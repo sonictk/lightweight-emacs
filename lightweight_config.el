@@ -1,3 +1,50 @@
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
+
+; Vertical command minibuffer
+(require 'ido)
+(require 'ido-vertical-mode)
+(setq ido-enable-flex-matching 1)
+(setq ido-everywhere 1)
+(ido-mode 1)
+(setq ido-vertical-define-keys 'C-n-and-C-p-only)
+(setq ido-use-faces t)
+(set-face-attribute 'ido-vertical-first-match-face nil
+                    :background nil
+                    :foreground "orange")
+(set-face-attribute 'ido-vertical-only-match-face nil
+                    :background nil
+                    :foreground nil)
+(set-face-attribute 'ido-vertical-match-face nil
+                    :foreground nil)
+(ido-vertical-mode 1)
+
+; Allow ido-mode to be used in M-x command minibuffer
+(require 'smex) 
+(smex-initialize) ; Can be omitted. This might cause a (minimal) delay
+                  ; when Smex is auto-initialized on its first run.
+(global-set-key (kbd "M-x") 'smex)
+(global-set-key (kbd "M-X") 'smex-major-mode-commands)
+;; This is old M-x.
+(global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
+
+; Better fuzzy matching algorithm for ido-mode
+(require 'ido-clever-match)
+(ido-clever-match-enable)
+
+; Indepedent space/hypen matching for ido-mode
+(require 'ido-complete-space-or-hyphen)
+
+; Undo functionality improved
+(require 'undo-tree)
+(global-undo-tree-mode)
+
+; Back button functionality and buffer mark navigation improved
+(require 'back-button)
+(back-button-mode 1)
+
+; Allow for swapping buffers between windows
+(require 'buffer-move)
+
 ; Stop Emacs from losing undo information by
 ; setting very high limits for undo buffers
 (setq undo-limit 20000000)
@@ -60,9 +107,7 @@
 
 (load-library "view")
 (require 'cc-mode)
-(require 'ido)
 (require 'compile)
-(ido-mode t)
 
 (defun lightweight-ediff-setup-windows (buffer-A buffer-B buffer-C control-buffer)
   (ediff-setup-windows-plain buffer-A buffer-B buffer-C control-buffer)
@@ -86,18 +131,20 @@
    (interactive "*")
    (insert (format-time-string "---------------- %a, %d %b %y: %I:%M%p")))
 
-; Bright-red TODOs
- (setq fixme-modes '(c++-mode c-mode emacs-lisp-mode))
- (make-face 'font-lock-fixme-face)
- (make-face 'font-lock-note-face)
- (mapc (lambda (mode)
-	 (font-lock-add-keywords
-	  mode
-	  '(("\\<\\(TODO\\)" 1 'font-lock-fixme-face t)
-            ("\\<\\(NOTE\\)" 1 'font-lock-note-face t))))
-	fixme-modes)
- (modify-face 'font-lock-fixme-face "Red" nil nil t nil t nil nil)
- (modify-face 'font-lock-note-face "Dark Green" nil nil t nil t nil nil)
+; Highlight TODOs and other interesting code tags along with whitespace
+(custom-set-faces
+ '(font-lock-warning-face ((t (:foreground "pink" :underline t :slant italic :weight bold))))
+ '(hes-escape-backslash-face ((t (:foreground "tan" :slant italic :weight bold))))
+ '(hes-escape-sequence-face ((t (:foreground "tan" :slant italic :weight bold))))
+ '(hi-blue-b ((t (:foreground "sandy brown" :weight bold))))
+ '(whitespace-space ((t (:foreground "gray30" :slant italic))))
+ '(whitespace-tab ((t (:background "#272822" :foreground "gray30")))))
+(defun font-lock-comment-annotations ()
+    "Highlight a bunch of well known comment annotations.
+  This functions should be added to the hooks of major modes for programming."
+    (font-lock-add-keywords
+         nil '(("\\<\\(FIX\\(ME\\)?\\|fixme\\|TODO\\|note\\|NOTE\\|OPTIMIZE\\|HACK\\|REFACTOR\\|todo\\|optimize\\|hack\\|refactor\\):"
+                          1 font-lock-warning-face t))))
 
 ; Accepted file extensions and their appropriate modes
 (setq auto-mode-alist
@@ -316,6 +363,121 @@
 
 (define-key global-map "\en" 'next-error)
 (define-key global-map "\eN" 'previous-error)
+
+; Remap the command and alt keys on OSX
+; Also allows for fn-delete to be right-delete
+(if (or (eq system-type 'darwin) (eq system-type 'gnu/linux))
+    (setq mac-command-modifier 'meta)
+    (setq mac-option-modifier nil)
+    (global-set-key [kp-delete] 'delete-char)
+)
+
+; Set key binding to toggle subword mode
+(global-set-key (kbd "C-c C-w") 'subword-mode)
+
+; Set key bindings for kill word and backward kill word that are overridden by Prelude
+(global-set-key (kbd "C-<backspace>") 'backward-kill-word)
+    (global-set-key (kbd "C-<delete>") 'kill-word)
+
+; Set key bindings for in-place scrolling of window
+(global-set-key (kbd "M-n") 'scroll-up-line)
+(global-set-key (kbd "M-p") 'scroll-down-line)
+
+; Unbind MMB
+(global-unset-key (kbd "<mouse-2>"))
+
+; Bind additional yank command hotkey
+(global-set-key (kbd "C-S-v") 'yank)
+
+; Unbind suspending the frame and bind it to undo instead
+(global-unset-key (kbd "C-z"))
+(global-set-key (kbd "C-z") 'undo-tree-undo)
+(global-set-key (kbd "C-S-z") 'undo-tree-redo)
+
+; Bindings for smooth horizontal scrolling
+(global-unset-key (kbd "C-x >"))
+(global-unset-key (kbd "C-x <"))
+(global-set-key (kbd "C-x >") '(lambda ()(interactive)(scroll-left 15)))
+(global-set-key (kbd "C-x <") '(lambda ()(interactive)(scroll-right 15)))
+
+; Bindings for commenting
+(defun comment-or-uncomment-region-or-line()
+  (interactive)
+  (let ((start (line-beginning-position))
+        (end (line-end-position)))
+    (when (or (not transient-mark-mode) (region-active-p))
+      (setq start (save-excursion
+                    (goto-char (region-beginning))
+                    (beginning-of-line)
+                    (point))
+            end (save-excursion
+                  (goto-char (region-end))
+                  (end-of-line)
+                  (point))))
+    (comment-or-uncomment-region start end)))
+(global-unset-key (kbd "C-c C-c"))
+(global-unset-key (kbd "C-/"))
+(global-set-key (kbd "C-c C-c") 'comment-or-uncomment-region-or-line)
+(global-set-key (kbd "C-c C-/") 'comment-or-uncomment-region-or-line)
+(global-set-key (kbd "C-/") 'comment-or-uncomment-region-or-line)
+
+; Bindings for opening recent files
+(global-set-key (kbd "C-x C-S-f") 'recentf-open-files)
+
+; Bindings for mousewheel horizontal scrolling
+(global-set-key (kbd "<S-wheel-down>") '(lambda nil (interactive) (scroll-right 15)))
+(global-set-key (kbd "<S-double-wheel-down>") '(lambda nil (interactive) (scroll-right 15)))
+(global-set-key (kbd "<S-triple-wheel-down>") '(lambda nil (interactive) (scroll-right 15)))
+(global-set-key (kbd "<S-mouse-4>") '(lambda nil (interactive) (scroll-right 15)))
+(global-set-key (kbd "<wheel-right>") '(lambda nil (interactive) (scroll-right 15)))
+(global-set-key (kbd "<wheel-left>") '(lambda nil (interactive) (scroll-left 15)))
+(global-set-key (kbd "<S-wheel-up>") '(lambda nil (interactive) (scroll-left 15)))
+(global-set-key (kbd "<S-double-wheel-up>") '(lambda nil (interactive) (scroll-left 15)))
+(global-set-key (kbd "<S-triple-wheel-up>") '(lambda nil (interactive) (scroll-left 15)))
+(global-set-key (kbd "<S-mouse-5>") '(lambda nil (interactive) (scroll-left 15)))
+
+; Bindings for text scale adjustment via scrollwheel
+(global-set-key (kbd "<C-wheel-up>") 'text-scale-increase)
+(global-set-key (kbd "<C-double-wheel-up>") 'text-scale-increase)
+(global-set-key (kbd "<C-triple-wheel-up>") 'text-scale-increase)
+(global-set-key (kbd "<C-mouse-4>") 'text-scale-increase)
+(global-set-key (kbd "<C-wheel-down>") 'text-scale-decrease)
+(global-set-key (kbd "<C-double-wheel-down>") 'text-scale-decrease)
+(global-set-key (kbd "<C-triple-wheel-down>") 'text-scale-decrease)
+(global-set-key (kbd "<C-mouse-5>") 'text-scale-decrease)
+
+; Set ECB mode to use LMB instead of MMB for selection
+(setq ecb-primary-secondary-mouse-buttons (quote mouse-1--C-mouse-1))
+
+; Override the default keybindings for buffer mark navigation
+(setq back-button-smartrep-prefix            '("C-c"))
+(setq back-button-global-keystrokes          '("C-c <C-SPC>"))
+(setq back-button-global-backward-keystrokes '("C-c <C-left>"))
+(setq back-button-global-forward-keystrokes  '("C-c <C-right>"))
+(setq back-button-global-backward-keystrokes '("C-c M-b"))
+(setq back-button-global-forward-keystrokes  '("C-c M-f"))
+(setq back-button-local-keystrokes           '("C-c <SPC>"))
+(setq back-button-local-backward-keystrokes  '("C-c <left>"))
+(setq back-button-local-forward-keystrokes   '("C-c <right>"))
+(setq back-button-local-backward-keystrokes  '("C-c C-b"))
+(setq back-button-local-forward-keystrokes   '("C-c C-f"))
+
+; Account for both kinds of mice and OSes at work/home
+(global-set-key (kbd "<mouse-8>") 'back-button-global-backward)
+(global-set-key (kbd "<mouse-9>") 'back-button-global-forward)
+(global-set-key (kbd "M-<mouse-8>") 'back-button-local-forward)
+(global-set-key (kbd "M-<mouse-9>") 'back-button-local-forward)
+
+(global-set-key (kbd "<mouse-4>") '(lambda nil (interactive) (scroll-down 6)))
+(global-set-key (kbd "<mouse-5>") '(lambda nil (interactive) (scroll-up 6)))
+
+; Additional keybinds for moving lines up/down on the home row
+(global-set-key (kbd "C-S-p") 'move-text-up)
+(global-set-key (kbd "C-S-n") 'move-text-down)
+
+; Additional keybind for finding header files
+(global-set-key (kbd "C-M->") 'ff-find-other-file)
+(global-set-key (kbd "C-M-<") 'ff-find-other-file-other-window)
 
 ; Editing
 (defun lightweight-replace-in-region (old-word new-word)
