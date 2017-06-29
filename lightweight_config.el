@@ -87,7 +87,9 @@
               (add-to-list 'symbol-names name)
               (add-to-list 'name-and-pos (cons name position))))))))    
 
-(global-set-key (kbd "C-c h i") 'ido-goto-symbol) ; or any key you see fit
+(global-set-key (kbd "C-c h i") 'ido-goto-symbol) 
+
+(setq semanticdb-default-save-directory "~/Git/lightweight-emacs/")
 
 ; Undo functionality improved
 (require 'undo-tree)
