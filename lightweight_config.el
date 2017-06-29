@@ -11,6 +11,9 @@
 (global-hl-line-mode 1)
 (set-face-background 'hl-line "midnight blue")
 
+; Start maximized
+(add-to-list 'default-frame-alist '(fullscreen . maximized))
+
 (setq compilation-directory-locked nil)
 (scroll-bar-mode -1)
 (setq shift-select-mode nil)
