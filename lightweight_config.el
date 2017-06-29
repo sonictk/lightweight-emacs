@@ -17,6 +17,16 @@
 (setq enable-local-variables nil)
 (setq lightweight-font "outline-DejaVu Sans Mono")
 
+; Only display the line numbers when goto line is activated
+(global-set-key [remap goto-line] 'goto-line-with-feedback)
+
+; Allow for going to specific line number
+(defun goto-line-with-feedback ()   "Show line numbers temporarily, while prompting for the line number input"   (interactive)   (unwind-protect
+      (progn
+        (linum-mode 1)
+        (goto-line (read-number "Goto line: ")))
+    (linum-mode -1)))
+
 (when lightweight-win32 
   (setq lightweight-font "outline-Liberation Mono")
 )
