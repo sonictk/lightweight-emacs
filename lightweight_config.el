@@ -96,6 +96,12 @@
 (global-set-key "\C-v"   'View-scroll-half-page-forward)
 (global-set-key "\M-v"   'View-scroll-half-page-backward)
 
+; Allow for loading recent files
+(recentf-mode 1)
+(setq recentf-max-menu-items 25)
+(global-set-key "\C-x\ \C-r" 'recentf-open-files)
+(setq recentf-save-file (expand-file-name "recentf" "~/Git/lightweight-emacs/"))
+
 ; Highlight doxygen comments
 (require 'doxymacs)
 (defun my-doxymacs-font-lock-hook ()
