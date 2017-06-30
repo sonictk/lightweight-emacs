@@ -937,6 +937,11 @@
     (font-lock-add-keywords
          nil '(("\\<\\(FIX\\(ME\\)?\\|fixme\\|TODO\\|note\\|NOTE\\|OPTIMIZE\\|HACK\\|REFACTOR\\|todo\\|optimize\\|hack\\|refactor\\):"
                           1 font-lock-warning-face t))))
+(add-hook 'prog-mode-hook 'font-lock-comment-annotations)
+
+; Use whitespace cleaning only for programming modes
+(add-hook 'prog-mode-hook
+    (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace)))
 
 (require 'whitespace)
 ; Show whitespace
