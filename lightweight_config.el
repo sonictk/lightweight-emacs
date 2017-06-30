@@ -96,6 +96,23 @@
 (global-set-key "\C-v"   'View-scroll-half-page-forward)
 (global-set-key "\M-v"   'View-scroll-half-page-backward)
 
+;; insert an empty line after the current line and position the cursor on its beginning
+(defun insert-empty-line ()
+ (interactive)
+ (move-end-of-line nil)
+ (open-line 1)
+ (next-line 1))
+(defun insert-empty-line-backwards ()
+ (interactive)
+ (previous-line 1)
+ (move-end-of-line nil)
+ (open-line 1)
+ (next-line 1))
+
+(global-set-key [(shift return)] 'insert-empty-line)
+(global-set-key [(ctrl return)] 'insert-empty-line)
+(global-set-key [(ctrl shift return)] 'insert-empty-line-backwards)
+
 ; Allow for loading recent files
 (recentf-mode 1)
 (setq recentf-max-menu-items 25)
@@ -118,7 +135,6 @@
     (if (or (eq major-mode 'c-mode) (eq major-mode 'c++-mode))
         (doxymacs-font-lock)))
 (add-hook 'font-lock-mode-hook 'my-doxymacs-font-lock-hook)
-
 ; Auto reload-buffers when files are changed on disk
 (global-auto-revert-mode t)
 
@@ -327,49 +343,52 @@
          ("\\.mm$" . objc-mode)
          ) auto-mode-alist))
 
+
 ; C++ indentation style
-(defconst lightweight-c-style
-  '((c-electric-pound-behavior   . nil)
-    (c-tab-always-indent         . t)
-    (c-comment-only-line-offset  . 0)
-    (c-hanging-braces-alist      . ((class-open)
-                                    (class-close)
-                                    (defun-open)
-                                    (defun-close)
-                                    (inline-open)
-                                    (inline-close)
-                                    (brace-list-open)
-                                    (brace-list-close)
-                                    (brace-list-intro)
-                                    (brace-list-entry)
-                                    (block-open)
-                                    (block-close)
-                                    (substatement-open)
-                                    (statement-case-open)
-                                    (class-open)))
-    (c-hanging-colons-alist      . ((inher-intro)
-                                    (case-label)
-                                    (label)
-                                    (access-label)
-                                    (access-key)
-                                    (member-init-intro)))
-    (c-cleanup-list              . (scope-operator
-                                    list-close-comma
-                                    defun-close-semi))
-    (c-offsets-alist             . ((arglist-close         .  c-lineup-arglist)
-                                    (label                 . -4)
-                                    (access-label          . -4)
-                                    (substatement-open     .  0)
-                                    (statement-case-intro  .  4)
-                                    (case-label            .  4)
-                                    (block-open            .  0)
-                                    (inline-open           .  0)
-                                    (topmost-intro-cont    .  0)
-                                    (knr-argdecl-intro     . -4)
-                                    (brace-list-open       .  0)
-                                    (brace-list-intro      .  4)))
-    (c-echo-syntactic-information-p . t))
-    "Lightweight Emacs C++ Style")
+(setq c-default-style "k&r"
+      c-basic-offset 4)
+; (defconst lightweight-c-style
+;   '((c-electric-pound-behavior   . nil)
+;     (c-tab-always-indent         . t)
+;     (c-comment-only-line-offset  . 0)
+;     (c-hanging-braces-alist      . ((class-open)
+;                                     (class-close)
+;                                     (defun-open)
+;                                     (defun-close)
+;                                     (inline-open)
+;                                     (inline-close)
+;                                     (brace-list-open)
+;                                     (brace-list-close)
+;                                     (brace-list-intro)
+;                                     (brace-list-entry)
+;                                     (block-open)
+;                                     (block-close)
+;                                     (substatement-open)
+;                                     (statement-case-open)
+;                                     (class-open)))
+;     (c-hanging-colons-alist      . ((inher-intro)
+;                                     (case-label)
+;                                     (label)
+;                                     (access-label)
+;                                     (access-key)
+;                                     (member-init-intro)))
+;     (c-cleanup-list              . (scope-operator
+;                                     list-close-comma
+;                                     defun-close-semi))
+;     (c-offsets-alist             . ((arglist-close         .  c-lineup-arglist)
+;                                     (label                 . -4)
+;                                     (access-label          . -4)
+;                                     (substatement-open     .  0)
+;                                     (statement-case-intro  .  4)
+;                                     (case-label            .  4)
+;                                     (block-open            .  0)
+;                                     (inline-open           .  0)
+;                                     (topmost-intro-cont    .  0)
+;                                     (knr-argdecl-intro     . -4)
+;                                     (brace-list-open       .  0)
+;                                     (brace-list-intro      .  4)))
+;     (c-echo-syntactic-information-p . t))
+;     "Lightweight Emacs C++ Style")
 
 ; Set tab width to 4 by default and use spaces by default
 (setq-default tab-width 4)
@@ -378,7 +397,6 @@
 (setq tab-stop-list '(4 8 12 16 20 24 28 32 36 40 44 48 52 56 60
                           64 68 72 76 80 84 88 92 96 100 104 108 112
                           116 120))
-; Always just tab when hitting the tab key, do not use smart tabbing
 (setq tab-always-indent nil)
 (setq c-tab-always-indent nil)
 
@@ -516,11 +534,11 @@
 ; CC++ mode handling
 (defun lightweight-c-hook ()
   ; Set my style for the current buffer
-  (c-add-style "Lightweight" lightweight-c-style t)
+  ; (c-add-style "Lightweight" lightweight-c-style t)
   
   ; 4-space tabs
   (setq tab-width 4
-        indent-tabs-mode nil)
+        indent-tabs-mode t)
 
   ; Additional style stuff
   (c-set-offset 'member-init-intro '++)
@@ -895,23 +913,23 @@
 (add-to-list 'custom-theme-load-path
              (file-name-as-directory "~/Git/lightweight-emacs/themes"))
 
-; Highlight TODOs and other interesting code tags along with whitespace
+; Highlight TODOs and other interesting code tags along with whitespace/tabs
 (custom-set-faces
   '(font-lock-warning-face ((t (:foreground "pink" :underline t :slant italic :weight bold))))
   '(hes-escape-backslash-face ((t (:foreground "tan" :slant italic :weight bold))))
   '(hes-escape-sequence-face ((t (:foreground "tan" :slant italic :weight bold))))
   '(hi-blue-b ((t (:foreground "sandy brown" :weight bold))))
 
-;  '(whitespace-space ((t (:bold t :foreground "gray24"))))
-;  '(whitespace-empty ((t (:foreground "gray32" :background "gray24"))))
-;  '(whitespace-hspace ((t (:foreground "gray32" :background "gray24"))))
-;  '(whitespace-indentation ((t (:foreground "gray32" :background "gray24"))))
-;  '(whitespace-line ((t (:foreground "gray32" :background "gray24"))))
-;  '(whitespace-newline ((t (:foreground "gray32" :background "gray24"))))
-;  '(whitespace-space-after-tab ((t (:foreground "gray32" :background "gray24"))))
-;  '(whitespace-space-before-tab ((t (:foreground "gray32" :background "gray24"))))
-;  '(whitespace-tab ((t (:foreground "gray32" :background "gray24"))))
-;  '(whitespace-trailing ((t (:foreground "gray32" :background "gray24"))))
+  '(whitespace-space ((t (:bold t :foreground "gray37" :background "gray24"))))
+  '(whitespace-empty ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-hspace ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-indentation ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-line ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-newline ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-space-after-tab ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-space-before-tab ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-tab ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-trailing ((t (:foreground "gray37" :background "gray24"))))
 )
 (defun font-lock-comment-annotations ()
     "Highlight a bunch of well known comment annotations.
@@ -920,19 +938,20 @@
          nil '(("\\<\\(FIX\\(ME\\)?\\|fixme\\|TODO\\|note\\|NOTE\\|OPTIMIZE\\|HACK\\|REFACTOR\\|todo\\|optimize\\|hack\\|refactor\\):"
                           1 font-lock-warning-face t))))
 
-;(require 'whitespace)
-;; Show whitespace
-;(global-whitespace-mode t)
-;(setq show-trailing-whitespace t)
-;(setq whitespace-style (quote
-;   (face spaces tabs space-mark tab-mark)))
-;(setq whitespace-display-mappings
-;  ;; all numbers are Unicode codepoint in decimal. ⁖ (insert-char 182 1)
-;  '(
-;    (space-mark 32 [183] [46]) ; 32 SPACE 「 」, 183 MIDDLE DOT 「·」, 46 FULL STOP 「.」
-;    (tab-mark 9 [187 9] [92 9]) ; 9 TAB, 9655 WHITE RIGHT-POINTING TRIANGLE 「▷」
-;   )
-;)
+(require 'whitespace)
+; Show whitespace
+(global-whitespace-mode t)
+(setq show-trailing-whitespace t)
+(setq whitespace-style (quote
+   (face spaces tabs space-mark tab-mark)))
+(setq whitespace-display-mappings
+  ;; all numbers are Unicode codepoint in decimal. ⁖ (insert-char 182 1)
+  '(
+    (space-mark 32 [183] [46]) ; 32 SPACE 「 」, 183 MIDDLE DOT 「·」, 46 FULL STOP 「.」
+    ;(newline-mark 10 [182 10]) ; 10 LINE FEED
+    (tab-mark 9 [187 9] [92 9]) ; 9 TAB, 9655 WHITE RIGHT-POINTING TRIANGLE 「▷」
+   )
+)
 (defun post-load-stuff ()
   (interactive)
   (menu-bar-mode -1)
