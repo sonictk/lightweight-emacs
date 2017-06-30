@@ -102,6 +102,16 @@
 (global-set-key "\C-x\ \C-r" 'recentf-open-files)
 (setq recentf-save-file (expand-file-name "recentf" "~/Git/lightweight-emacs/"))
 
+;; get rid of `find-file-read-only' and replace it with something
+;; more useful.
+(global-set-key (kbd "C-x C-r") 'ido-recentf-open)
+(defun ido-recentf-open ()
+  "Use `ido-completing-read' to \\[find-file] a recent file"
+  (interactive)
+  (if (find-file (ido-completing-read "Find recent file: " recentf-list))
+      (message "Opening file...")
+    (message "Aborting")))
+
 ; Highlight doxygen comments
 (require 'doxymacs)
 (defun my-doxymacs-font-lock-hook ()
@@ -830,6 +840,9 @@
 (setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
 (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
 
+; Scroll just one line when hitting bottom of window
+(setq scroll-conservatively 10000)
+
 ; Startup windowing
 (setq next-line-add-newlines nil)
 (setq truncate-partial-width-windows nil)
@@ -927,6 +940,7 @@
   (load-theme 'zenburn t)
   (set-cursor-color "#40FF40")
   (set-face-background 'hl-line "#1a3a3a")
+  (recentf-load-list)
 )
 (add-hook 'window-setup-hook 'post-load-stuff t)
 
