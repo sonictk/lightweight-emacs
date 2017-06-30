@@ -9,3 +9,7 @@
 
 # Undo-tree save-files
 *.~undo-tree
+
+# Plugin configuration files
+ido.last
+smex-items

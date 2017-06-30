@@ -1,3 +1,4 @@
+; Add custom module path so that nothing is saved to the global emacs config
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
 
 ; Vertical command minibuffer
@@ -17,6 +18,7 @@
 (set-face-attribute 'ido-vertical-match-face nil
                     :foreground nil)
 (ido-vertical-mode 1)
+(setq ido-save-directory-list-file "~/Git/lightweight-emacs/ido.last")
 
 ; Allow ido-mode to be used in M-x command minibuffer
 (require 'smex) 
@@ -26,6 +28,7 @@
 (global-set-key (kbd "M-X") 'smex-major-mode-commands)
 ;; This is old M-x.
 (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
+(setq smex-save-file "~/Git/lightweight-emacs/smex-items")
 
 ; Better fuzzy matching algorithm for ido-mode
 (require 'ido-clever-match)
@@ -35,10 +38,6 @@
 (require 'ido-complete-space-or-hyphen)
 
 ; Allow for ido-mode to be used with imenu for looking through source file functions/members
-; (require 'imenu)
-; (require 'idomenu)
-; (autoload 'idomenu "idomenu" nil t)
-
 (defun ido-goto-symbol (&optional symbol-list)
       "Refresh imenu and jump to a place in the buffer using Ido."
       (interactive)
@@ -89,7 +88,48 @@
 
 (global-set-key (kbd "C-c h i") 'ido-goto-symbol) 
 
+; Do not save semanticdb file to user home emacs directory
 (setq semanticdb-default-save-directory "~/Git/lightweight-emacs/")
+
+; Configure scrolling to only scroll half a page at a time
+(require 'view)
+(global-set-key "\C-v"   'View-scroll-half-page-forward)
+(global-set-key "\M-v"   'View-scroll-half-page-backward)
+
+; Highlight doxygen comments
+(require 'doxymacs)
+(defun my-doxymacs-font-lock-hook ()
+    (if (or (eq major-mode 'c-mode) (eq major-mode 'c++-mode))
+        (doxymacs-font-lock)))
+(add-hook 'font-lock-mode-hook 'my-doxymacs-font-lock-hook)
+
+; Auto reload-buffers when files are changed on disk
+(global-auto-revert-mode t)
+
+; Enable Emacs Development Environment mode
+(global-ede-mode t)
+
+; Enable remote .dir-locals.el files to be found
+(setq enable-remote-dir-locals t)
+
+; Function to kill all other buffers apart from the current one
+(defun kill-other-buffers ()
+    "Kill all other buffers."
+    (interactive)
+    (mapc 'kill-buffer 
+        (delq (current-buffer) 
+            (remove-if-not 'buffer-file-name (buffer-list))
+        )
+    )
+)
+
+; Disable auto-saving buffers
+(setq auto-save-default nil)
+(setq auto-save-interval 0)
+(setq auto-save-timeout 0)
+
+; Disable word wrapping by default
+(set-default 'truncate-lines t)
 
 ; Undo functionality improved
 (require 'undo-tree)
@@ -171,6 +211,18 @@
 (setq ediff-window-setup-function 'lightweight-ediff-setup-windows)
 (setq ediff-split-window-function 'split-window-horizontally)
 
+; Restore session after ediff session
+(defvar my-ediff-last-windows nil)
+
+(defun my-store-pre-ediff-winconfig ()
+  (setq my-ediff-last-windows (current-window-configuration)))
+
+(defun my-restore-pre-ediff-winconfig ()
+  (set-window-configuration my-ediff-last-windows))
+
+(add-hook 'ediff-before-setup-hook #'my-store-pre-ediff-winconfig)
+(add-hook 'ediff-quit-hook #'my-restore-pre-ediff-winconfig)
+
 ; Turn off the bell on Mac OS X
 (defun nil-bell ())
 (setq ring-bell-function 'nil-bell)
@@ -187,20 +239,57 @@
    (interactive "*")
    (insert (format-time-string "---------------- %a, %d %b %y: %I:%M%p")))
 
-; Highlight TODOs and other interesting code tags along with whitespace
-(custom-set-faces
- '(font-lock-warning-face ((t (:foreground "pink" :underline t :slant italic :weight bold))))
- '(hes-escape-backslash-face ((t (:foreground "tan" :slant italic :weight bold))))
- '(hes-escape-sequence-face ((t (:foreground "tan" :slant italic :weight bold))))
- '(hi-blue-b ((t (:foreground "sandy brown" :weight bold))))
- '(whitespace-space ((t (:foreground "gray30" :slant italic))))
- '(whitespace-tab ((t (:background "#272822" :foreground "gray30")))))
-(defun font-lock-comment-annotations ()
-    "Highlight a bunch of well known comment annotations.
-  This functions should be added to the hooks of major modes for programming."
-    (font-lock-add-keywords
-         nil '(("\\<\\(FIX\\(ME\\)?\\|fixme\\|TODO\\|note\\|NOTE\\|OPTIMIZE\\|HACK\\|REFACTOR\\|todo\\|optimize\\|hack\\|refactor\\):"
-                          1 font-lock-warning-face t))))
+; Highlight escape character sequences correctly
+(custom-set-variables
+ '(hes-mode-alist
+   (quote
+    ((c-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]+\\|u[[:xdigit:]]\\{4\\}\\|U[[:xdigit:]]\\{8\\}\\|[\"'?\\abfnrtv]\\)\\)")
+     (c++-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]+\\|u[[:xdigit:]]\\{4\\}\\|U[[:xdigit:]]\\{8\\}\\|[\"'?\\abfnrtv]\\)\\)")
+     (cmake-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]+\\|u[[:xdigit:]]\\{4\\}\\|U[[:xdigit:]]\\{8\\}\\|[\"'?\\abfnrtv]\\)\\)")
+     (objc-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]+\\|u[[:xdigit:]]\\{4\\}\\|U[[:xdigit:]]\\{8\\}\\|[\"'?\\abfnrtv]\\)\\)")
+     (python-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]+\\|u[[:xdigit:]]\\{4\\}\\|U[[:xdigit:]]\\{8\\}\\|[\"'?\\abfnrtv]\\)\\)")
+     (java-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|u[[:xdigit:]]\\{4\\}\\|[\"'\\bfnrt]\\)\\)")
+     (clojure-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|u[[:xdigit:]]\\{4\\}\\|[\"'\\bfnrt]\\)\\)")
+     (js-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]\\{2\\}\\|u[[:xdigit:]]\\{4\\}\\|.\\)\\)")
+     (js2-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]\\{2\\}\\|u[[:xdigit:]]\\{4\\}\\|.\\)\\)")
+     (ruby-mode
+      ("\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]\\{1,2\\}\\|u\\(?:[[:xdigit:]]\\{4\\}\\|{[[:xdigit:]]\\{1,6\\}\\(?:[[:space:]]+[[:xdigit:]]\\{1,6\\}\\)*}\\)\\|.\\)\\)"
+       (0
+        (let*
+            ((state
+              (syntax-ppss))
+             (term
+              (nth 3 state)))
+          (when
+              (or
+               (and
+                (eq term 39)
+                (member
+                 (match-string 2)
+                 (quote
+                  ("\\" "'"))))
+               (if
+                   (fboundp
+                    (quote ruby-syntax-expansion-allowed-p))
+                   (ruby-syntax-expansion-allowed-p state)
+                 (memq term
+                       (quote
+                        (34 47 10 96 t)))))
+            (font-lock-prepend-text-property
+             (match-beginning 1)
+             (match-end 1)
+             (quote face)
+             (quote hes-escape-backslash-face))
+            (font-lock-prepend-text-property
+             (match-beginning 2)
+             (match-end 2)
+             (quote face)
+             (quote hes-escape-sequence-face))
+            nil))
+        prepend)))
+     (emacs-lisp-mode . "\\(\\\\\\(u[[:xdigit:]]\\{4\\}\\|U00[[:xdigit:]]\\{6\\}\\|x[[:xdigit:]]+\\|[0-7]+\\|.\\)\\)"))))
+ '(yascroll:delay-to-hide nil)
+)
 
 ; Accepted file extensions and their appropriate modes
 (setq auto-mode-alist
@@ -266,6 +355,147 @@
     (c-echo-syntactic-information-p . t))
     "Lightweight Emacs C++ Style")
 
+; Set tab width to 4 by default and use spaces by default
+(setq-default tab-width 4)
+(setq-default indent-tabs-mode nil)
+(setq-default tab-always-indent t)
+(setq tab-stop-list '(4 8 12 16 20 24 28 32 36 40 44 48 52 56 60
+                          64 68 72 76 80 84 88 92 96 100 104 108 112
+                          116 120))
+; Always just tab when hitting the tab key, do not use smart tabbing
+(setq tab-always-indent nil)
+(setq c-tab-always-indent nil)
+
+; Set flag so that will not be prompted to kill running process on closing Emacs every single time
+(add-hook 'comint-exec-hook 
+      (lambda () (set-process-query-on-exit-flag (get-buffer-process (current-buffer)) nil)))
+
+; Add syntax highlighting for escape characters
+(require 'highlight-escape-sequences)
+(hes-mode t)
+
+; Mouse keybinding for rectangle mark mode
+(defun mouse-start-rectangle (start-event)
+  (interactive "e")
+  (deactivate-mark)
+  (mouse-set-point start-event)
+  (rectangle-mark-mode +1)
+  (let ((drag-event))
+    (track-mouse
+      (while (progn
+               (setq drag-event (read-event))
+               (mouse-movement-p drag-event))
+        (mouse-set-point drag-event)))))
+
+(global-set-key (kbd "S-<down-mouse-3>") 'mouse-start-rectangle)
+
+; Fix scroll-all-mode not working with the mouse wheel
+(defun mwheel-scroll-all-function-all (func &optional arg)
+  (if (and scroll-all-mode arg)
+      (save-selected-window
+        (walk-windows
+         (lambda (win)
+           (select-window win)
+           (condition-case nil
+               (funcall func arg)
+             (error nil)))))
+    (funcall func arg)))
+
+(defun mwheel-scroll-all-scroll-up-all (&optional arg)
+  (mwheel-scroll-all-function-all 'scroll-up arg))
+
+(defun mwheel-scroll-all-scroll-down-all (&optional arg)
+  (mwheel-scroll-all-function-all 'scroll-down arg))
+
+(setq mwheel-scroll-up-function 'mwheel-scroll-all-scroll-up-all)
+(setq mwheel-scroll-down-function 'mwheel-scroll-all-scroll-down-all)
+
+; Transparency toggle configuration
+(defvar emacs-transparency-toggle-switch nil)
+
+(defun emacs-transparency-toggle ()
+  (interactive)
+  (if emacs-transparency-toggle-switch
+      (progn
+        (setq emacs-transparency-toggle-switch nil)
+        (set-frame-parameter nil 'alpha 100))
+    (setq emacs-transparency-toggle-switch t)
+(set-frame-parameter nil 'alpha 50)))
+
+; Activate CMake mode automatically
+(setq auto-mode-alist
+      (append
+       '(("CMakeLists\\.txt\\'" . cmake-mode))
+       '(("\\.cmake\\'" . cmake-mode))
+       auto-mode-alist))
+; Set CMake tab width to use 4 spaces instead of 2 by defaul
+(setq cmake-tab-width 4)
+
+; GDB Restore windows layout after debugging and also nicer default layout
+(setq gdb-many-windows nil)
+(defun set-gdb-layout(&optional c-buffer)
+  (if (not c-buffer)
+      (setq c-buffer (window-buffer (selected-window)))) ;; save current buffer
+
+  ;; from http://stackoverflow.com/q/39762833/846686
+  (set-window-dedicated-p (selected-window) nil) ;; unset dedicate state if needed
+  (switch-to-buffer gud-comint-buffer)
+  (delete-other-windows) ;; clean all
+
+  (let* (
+         (w-source (selected-window)) ;; left top
+         (w-gdb (split-window w-source nil 'right)) ;; right bottom
+         (w-locals (split-window w-gdb nil 'above)) ;; right middle bottom
+         (w-stack (split-window w-locals nil 'above)) ;; right middle top
+         (w-breakpoints (split-window w-stack nil 'above)) ;; right top
+         (w-io (split-window w-source (floor(* 0.9 (window-body-height)))
+                             'below)) ;; left bottom
+         )
+    (set-window-buffer w-io (gdb-get-buffer-create 'gdb-inferior-io))
+    (set-window-dedicated-p w-io t)
+    (set-window-buffer w-breakpoints (gdb-get-buffer-create 'gdb-breakpoints-buffer))
+    (set-window-dedicated-p w-breakpoints t)
+    (set-window-buffer w-locals (gdb-get-buffer-create 'gdb-locals-buffer))
+    (set-window-dedicated-p w-locals t)
+    (set-window-buffer w-stack (gdb-get-buffer-create 'gdb-stack-buffer))
+    (set-window-dedicated-p w-stack t)
+    (set-window-dedicated-p w-gdb t)
+
+    (set-window-buffer w-gdb gud-comint-buffer)
+
+    (select-window w-source)
+    (set-window-buffer w-source c-buffer)
+    ))
+(defadvice gdb (around args activate)
+  "Change the way to gdb works."
+  (setq global-config-editing (current-window-configuration)) ;; to restore: (set-window-configuration c-editing)
+  (let (
+        (c-buffer (window-buffer (selected-window))) ;; save current buffer
+        )
+    ad-do-it
+    (set-gdb-layout c-buffer))
+  )
+(defadvice gdb-reset (around args activate)
+  "Change the way to gdb exit."
+  ad-do-it
+  (set-window-configuration global-config-editing))
+
+; Function for displaying the file name in the minibuffer
+(defun show-file-name ()
+  "Show the full path file name in the minibuffer."
+  (interactive)
+  (kill-new (buffer-file-name))
+  (message (buffer-file-name)))
+
+; Add python-mode syntax hook for SCons files
+(setq auto-mode-alist
+     (cons '("SConstruct" . python-mode) auto-mode-alist))
+(setq auto-mode-alist
+     (cons '("SConscript" . python-mode) auto-mode-alist))
+
+; Set cc-search-directories as safe in order to allow ff-find-other-file to work
+(put 'cc-search-directories 'safe-local-variable #'listp) 
+(put 'cc-other-file-alist 'safe-local-variable #'listp) 
 
 ; CC++ mode handling
 (defun lightweight-c-hook ()
@@ -419,7 +649,8 @@
     (global-set-key [kp-delete] 'delete-char)
 )
 
-; Set key binding to toggle subword mode
+; Enable subword mode globally by default
+(global-subword-mode t)
 (global-set-key (kbd "C-c C-w") 'subword-mode)
 
 ; Set key bindings for kill word and backward kill word that are overridden by Prelude
@@ -524,7 +755,7 @@
 
 ; Additional keybind for finding header files
 (global-set-key (kbd "C-M->") 'ff-find-other-file)
-(global-set-key (kbd "C-M-<") 'ff-find-other-file-other-window)
+(global-set-key (kbd "C-M-<") '(lambda nil (interactive) (ff-find-other-file t)))
 
 ; Editing
 (defun lightweight-replace-in-region (old-word new-word)
@@ -564,14 +795,53 @@
 ; Smooth scroll
 (setq scroll-step 3)
 
-; Clock
-(display-time)
+; Set display margins
+(defun my-set-margins ()
+  "Set margins in current buffer."
+  (setq left-margin-width 4)
+  (setq right-margin-width 4)
+)
+(add-hook 'text-mode-hook 'my-set-margins)
+
+; Setup GDB debugger to display multi view for debugging by default
+(setq
+ ;; use gdb-many-windows by default
+ gdb-many-windows t
+
+ ;; Non-nil means display source file containing the main routine at startup
+ gdb-show-main t
+ )
+
+; Enable vertical ruler for Python/C/C++ source files
+(require 'fill-column-indicator)
+(add-hook 'python-mode-hook (lambda () (fci-mode t)))
+(add-hook 'c-mode-common-hook (lambda ()(fci-mode t)))
+(setq fci-rule-column 80)
+(setq fci-rule-use-dashes t)
+
+;; Scroll one line at a time (less "jumpy" than defaults)
+(setq mouse-wheel-scroll-amount '(3 ((shift) . 3))) ;; scroll 3 lines at a time when using mwheel
+(setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
+(setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
 
 ; Startup windowing
 (setq next-line-add-newlines nil)
-(setq-default truncate-lines t)
 (setq truncate-partial-width-windows nil)
-(split-window-horizontally)
+
+; Check if running on Macbook based off hostname and set the font size accordingly
+(if (string-equal system-name "sonictk-mbp.local") 
+    ;; Set custom font as default global font
+    (add-to-list 'default-frame-alist '(font . "Liberation Mono-12"))
+    (set-face-attribute 'default nil :font "Liberation Mono-12")
+)
+
+; Global scrollbar mode
+(require 'yascroll)
+(global-yascroll-bar-mode 1)
+
+; Use whitespace cleaning only for programming modes
+(add-hook 'prog-mode-hook
+    (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace)))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
@@ -605,11 +875,52 @@
 (set-face-attribute 'default t :font "Liberation Mono-11.5")
 (add-to-list 'custom-theme-load-path
              (file-name-as-directory "~/Git/lightweight-emacs/themes"))
+
+; Highlight TODOs and other interesting code tags along with whitespace
+(custom-set-faces
+  '(font-lock-warning-face ((t (:foreground "pink" :underline t :slant italic :weight bold))))
+  '(hes-escape-backslash-face ((t (:foreground "tan" :slant italic :weight bold))))
+  '(hes-escape-sequence-face ((t (:foreground "tan" :slant italic :weight bold))))
+  '(hi-blue-b ((t (:foreground "sandy brown" :weight bold))))
+
+;  '(whitespace-space ((t (:bold t :foreground "gray24"))))
+;  '(whitespace-empty ((t (:foreground "gray32" :background "gray24"))))
+;  '(whitespace-hspace ((t (:foreground "gray32" :background "gray24"))))
+;  '(whitespace-indentation ((t (:foreground "gray32" :background "gray24"))))
+;  '(whitespace-line ((t (:foreground "gray32" :background "gray24"))))
+;  '(whitespace-newline ((t (:foreground "gray32" :background "gray24"))))
+;  '(whitespace-space-after-tab ((t (:foreground "gray32" :background "gray24"))))
+;  '(whitespace-space-before-tab ((t (:foreground "gray32" :background "gray24"))))
+;  '(whitespace-tab ((t (:foreground "gray32" :background "gray24"))))
+;  '(whitespace-trailing ((t (:foreground "gray32" :background "gray24"))))
+)
+(defun font-lock-comment-annotations ()
+    "Highlight a bunch of well known comment annotations.
+  This functions should be added to the hooks of major modes for programming."
+    (font-lock-add-keywords
+         nil '(("\\<\\(FIX\\(ME\\)?\\|fixme\\|TODO\\|note\\|NOTE\\|OPTIMIZE\\|HACK\\|REFACTOR\\|todo\\|optimize\\|hack\\|refactor\\):"
+                          1 font-lock-warning-face t))))
+
+;(require 'whitespace)
+;; Show whitespace
+;(global-whitespace-mode t)
+;(setq show-trailing-whitespace t)
+;(setq whitespace-style (quote
+;   (face spaces tabs space-mark tab-mark)))
+;(setq whitespace-display-mappings
+;  ;; all numbers are Unicode codepoint in decimal. ⁖ (insert-char 182 1)
+;  '(
+;    (space-mark 32 [183] [46]) ; 32 SPACE 「 」, 183 MIDDLE DOT 「·」, 46 FULL STOP 「.」
+;    (tab-mark 9 [187 9] [92 9]) ; 9 TAB, 9655 WHITE RIGHT-POINTING TRIANGLE 「▷」
+;   )
+;)
 (defun post-load-stuff ()
   (interactive)
   (menu-bar-mode -1)
   (maximize-frame)
   (load-theme 'zenburn t)
   (set-cursor-color "#40FF40")
+  (set-face-background 'hl-line "#1a3a3a")
 )
 (add-hook 'window-setup-hook 'post-load-stuff t)
+
