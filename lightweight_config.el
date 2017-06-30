@@ -972,6 +972,10 @@
     (tab-mark 9 [187 9] [92 9]) ; 9 TAB, 9655 WHITE RIGHT-POINTING TRIANGLE 「▷」
    )
 )
+; Startup with split window
+(split-window-horizontally)
+
+; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)
   (menu-bar-mode -1)
