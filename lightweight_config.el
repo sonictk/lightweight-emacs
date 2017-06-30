@@ -1,5 +1,14 @@
 ; Add custom module path so that nothing is saved to the global emacs config
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
+
+; Template system for Emacs - allows macros to do text insertion
+(require 'yasnippet)
+;(setq yas-snippet-dirs
+;      '("~/.emacs.d/snippets"                 ;; personal snippets
+;        "/path/to/yasnippet/snippets"         ;; the default collection
+;        ))
+(yas-global-mode 1)
 
 ; Vertical command minibuffer
 (require 'ido)
