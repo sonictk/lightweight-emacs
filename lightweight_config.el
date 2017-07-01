@@ -815,6 +815,7 @@ See also `newline-and-indent'."
 (global-set-key (kbd "<mouse-5>") '(lambda nil (interactive) (scroll-up 6)))
 
 ; Additional keybinds for moving lines up/down on the home row
+(require 'move-text)
 (global-set-key (kbd "C-S-p") 'move-text-up)
 (global-set-key (kbd "C-S-n") 'move-text-down)
 
