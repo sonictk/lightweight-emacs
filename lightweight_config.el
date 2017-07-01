@@ -104,7 +104,7 @@
 (global-set-key (kbd "C-c h i") 'ido-goto-symbol) 
 
 ; Do not save semanticdb file to user home emacs directory
-(setq semanticdb-default-save-directory "~/Git/lightweight-emacs/")
+(setq semanticdb-default-save-directory "~/Git/lightweight-emacs/semantic-cache")
 
 ; Configure scrolling to only scroll half a page at a time
 (require 'view)

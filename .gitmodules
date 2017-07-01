@@ -4,3 +4,9 @@
 [submodule "modules/company-mode"]
 	path = modules/company-mode
 	url = git@github.com:company-mode/company-mode.git
+[submodule "modules/smartparens"]
+	path = modules/smartparens
+	url = git@github.com:Fuco1/smartparens.git
+[submodule "modules/dash.el"]
+	path = modules/dash.el
+	url = git@github.com:magnars/dash.el.git
