@@ -972,6 +972,17 @@
     (tab-mark 9 [187 9] [92 9]) ; 9 TAB, 9655 WHITE RIGHT-POINTING TRIANGLE 「▷」
    )
 )
+
+; Set up auto-complete for code
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/company-mode/")
+(require 'company)
+(require 'company-c-headers)
+(setq company-backends (delete 'company-semantic company-backends))
+(define-key c-mode-map  [(ctrl tab)] 'company-complete)
+(define-key c++-mode-map  [(ctrl tab)] 'company-complete)
+(add-to-list 'company-backends 'company-c-headers)
+; (add-hook 'after-init-hook 'global-company-mode)
+
 ; Startup with split window
 (split-window-horizontally)
 
@@ -984,6 +995,7 @@
   (set-cursor-color "#40FF40")
   (set-face-background 'hl-line "#1a3a3a")
   (recentf-load-list)
+  (global-company-mode t)
 )
 (add-hook 'window-setup-hook 'post-load-stuff t)
 

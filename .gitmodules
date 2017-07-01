@@ -1,3 +1,6 @@
 [submodule "modules/yasnippet"]
 	path = modules/yasnippet
 	url = git@github.com:joaotavora/yasnippet.git
+[submodule "modules/company-mode"]
+	path = modules/company-mode
+	url = git@github.com:company-mode/company-mode.git
