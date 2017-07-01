@@ -124,8 +124,21 @@
  (open-line 1)
  (next-line 1))
 
-(global-set-key [(shift return)] 'insert-empty-line)
-(global-set-key [(ctrl return)] 'insert-empty-line)
+;; Autoindent open-*-lines
+(defvar newline-and-indent t
+  "Modify the behavior of the open-*-line functions to cause them to autoindent.")
+;; Behave like vi's o command
+(defun open-next-line (arg)
+  "Move to the next line and then opens a line.
+See also `newline-and-indent'."
+  (interactive "p")
+  (end-of-line)
+  (open-line arg)
+  (next-line 1)
+  (when newline-and-indent
+    (indent-according-to-mode)))
+(global-set-key [(shift return)] 'open-next-line)
+(global-set-key [(ctrl return)] 'open-next-line)
 (global-set-key [(ctrl shift return)] 'insert-empty-line-backwards)
 
 ; Allow for loading recent files
@@ -1001,6 +1014,17 @@
 (define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags)
 (define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
 
+; Set up re-factoring support
+(require 'srefactor)
+(require 'srefactor-lisp)
+(semantic-mode 1) ;; -> this is optional for Lisp
+(define-key c-mode-map (kbd "M-RET") 'srefactor-refactor-at-point)
+(define-key c++-mode-map (kbd "M-RET") 'srefactor-refactor-at-point)
+(global-set-key (kbd "M-RET o") 'srefactor-lisp-one-line)
+(global-set-key (kbd "M-RET m") 'srefactor-lisp-format-sexp)
+(global-set-key (kbd "M-RET d") 'srefactor-lisp-format-defun)
+(global-set-key (kbd "M-RET b") 'srefactor-lisp-format-buffer)
+
 ; Display function interface at point in minibuffer
 (setq-local eldoc-documentation-function #'ggtags-eldoc-function)
 
@@ -1015,6 +1039,22 @@
 (dtrt-indent-mode 1)
 (setq dtrt-indent-verbosity 0)
 
+(global-set-key (kbd "RET") 'newline-and-indent)  ; automatically indent when press RET
+
+; Set up auto-pairing for parentheses
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/smartparens")
+(require 'dash)
+(require 'smartparens-config)
+(show-smartparens-global-mode +1)
+(smartparens-global-mode 1)
+
+; when you press RET, the curly braces automatically
+; add another newline
+(sp-with-modes '(c-mode c++-mode)
+  (sp-local-pair "{" nil :post-handlers '(("||\n[i]" "RET")))
+  (sp-local-pair "/*" "*/" :post-handlers '((" | " "SPC")
+                                            ("* ||\n[i]" "RET"))))
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)
@@ -1027,4 +1067,3 @@
   (global-company-mode t)
 )
 (add-hook 'window-setup-hook 'post-load-stuff t)
-
