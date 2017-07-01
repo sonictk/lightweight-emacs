@@ -732,6 +732,15 @@ See also `newline-and-indent'."
 ; Bind additional yank command hotkey
 (global-set-key (kbd "C-S-v") 'yank)
 
+;; Save whatever’s in the current (system) clipboard before
+;; replacing it with the Emacs’ text.
+(setq save-interprogram-paste-before-kill t)
+
+; Better yank ring management
+(require 'browse-kill-ring)
+(global-set-key (kbd "M-y") 'browse-kill-ring)
+(setq browse-kill-ring-highlight-current-entry t)
+
 ; Unbind suspending the frame and bind it to undo instead
 (global-unset-key (kbd "C-z"))
 (global-set-key (kbd "C-z") 'undo-tree-undo)
