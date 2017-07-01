@@ -616,6 +616,9 @@
 
 (add-hook 'c-mode-common-hook 'lightweight-c-hook)
 
+; Allow for code folding
+(add-hook 'c-mode-common-hook 'hs-minor-mode)
+
 (defun lightweight-save-buffer ()
   "Save the buffer after untabifying it."
   (interactive)
@@ -983,8 +986,34 @@
 (add-to-list 'company-backends 'company-c-headers)
 ; (add-hook 'after-init-hook 'global-company-mode)
 
+; Set up code navigation
+(require 'ggtags)
+(add-hook 'c-mode-common-hook
+          (lambda ()
+            (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
+              (ggtags-mode 1))))
+
+(define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
+(define-key ggtags-mode-map (kbd "C-c g h") 'ggtags-view-tag-history)
+(define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
+(define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
+(define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
+(define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags)
+(define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
+
+; Display function interface at point in minibuffer
+(setq-local eldoc-documentation-function #'ggtags-eldoc-function)
+
 ; Startup with split window
 (split-window-horizontally)
+
+; Shortcut to yes/no prompts
+(defalias 'yes-or-no-p 'y-or-n-p)
+
+; Guess indentation in files
+(require 'dtrt-indent)
+(dtrt-indent-mode 1)
+(setq dtrt-indent-verbosity 0)
 
 ; Cleanup and theme setup
 (defun post-load-stuff ()
