@@ -235,6 +235,8 @@ current buffer's, reload dir-locals."
 
 ; Allow for swapping buffers between windows
 (require 'buffer-move)
+(global-set-key (kbd "<M-S-left>") 'buf-move-left)
+(global-set-key (kbd "<M-S-right>") 'buf-move-right)
 
 ; Stop Emacs from losing undo information by
 ; setting very high limits for undo buffers
