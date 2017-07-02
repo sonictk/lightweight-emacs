@@ -791,9 +791,18 @@ current buffer's, reload dir-locals."
 (global-set-key (kbd "C-S-p") 'move-text-up)
 (global-set-key (kbd "C-S-n") 'move-text-down)
 
-; Additional keybind for finding header files
+; Project management using Projectile
+(require 'projectile)
+(projectile-global-mode t)
+; Force Projectile to use faster indexing in Windows
+; NOTE: If this causes problems, comment it out 
+(setq projectile-indexing-method 'alien)
+
+; Additional keybindngs for finding header files
 (global-set-key (kbd "C-M->") 'ff-find-other-file)
 (global-set-key (kbd "C-M-<") '(lambda nil (interactive) (ff-find-other-file t)))
+(global-set-key (kbd "C-,") 'projectile-find-other-file)
+(global-set-key (kbd "C-.") 'projectile-find-other-file-other-window)
 
 ; Editing
 (defun lightweight-replace-in-region (old-word new-word)
@@ -1003,13 +1012,6 @@ current buffer's, reload dir-locals."
 ; Display function interface at point in minibuffer
 (setq-local eldoc-documentation-function #'ggtags-eldoc-function)
 
-; Project management using Projectile
-(require 'projectile)
-(projectile-global-mode t)
-; Force Projectile to use faster indexing in Windows
-; NOTE: If this causes problems, comment it out 
-(setq projectile-indexing-method 'alien)
-
 ; Startup with split window
 (split-window-horizontally)
 
@@ -1036,6 +1038,10 @@ current buffer's, reload dir-locals."
   (sp-local-pair "{" nil :post-handlers '(("||\n[i]" "RET")))
   (sp-local-pair "/*" "*/" :post-handlers '((" | " "SPC")
                                             ("* ||\n[i]" "RET"))))
+
+; Show possible commands in minibuffer after hitting first button combination
+(require 'which-key)
+(which-key-mode)
 
 ; Cleanup and theme setup
 (defun post-load-stuff ()
