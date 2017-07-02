@@ -172,6 +172,34 @@ See also `newline-and-indent'."
 ; Enable remote .dir-locals.el files to be found
 (setq enable-remote-dir-locals t)
 
+; Define function to reload all directory local vars for all buffers
+(defun my-reload-dir-locals-for-current-buffer ()
+  "reload dir locals for the current buffer"
+  (interactive)
+  (let ((enable-local-variables :all))
+    (hack-dir-local-variables-non-file-buffer)))
+(defun my-reload-dir-locals-for-all-buffer-in-this-directory ()
+  "For every buffer with the same `default-directory` as the 
+current buffer's, reload dir-locals."
+  (interactive)
+  (let ((dir default-directory))
+    (dolist (buffer (buffer-list))
+      (with-current-buffer buffer
+        (when (equal default-directory dir))
+        (my-reload-dir-locals-for-current-buffer)))))
+
+; Set swapping between header/implementation files to work
+(setq-default ff-other-file-alist
+  '(("\\.cpp\\'" (".hpp" ".ipp" ".h"))
+    ("\\.ipp\\'" (".hpp" ".cpp"))
+    ("\\.hpp\\'" (".ipp" ".cpp" ".cxx"))
+    ("\\.cxx\\'" (".hxx" ".ixx" ".h"))
+    ("\\.ixx\\'" (".cxx" ".hxx" ".h"))
+    ("\\.hxx\\'" (".ixx" ".cxx" ".cpp"))
+    ("\\.c\\'" (".h"))
+    ("\\.h\\'" (".c" ".cpp" ".cxx" ".ixx" ".ipp")))
+)
+
 ; Function to kill all other buffers apart from the current one
 (defun kill-other-buffers ()
     "Kill all other buffers."
@@ -229,11 +257,13 @@ See also `newline-and-indent'."
 (global-set-key [remap goto-line] 'goto-line-with-feedback)
 
 ; Allow for going to specific line number
+(require 'nlinum)
+(setq nlinum-highlight-current-line t)
 (defun goto-line-with-feedback ()   "Show line numbers temporarily, while prompting for the line number input"   (interactive)   (unwind-protect
       (progn
-        (linum-mode 1)
+        (nlinum-mode 1)
         (goto-line (read-number "Goto line: ")))
-    (linum-mode -1)))
+    (nlinum-mode -1)))
 
 (when lightweight-win32 
   (setq lightweight-font "outline-Liberation Mono")
@@ -561,9 +591,6 @@ See also `newline-and-indent'."
 
 ; CC++ mode handling
 (defun lightweight-c-hook ()
-  ; Set my style for the current buffer
-  ; (c-add-style "Lightweight" lightweight-c-style t)
-  
   ; 4-space tabs
   (setq tab-width 4
         indent-tabs-mode t)
@@ -960,6 +987,8 @@ See also `newline-and-indent'."
   '(hes-escape-backslash-face ((t (:foreground "tan" :slant italic :weight bold))))
   '(hes-escape-sequence-face ((t (:foreground "tan" :slant italic :weight bold))))
   '(hi-blue-b ((t (:foreground "sandy brown" :weight bold))))
+
+  '(linum-face ((t (:foreground "peru" :background "#3F3F3F"))))
 
   '(whitespace-space ((t (:bold t :foreground "gray37" :background "gray24"))))
   '(whitespace-empty ((t (:foreground "gray37" :background "gray24"))))
