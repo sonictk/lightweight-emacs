@@ -10,3 +10,6 @@
 [submodule "modules/dash.el"]
 	path = modules/dash.el
 	url = git@github.com:magnars/dash.el.git
+[submodule "modules/flycheck"]
+	path = modules/flycheck
+	url = git@github.com:flycheck/flycheck.git

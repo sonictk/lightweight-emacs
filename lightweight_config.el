@@ -1059,6 +1059,62 @@ current buffer's, reload dir-locals."
 (require 'which-key)
 (which-key-mode)
 
+; Live syntax checking
+(require 'seq)
+(require 'let-alist)
+(require 'pkg-info)
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/flycheck")
+(require 'flycheck)
+
+; Allow for communication between emacs and Maya
+(add-hook
+ 'mel-mode-hook
+ (lambda ()
+   (require 'etom)
+   (setq etom-default-host "localhost")
+   (setq etom-default-port 2222)
+   (local-set-key (kbd "C-c C-r") 'etom-send-region)
+   (local-set-key (kbd "C-c C-c") 'etom-send-buffer)
+   (local-set-key (kbd "C-c C-l") 'etom-send-buffer)
+   (local-set-key (kbd "C-c C-z") 'etom-show-buffer)))
+
+; For Python
+(add-hook
+ 'python-mode-hook
+ (lambda ()
+   (require 'etom)
+   (setq etom-default-host "localhost")
+   (setq etom-default-port 2222)
+   (local-set-key (kbd "C-c C-r") 'etom-send-region-py)
+   (local-set-key (kbd "C-c C-c") 'etom-send-buffer-py)
+   (local-set-key (kbd "C-c C-l") 'etom-send-buffer-py)
+   (local-set-key (kbd "C-c C-z") 'etom-show-buffer)))
+
+; Enable generating Sphinx-compatible docstrings automatically for Python with C-c C-d
+(add-hook 'python-mode-hook (
+        lambda ()
+        (sphinx-doc-mode t)
+    )
+)
+
+; Add MEL mode syntax highlighting
+(add-to-list 'auto-mode-alist '("\\.mel$" . mel-mode))
+(autoload 'mel-mode "mel-mode" nil t)
+
+; Add MaxScript mode syntax highlighting
+(add-to-list 'auto-mode-alist '("\\.ms$" . maxscript-mode))
+
+; Shader syntax highlighting
+(autoload 'glsl-mode "glsl-mode" nil t)
+(add-to-list 'auto-mode-alist '("\\.glsl\\'" . glsl-mode))
+(add-to-list 'auto-mode-alist '("\\.vert\\'" . glsl-mode))
+(add-to-list 'auto-mode-alist '("\\.frag\\'" . glsl-mode))
+(add-to-list 'auto-mode-alist '("\\.geom\\'" . glsl-mode))
+
+(autoload 'hlsl-mode "hlsl-mode" nil t)
+(add-to-list 'auto-mode-alist '("\\.fx\\'" . hlsl-mode))
+(add-to-list 'auto-mode-alist '("\\.hlsl\\'" . hlsl-mode))
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)
