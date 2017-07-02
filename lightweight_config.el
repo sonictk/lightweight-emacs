@@ -45,9 +45,12 @@
 (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 (setq smex-save-file "~/Git/lightweight-emacs/smex-items")
 
-; Better fuzzy matching algorithm for ido-mode
-(require 'ido-clever-match)
-(ido-clever-match-enable)
+; Better fuzzy matching for ido-mode
+(require 'flx-ido)
+(flx-ido-mode 1)
+;; disable ido faces to see flx highlights.
+(setq ido-enable-flex-matching t)
+(setq ido-use-faces nil)
 
 ; Indepedent space/hypen matching for ido-mode
 (require 'ido-complete-space-or-hyphen)
