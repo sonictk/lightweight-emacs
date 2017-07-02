@@ -797,6 +797,9 @@ current buffer's, reload dir-locals."
 ; Force Projectile to use faster indexing in Windows
 ; NOTE: If this causes problems, comment it out 
 (setq projectile-indexing-method 'alien)
+; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name))))
+; Remove redundant project name from the mode line
+(setq projectile-mode-line '(:eval (format "" )))
 
 ; Additional keybindngs for finding header files
 (global-set-key (kbd "C-M->") 'ff-find-other-file)
