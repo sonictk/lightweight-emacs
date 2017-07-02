@@ -997,7 +997,6 @@ current buffer's, reload dir-locals."
 (define-key c-mode-map  [(ctrl tab)] 'company-complete)
 (define-key c++-mode-map  [(ctrl tab)] 'company-complete)
 (add-to-list 'company-backends 'company-c-headers)
-; (add-hook 'after-init-hook 'global-company-mode)
 
 ; Set up code navigation
 (require 'ggtags)
@@ -1065,6 +1064,7 @@ current buffer's, reload dir-locals."
 (require 'pkg-info)
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/flycheck")
 (require 'flycheck)
+(global-flycheck-mode -1) ; Disable globally by default
 
 ; Allow for communication between emacs and Maya
 (add-hook
@@ -1103,6 +1103,10 @@ current buffer's, reload dir-locals."
 
 ; Add MaxScript mode syntax highlighting
 (add-to-list 'auto-mode-alist '("\\.ms$" . maxscript-mode))
+(add-hook 'maxscript-mode
+  (lambda()(dtrt-indent-mode t))
+  (lambda()(indent-tabs-mode t))
+)
 
 ; Shader syntax highlighting
 (autoload 'glsl-mode "glsl-mode" nil t)
@@ -1114,6 +1118,75 @@ current buffer's, reload dir-locals."
 (autoload 'hlsl-mode "hlsl-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.fx\\'" . hlsl-mode))
 (add-to-list 'auto-mode-alist '("\\.hlsl\\'" . hlsl-mode))
+
+; Better eshell
+(setq eshell-history-size 1024)
+(setq eshell-prompt-regexp "^[^#$]*[#$] ")
+
+(load "em-hist")           ; So the history vars are defined
+(if (boundp 'eshell-save-history-on-exit)
+    (setq eshell-save-history-on-exit t)) ; Don't ask, just save
+;(message "eshell-ask-to-save-history is %s" eshell-ask-to-save-history)
+(if (boundp 'eshell-ask-to-save-history)
+    (setq eshell-ask-to-save-history 'always)) ; For older(?) version
+;(message "eshell-ask-to-save-history is %s" eshell-ask-to-save-history)
+(defun eshell/ef (fname-regexp &rest dir) (ef fname-regexp default-directory))
+
+;;; ---- path manipulation
+(defun pwd-repl-home (pwd)
+  (interactive)
+  (let* ((home (expand-file-name (getenv "HOME")))
+   (home-len (length home)))
+    (if (and
+   (>= (length pwd) home-len)
+   (equal home (substring pwd 0 home-len)))
+  (concat "~" (substring pwd home-len))
+      pwd)))
+
+(defun curr-dir-git-branch-string (pwd)
+  "Returns current git branch as a string, or the empty string if
+PWD is not in a git repo (or the git command is not found)."
+  (interactive)
+  (when (and (eshell-search-path "git")
+             (locate-dominating-file pwd ".git"))
+    (let ((git-output (shell-command-to-string (concat "cd " pwd " && git branch | grep '\\*' | sed -e 's/^\\* //'"))))
+      (propertize (concat "["
+              (if (> (length git-output) 0)
+                  (substring git-output 0 -1)
+                "(no branch)")
+              "]") 'face `(:foreground "green"))
+      )))
+
+(setq eshell-prompt-function
+      (lambda ()
+        (concat
+         (propertize ((lambda (p-lst)
+            (if (> (length p-lst) 3)
+                (concat
+                 (mapconcat (lambda (elm) (if (zerop (length elm)) ""
+                                            (substring elm 0 1)))
+                            (butlast p-lst 3)
+                            "/")
+                 "/"
+                 (mapconcat (lambda (elm) elm)
+                            (last p-lst 3)
+                            "/"))
+              (mapconcat (lambda (elm) elm)
+                         p-lst
+                         "/")))
+          (split-string (pwd-repl-home (eshell/pwd)) "/")) 'face `(:foreground "yellow"))
+         (or (curr-dir-git-branch-string (eshell/pwd)))
+         (propertize "# " 'face 'default))))
+(setq eshell-highlight-prompt nil)
+
+;; Start eshell or switch to it if it's active.
+(global-set-key (kbd "C-x m") 'eshell)
+
+;; Start a new eshell even if one is active.
+(global-set-key (kbd "C-x M") (lambda () (interactive) (eshell t)))
+
+;; Start a regular shell if you prefer that.
+(global-set-key (kbd "C-x M-m") 'shell)
 
 ; Cleanup and theme setup
 (defun post-load-stuff ()
