@@ -2,6 +2,9 @@
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
 
+; Blink the cursor forever
+(setq blink-cursor-blinks -1)
+
 ; Template system for Emacs - allows macros to do text insertion
 (require 'yasnippet)
 ;(setq yas-snippet-dirs
@@ -404,52 +407,9 @@ current buffer's, reload dir-locals."
          ("\\.mm$" . objc-mode)
          ) auto-mode-alist))
 
-
 ; C++ indentation style
 (setq c-default-style "k&r"
       c-basic-offset 4)
-; (defconst lightweight-c-style
-;   '((c-electric-pound-behavior   . nil)
-;     (c-tab-always-indent         . t)
-;     (c-comment-only-line-offset  . 0)
-;     (c-hanging-braces-alist      . ((class-open)
-;                                     (class-close)
-;                                     (defun-open)
-;                                     (defun-close)
-;                                     (inline-open)
-;                                     (inline-close)
-;                                     (brace-list-open)
-;                                     (brace-list-close)
-;                                     (brace-list-intro)
-;                                     (brace-list-entry)
-;                                     (block-open)
-;                                     (block-close)
-;                                     (substatement-open)
-;                                     (statement-case-open)
-;                                     (class-open)))
-;     (c-hanging-colons-alist      . ((inher-intro)
-;                                     (case-label)
-;                                     (label)
-;                                     (access-label)
-;                                     (access-key)
-;                                     (member-init-intro)))
-;     (c-cleanup-list              . (scope-operator
-;                                     list-close-comma
-;                                     defun-close-semi))
-;     (c-offsets-alist             . ((arglist-close         .  c-lineup-arglist)
-;                                     (label                 . -4)
-;                                     (access-label          . -4)
-;                                     (substatement-open     .  0)
-;                                     (statement-case-intro  .  4)
-;                                     (case-label            .  4)
-;                                     (block-open            .  0)
-;                                     (inline-open           .  0)
-;                                     (topmost-intro-cont    .  0)
-;                                     (knr-argdecl-intro     . -4)
-;                                     (brace-list-open       .  0)
-;                                     (brace-list-intro      .  4)))
-;     (c-echo-syntactic-information-p . t))
-;     "Lightweight Emacs C++ Style")
 
 ; Set tab width to 4 by default and use spaces by default
 (setq-default tab-width 4)
@@ -615,33 +575,6 @@ current buffer's, reload dir-locals."
 
   ; Abbrevation expansion
   (abbrev-mode 1)
- 
-  (defun lightweight-find-corresponding-file ()
-    "Find the file that corresponds to this one."
-    (interactive)
-    (setq CorrespondingFileName nil)
-    (setq BaseFileName (file-name-sans-extension buffer-file-name))
-    (if (string-match "\\.c" buffer-file-name)
-       (setq CorrespondingFileName (concat BaseFileName ".h")))
-    (if (string-match "\\.h" buffer-file-name)
-       (if (file-exists-p (concat BaseFileName ".c")) (setq CorrespondingFileName (concat BaseFileName ".c"))
-	   (setq CorrespondingFileName (concat BaseFileName ".cpp"))))
-    (if (string-match "\\.hin" buffer-file-name)
-       (setq CorrespondingFileName (concat BaseFileName ".cin")))
-    (if (string-match "\\.cin" buffer-file-name)
-       (setq CorrespondingFileName (concat BaseFileName ".hin")))
-    (if (string-match "\\.cpp" buffer-file-name)
-       (setq CorrespondingFileName (concat BaseFileName ".h")))
-    (if CorrespondingFileName (find-file CorrespondingFileName)
-       (error "Unable to find a corresponding file")))
-  (defun lightweight-find-corresponding-file-other-window ()
-    "Find the file that corresponds to this one."
-    (interactive)
-    (find-file-other-window buffer-file-name)
-    (lightweight-find-corresponding-file)
-    (other-window -1))
-  (define-key c++-mode-map [f12] 'lightweight-find-corresponding-file)
-  (define-key c++-mode-map [M-f12] 'lightweight-find-corresponding-file-other-window)
 
   ; devenv.com error parsing
   (add-to-list 'compilation-error-regexp-alist 'lightweight-devenv)
@@ -1069,6 +1002,13 @@ current buffer's, reload dir-locals."
 
 ; Display function interface at point in minibuffer
 (setq-local eldoc-documentation-function #'ggtags-eldoc-function)
+
+; Project management using Projectile
+(require 'projectile)
+(projectile-global-mode t)
+; Force Projectile to use faster indexing in Windows
+; NOTE: If this causes problems, comment it out 
+(setq projectile-indexing-method 'alien)
 
 ; Startup with split window
 (split-window-horizontally)
