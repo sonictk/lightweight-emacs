@@ -797,20 +797,6 @@ current buffer's, reload dir-locals."
 ; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name))))
 (setq projectile-mode-line '(:eval (format "" )))
 
-; Live syntax checking
-(require 'seq)
-(require 'let-alist)
-(require 'pkg-info)
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/flycheck")
-(require 'flycheck)
-(global-flycheck-mode -1) ; Disable globally by default
-
-; Set cc-search-directories as safe in order to allow ff-find-other-file to work
-(require 'find-file)
-(put 'cc-search-directories 'safe-local-variable #'listp) 
-(put 'cc-other-file-alist 'safe-local-variable #'listp) 
-(put 'flycheck-clang-include-path 'safe-local-variable #'listp) 
-
 ; Additional keybindngs for finding header files
 (global-set-key (kbd "C-M->") 'ff-find-other-file)
 (global-set-key (kbd "C-M-<") '(lambda nil (interactive) (ff-find-other-file t)))
@@ -1000,11 +986,64 @@ current buffer's, reload dir-locals."
 ; Set up auto-complete for code
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/company-mode/")
 (require 'company)
-(require 'company-c-headers)
+;(require 'company-c-headers)
 (setq company-backends (delete 'company-semantic company-backends))
 (define-key c-mode-map  [(ctrl tab)] 'company-complete)
 (define-key c++-mode-map  [(ctrl tab)] 'company-complete)
-(add-to-list 'company-backends 'company-c-headers)
+;(add-to-list 'company-backends 'company-c-headers)
+
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/irony-mode/")
+
+(require 'irony)
+(require 'irony-cdb-clang-complete)
+(require 'irony-cdb)
+(require 'irony-cdb-json)
+(require 'irony-cdb-libclang)
+(require 'irony-completion)
+(require 'irony-diagnostics)
+(require 'irony-iotask)
+(require 'irony-snippet)
+(setq irony-server-install-prefix "~/Git/lightweight-emacs/irony-cfg/bin/")
+(setq irony-user-dir "~/Git/lightweight-emacs/irony-cfg/")
+(add-hook 'c++-mode-hook 'irony-mode)
+(add-hook 'c-mode-hook 'irony-mode)
+(add-hook 'objc-mode-hook 'irony-mode)
+(add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
+;; Windows performance tweaks
+(when (boundp 'w32-pipe-read-delay)
+  (setq w32-pipe-read-delay 0))
+;; Set the buffer size to 64K on Windows (from the original 4K)
+(when (boundp 'w32-pipe-buffer-size)
+  (setq irony-server-w32-pipe-buffer-size (* 64 1024)))
+
+(require 'company-irony)
+(eval-after-load 'company
+  '(add-to-list 'company-backends 'company-irony))
+(setq company-irony-ignore-case t)
+
+(require 'company-irony-c-headers)
+;; Load with `irony-mode` as a grouped backend
+(eval-after-load 'company
+  '(add-to-list
+    'company-backends '(company-irony-c-headers company-irony)))
+
+; Live syntax checking
+(require 'seq)
+(require 'let-alist)
+(require 'pkg-info)
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/flycheck")
+(require 'flycheck)
+(global-flycheck-mode -1) ; Disable globally by default
+
+; Set cc-search-directories as safe in order to allow ff-find-other-file to work
+(require 'find-file)
+(put 'cc-search-directories 'safe-local-variable #'listp) 
+(put 'cc-other-file-alist 'safe-local-variable #'listp) 
+(put 'flycheck-clang-include-path 'safe-local-variable #'listp) 
+
+(require 'flycheck-irony)
+(eval-after-load 'flycheck
+  '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
 
 ; Set up code navigation
 (require 'ggtags)
