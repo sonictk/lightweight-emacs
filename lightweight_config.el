@@ -177,12 +177,12 @@ See also `newline-and-indent'."
 (setq enable-remote-dir-locals t)
 
 ; Define function to reload all directory local vars for all buffers
-(defun my-reload-dir-locals-for-current-buffer ()
-  "reload dir locals for the current buffer"
+(defun reload-dir-locals-for-current-buffer ()
+  "Reload directory-local variables for the current buffer"
   (interactive)
   (let ((enable-local-variables :all))
     (hack-dir-local-variables-non-file-buffer)))
-(defun my-reload-dir-locals-for-all-buffer-in-this-directory ()
+(defun reload-dir-locals-for-all-buffer-in-this-directory ()
   "For every buffer with the same `default-directory` as the 
 current buffer's, reload dir-locals."
   (interactive)
@@ -190,7 +190,7 @@ current buffer's, reload dir-locals."
     (dolist (buffer (buffer-list))
       (with-current-buffer buffer
         (when (equal default-directory dir))
-        (my-reload-dir-locals-for-current-buffer)))))
+        (reload-dir-locals-for-current-buffer)))))
 
 ; Set swapping between header/implementation files to work
 (setq-default ff-other-file-alist
