@@ -39,7 +39,7 @@
 (setq ido-save-directory-list-file "~/Git/lightweight-emacs/ido.last")
 
 ; Allow ido-mode to be used in M-x command minibuffer
-(require 'smex) 
+(require 'smex)
 (smex-initialize) ; Can be omitted. This might cause a (minimal) delay
                   ; when Smex is auto-initialized on its first run.
 (global-set-key (kbd "M-x") 'smex)
@@ -105,9 +105,9 @@
             (unless (or (null position) (null name)
                         (string= (car imenu--rescan-item) name))
               (add-to-list 'symbol-names name)
-              (add-to-list 'name-and-pos (cons name position))))))))    
+              (add-to-list 'name-and-pos (cons name position))))))))
 
-(global-set-key (kbd "C-c h i") 'ido-goto-symbol) 
+(global-set-key (kbd "C-c h i") 'ido-goto-symbol)
 
 ; Do not save semanticdb file to user home emacs directory
 (setq semanticdb-default-save-directory "~/Git/lightweight-emacs/semantic-cache")
@@ -183,7 +183,7 @@ See also `newline-and-indent'."
   (let ((enable-local-variables :all))
     (hack-dir-local-variables-non-file-buffer)))
 (defun reload-dir-locals-for-all-buffer-in-this-directory ()
-  "For every buffer with the same `default-directory` as the 
+  "For every buffer with the same `default-directory` as the
 current buffer's, reload dir-locals."
   (interactive)
   (let ((dir default-directory))
@@ -208,8 +208,8 @@ current buffer's, reload dir-locals."
 (defun kill-other-buffers ()
     "Kill all other buffers."
     (interactive)
-    (mapc 'kill-buffer 
-        (delq (current-buffer) 
+    (mapc 'kill-buffer
+        (delq (current-buffer)
             (remove-if-not 'buffer-file-name (buffer-list))
         )
     )
@@ -289,12 +289,12 @@ current buffer's, reload dir-locals."
         (goto-line (read-number "Goto line: ")))
     (nlinum-mode -1)))
 
-(when lightweight-win32 
+(when lightweight-win32
   (setq lightweight-font "outline-Liberation Mono")
 )
 
-(when lightweight-aquamacs 
-  (cua-mode 0) 
+(when lightweight-aquamacs
+  (cua-mode 0)
   (osx-key-mode 0)
   (tabbar-mode 0)
   (setq mac-command-modifier 'meta)
@@ -440,7 +440,7 @@ current buffer's, reload dir-locals."
 (setq c-tab-always-indent nil)
 
 ; Set flag so that will not be prompted to kill running process on closing Emacs every single time
-(add-hook 'comint-exec-hook 
+(add-hook 'comint-exec-hook
       (lambda () (set-process-query-on-exit-flag (get-buffer-process (current-buffer)) nil)))
 
 ; Add syntax highlighting for escape characters
@@ -662,7 +662,7 @@ current buffer's, reload dir-locals."
 (defun append-as-kill ()
   "Performs copy-region-as-kill as an append."
   (interactive)
-  (append-next-kill) 
+  (append-next-kill)
   (copy-region-as-kill (mark) (point))
 )
 (define-key global-map [M-up] 'previous-blank-line)
@@ -784,7 +784,7 @@ current buffer's, reload dir-locals."
 (require 'projectile)
 (projectile-global-mode t)
 ; Force Projectile to use faster indexing in Windows
-; NOTE: If this causes problems, comment it out 
+; NOTE: If this causes problems, comment it out
 (setq projectile-indexing-method 'alien)
 ; Remove redundant project name from the mode line
 ; This is the default
@@ -883,7 +883,7 @@ current buffer's, reload dir-locals."
 (setq truncate-partial-width-windows nil)
 
 ; Check if running on Macbook based off hostname and set the font size accordingly
-(if (string-equal system-name "sonictk-mbp.local") 
+(if (string-equal system-name "sonictk-mbp.local")
     ;; Set custom font as default global font
     (add-to-list 'default-frame-alist '(font . "Liberation Mono-12"))
     (set-face-attribute 'default nil :font "Liberation Mono-12")
@@ -1031,9 +1031,9 @@ current buffer's, reload dir-locals."
 
 ; Set cc-search-directories as safe in order to allow ff-find-other-file to work
 (require 'find-file)
-(put 'cc-search-directories 'safe-local-variable #'listp) 
-(put 'cc-other-file-alist 'safe-local-variable #'listp) 
-(put 'flycheck-clang-include-path 'safe-local-variable #'listp) 
+(put 'cc-search-directories 'safe-local-variable #'listp)
+(put 'cc-other-file-alist 'safe-local-variable #'listp)
+(put 'flycheck-clang-include-path 'safe-local-variable #'listp)
 
 (require 'flycheck-irony)
 (eval-after-load 'flycheck
@@ -1102,18 +1102,18 @@ current buffer's, reload dir-locals."
 ; Copy line if no region is selected
 (defadvice kill-ring-save (before slick-copy activate compile) "When called
    interactively with no active region, copy a single line instead."
-   (interactive (if mark-active (list (region-beginning) (region-end)) 
+   (interactive (if mark-active (list (region-beginning) (region-end))
                   (message "Copied line")
-                  (list (line-beginning-position) 
+                  (list (line-beginning-position)
                         (line-end-position)))))
 
 ; Function for finding all subdirectories for setting in cc-search-directories
 (defun get-all-subdirectories(dir-list)
-  "Returns a list of all recursive subdirectories of dir-list, 
+  "Returns a list of all recursive subdirectories of dir-list,
    ignoring directories with names that start with . (dot)"
-  (split-string 
-   (shell-command-to-string 
-     (concat "find " 
+  (split-string
+   (shell-command-to-string
+     (concat "find "
              (mapconcat 'identity dir-list " ")
              " -type d -not -regex \".*/\\\..*\""))))
 
@@ -1140,6 +1140,15 @@ current buffer's, reload dir-locals."
    (local-set-key (kbd "C-c C-c") 'etom-send-buffer-py)
    (local-set-key (kbd "C-c C-l") 'etom-send-buffer-py)
    (local-set-key (kbd "C-c C-z") 'etom-show-buffer)))
+
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/elpy")
+(add-hook 'python-mode-hook
+    (lambda ()
+        (require 'elpy)
+        (elpy-enable)
+        (elpy-use-ipython)
+    )
+)
 
 ; Enable generating Sphinx-compatible docstrings automatically for Python with C-c C-d
 (add-hook 'python-mode-hook (
