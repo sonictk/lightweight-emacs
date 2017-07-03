@@ -633,12 +633,6 @@ current buffer's, reload dir-locals."
      (interactive)
      (w32-send-sys-command 61728))
 
-(defun maximize-frame ()
-    "Maximize the current frame"
-     (interactive)
-     (when lightweight-aquamacs (aquamacs-toggle-full-frame))
-     (when lightweight-win32 (w32-send-sys-command 61488)))
-
 ; Navigation
 (defun previous-blank-line ()
   "Moves to the previous line containing nothing but whitespace."
@@ -1249,7 +1243,6 @@ PWD is not in a git repo (or the git command is not found)."
 (defun post-load-stuff ()
   (interactive)
   (menu-bar-mode -1)
-  (maximize-frame)
   (load-theme 'zenburn t)
   (set-cursor-color "#40FF40")
   (set-face-background 'hl-line "#1a3a3a")
