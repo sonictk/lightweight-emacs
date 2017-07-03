@@ -1239,6 +1239,17 @@ PWD is not in a git repo (or the git command is not found)."
 ;; Start a regular shell if you prefer that.
 (global-set-key (kbd "C-x M-m") 'shell)
 
+; Save the Emacs sessions
+(setq desktop-dirname             "~/Git/lightweight-emacs/"
+      desktop-base-file-name      "emacs.desktop"
+      desktop-base-lock-name      "lock"
+      desktop-path                (list desktop-dirname)
+      desktop-save                t
+      desktop-files-not-to-save   "^$" ;reload tramp paths
+      desktop-load-locked-desktop nil
+      desktop-auto-save-timeout   30)
+(desktop-save-mode 1)
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)
@@ -1246,6 +1257,9 @@ PWD is not in a git repo (or the git command is not found)."
   (load-theme 'zenburn t)
   (set-cursor-color "#40FF40")
   (set-face-background 'hl-line "#1a3a3a")
+  (if (eq system-type 'windows-nt)
+    (w32-send-sys-command 61488) ; Maximize window
+  )
   (recentf-load-list)
   (global-company-mode t)
 )
