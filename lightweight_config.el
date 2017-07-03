@@ -1144,6 +1144,7 @@ current buffer's, reload dir-locals."
 ; Enable generating Sphinx-compatible docstrings automatically for Python with C-c C-d
 (add-hook 'python-mode-hook (
         lambda ()
+        (require 'sphinx-doc)
         (sphinx-doc-mode t)
     )
 )
