@@ -2,13 +2,16 @@
 
 ## About
 
-This is a lightweight emacs configuration focused on editing C/C++,
-Python, and Markdown. 
+This is a "lightweight" emacs configuration focused on editing C/C++,
+Python, and Markdown. It's not that lightweight after I've added all the
+features that I want, but it's "lighter" than what I had, which was heavier
+than the average blue whale.
+
 
 ## Why?
 
 I decided to start working on a brand-new configuration after my
-previous one started to become a little unwieldy/slow, along with the
+previous one started to become really unwieldy/slow, along with the
 fact that I was getting tired of having a configuration that I didn't
 really fully understand. Additionally, I was tired of updating
 packages from MELPA that broke in newer versions or had changed in
@@ -20,12 +23,30 @@ Finally, I was tired of having my configuration dump a ton of stuff in
 my user folder. I wanted my configuration to all stay in a single
 directory, and not affect my existing Emacs installation or normal configuration.
 
+
 ## What?
 
 This configuration does not rely on MELPA or any external package
 manager. It is focused on using only the plugins I find useful
 instead of starting with a gazillion ones that Prelude installs, and
 writing my own functions for the rest of the functionality that I require.
+
+Goals of this configuration:
+
+* Optimized for C/C++/Python work, in that order. Some extra stuff like shaders
+  (HLSL/GLSL), Maya support (through **etom**) and Maxscript support.
+* C/C++ completion and introspection through ``irony-mode`` and ``semantic``.
+* Able to run completely side-by-side with your existing Emacs installation and
+  not dump any of its configuration files anywhere outside of the repository.
+* (As far as possible) Immutable configuration; not dependent on package
+  managers or changing versions of modules.
+* Not much else, really. It's still almost as slow as my original config; but
+  now it's at least a lot easier for me to figure out what's going on within the
+  config file and fix/add things.
+* Not intended to be a Sublime Text/VS Code/Atom replacement. In my mind, this
+  is intended to be my go-to IDE for real work. I still use my crazy Vim config
+  for normal text editing.
+
 
 ## How?
 
@@ -38,11 +59,10 @@ You will need the following dependencies, regardless of your platform:
 * gdb
 * [CMake](https://cmake.org/)
 * [GNU Global Tags](https://www.gnu.org/software/global/)
-* [ag](https://github.com/ggreer/the_silver_searcher#installation)
 * Git
 
 After that, just clone this repository with all its submodules and (hopefully)
-things should work. 
+things should work.
 
 ``git clone --recursive <git-repo-url>``
 
@@ -53,6 +73,10 @@ What I do is launch Emacs using this command:
 ``irony-mode`` is used for completion. You will need to create a
 ``.clang_complete`` file that contains compilation options for your project
 (determined via whether your project folder is a Git repository or not)
+
+You will also need to compile and install ``irony-server``. Just launch Emacs
+(assuming it works fine) and run ``irony-install-server``. **You need to
+compile that and restart Emacs after in order for C/C++ completion to work.**
 
 Sample ``.clang_complete`` file used for C/C++ completion via irony:
 
@@ -125,9 +149,16 @@ this method.
 
 ## Who?
 
-Siew Yi Liang a.k.a. sonictk
+Siew Yi Liang a.k.a. sonictk. Tons of plugins are used in this configration;
+their licenses and original source code have been preserved (except for some
+changes I made to ``back-button.el``, because it stomps default Emacs
+keybindings) Please kowtow to them as appropriate if you end up using this
+configuration for their kindness and benevolence.
+
 
 ## Whaaaaaa~?
 
-I make no promises that this won't break your installation or your heart. If it
-does... ¯\_༼ ಥ ‿ ಥ ༽_/¯
+Changes are being made constantly to this configuration, and I make no promises
+that this won't break your installation or your heart. If it does...
+
+¯\_༼ ಥ ‿ ಥ ༽_/¯
