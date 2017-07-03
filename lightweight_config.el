@@ -792,9 +792,24 @@ current buffer's, reload dir-locals."
 ; Force Projectile to use faster indexing in Windows
 ; NOTE: If this causes problems, comment it out 
 (setq projectile-indexing-method 'alien)
-; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name))))
 ; Remove redundant project name from the mode line
+; This is the default
+; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name))))
 (setq projectile-mode-line '(:eval (format "" )))
+
+; Live syntax checking
+(require 'seq)
+(require 'let-alist)
+(require 'pkg-info)
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/flycheck")
+(require 'flycheck)
+(global-flycheck-mode -1) ; Disable globally by default
+
+; Set cc-search-directories as safe in order to allow ff-find-other-file to work
+(require 'find-file)
+(put 'cc-search-directories 'safe-local-variable #'listp) 
+(put 'cc-other-file-alist 'safe-local-variable #'listp) 
+(put 'flycheck-clang-include-path 'safe-local-variable #'listp) 
 
 ; Additional keybindngs for finding header files
 (global-set-key (kbd "C-M->") 'ff-find-other-file)
@@ -1050,19 +1065,6 @@ current buffer's, reload dir-locals."
 ; Show possible commands in minibuffer after hitting first button combination
 (require 'which-key)
 (which-key-mode)
-
-; Live syntax checking
-(require 'seq)
-(require 'let-alist)
-(require 'pkg-info)
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/flycheck")
-(require 'flycheck)
-(global-flycheck-mode -1) ; Disable globally by default
-
-; Set cc-search-directories as safe in order to allow ff-find-other-file to work
-(put 'cc-search-directories 'safe-local-variable #'listp) 
-(put 'cc-other-file-alist 'safe-local-variable #'listp) 
-(put 'flycheck-clang-include-path 'safe-local-variable #'listp) 
 
 ; Copy line if no region is selected
 (defadvice kill-ring-save (before slick-copy activate compile) "When called
