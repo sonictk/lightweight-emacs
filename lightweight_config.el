@@ -125,10 +125,8 @@
  (next-line 1))
 (defun insert-empty-line-backwards ()
  (interactive)
- (previous-line 1)
- (move-end-of-line nil)
- (open-line 1)
- (next-line 1))
+ (move-beginning-of-line nil)
+ (open-line 1))
 
 ;; Autoindent open-*-lines
 (defvar newline-and-indent t
@@ -231,6 +229,24 @@ current buffer's, reload dir-locals."
 
 ; Back button functionality and buffer mark navigation improved
 (require 'back-button)
+; Override the default keybindings for buffer mark navigation
+(setq back-button-smartrep-prefix            '("C-c"))
+(setq back-button-global-keystrokes          '("C-c <C-SPC>"))
+(setq back-button-global-backward-keystrokes '("C-c <C-left>"))
+(setq back-button-global-forward-keystrokes  '("C-c <C-right>"))
+(setq back-button-global-backward-keystrokes '("C-c M-b"))
+(setq back-button-global-forward-keystrokes  '("C-c M-f"))
+(setq back-button-local-keystrokes           '("C-c <SPC>"))
+(setq back-button-local-backward-keystrokes  '("C-c <left>"))
+(setq back-button-local-forward-keystrokes   '("C-c <right>"))
+(setq back-button-local-backward-keystrokes  '("C-c C-b"))
+(setq back-button-local-forward-keystrokes   '("C-c C-f"))
+
+; Account for both kinds of mice and OSes at work/home
+(global-set-key (kbd "<mouse-8>") 'back-button-global-backward)
+(global-set-key (kbd "<mouse-9>") 'back-button-global-forward)
+(global-set-key (kbd "M-<mouse-8>") 'back-button-local-forward)
+(global-set-key (kbd "M-<mouse-9>") 'back-button-local-forward)
 (back-button-mode 1)
 
 ; Allow for swapping buffers between windows
@@ -550,10 +566,6 @@ current buffer's, reload dir-locals."
 (setq auto-mode-alist
      (cons '("SConscript" . python-mode) auto-mode-alist))
 
-; Set cc-search-directories as safe in order to allow ff-find-other-file to work
-(put 'cc-search-directories 'safe-local-variable #'listp) 
-(put 'cc-other-file-alist 'safe-local-variable #'listp) 
-
 ; CC++ mode handling
 (defun lightweight-c-hook ()
   ; 4-space tabs
@@ -765,25 +777,6 @@ current buffer's, reload dir-locals."
 
 ; Set ECB mode to use LMB instead of MMB for selection
 (setq ecb-primary-secondary-mouse-buttons (quote mouse-1--C-mouse-1))
-
-; Override the default keybindings for buffer mark navigation
-(setq back-button-smartrep-prefix            '("C-c"))
-(setq back-button-global-keystrokes          '("C-c <C-SPC>"))
-(setq back-button-global-backward-keystrokes '("C-c <C-left>"))
-(setq back-button-global-forward-keystrokes  '("C-c <C-right>"))
-(setq back-button-global-backward-keystrokes '("C-c M-b"))
-(setq back-button-global-forward-keystrokes  '("C-c M-f"))
-(setq back-button-local-keystrokes           '("C-c <SPC>"))
-(setq back-button-local-backward-keystrokes  '("C-c <left>"))
-(setq back-button-local-forward-keystrokes   '("C-c <right>"))
-(setq back-button-local-backward-keystrokes  '("C-c C-b"))
-(setq back-button-local-forward-keystrokes   '("C-c C-f"))
-
-; Account for both kinds of mice and OSes at work/home
-(global-set-key (kbd "<mouse-8>") 'back-button-global-backward)
-(global-set-key (kbd "<mouse-9>") 'back-button-global-forward)
-(global-set-key (kbd "M-<mouse-8>") 'back-button-local-forward)
-(global-set-key (kbd "M-<mouse-9>") 'back-button-local-forward)
 
 (global-set-key (kbd "<mouse-4>") '(lambda nil (interactive) (scroll-down 6)))
 (global-set-key (kbd "<mouse-5>") '(lambda nil (interactive) (scroll-up 6)))
@@ -1065,6 +1058,29 @@ current buffer's, reload dir-locals."
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/flycheck")
 (require 'flycheck)
 (global-flycheck-mode -1) ; Disable globally by default
+
+; Set cc-search-directories as safe in order to allow ff-find-other-file to work
+(put 'cc-search-directories 'safe-local-variable #'listp) 
+(put 'cc-other-file-alist 'safe-local-variable #'listp) 
+(put 'flycheck-clang-include-path 'safe-local-variable #'listp) 
+
+; Copy line if no region is selected
+(defadvice kill-ring-save (before slick-copy activate compile) "When called
+   interactively with no active region, copy a single line instead."
+   (interactive (if mark-active (list (region-beginning) (region-end)) 
+                  (message "Copied line")
+                  (list (line-beginning-position) 
+                        (line-end-position)))))
+
+; Function for finding all subdirectories for setting in cc-search-directories
+(defun get-all-subdirectories(dir-list)
+  "Returns a list of all recursive subdirectories of dir-list, 
+   ignoring directories with names that start with . (dot)"
+  (split-string 
+   (shell-command-to-string 
+     (concat "find " 
+             (mapconcat 'identity dir-list " ")
+             " -type d -not -regex \".*/\\\..*\""))))
 
 ; Allow for communication between emacs and Maya
 (add-hook

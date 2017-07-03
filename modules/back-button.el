@@ -1,3 +1,4 @@
+;;; MODIFIED by sonictk to remove default bindings which stomp Emacs bindings
 ;;; back-button.el --- Visual navigation through mark rings
 ;;
 ;; Copyright (c) 2012-2015 Roland Walker
@@ -318,7 +319,7 @@ Set to nil or 0 for no timeout."
   "Key bindings for `back-button-mode'."
   :group 'back-button)
 
-(defcustom back-button-smartrep-prefix "C-x"
+(defcustom back-button-smartrep-prefix ""
   "Prefix key for smartrep.el bindings.
 
 Smartrep bindings will be installed for all back-button key
@@ -331,7 +332,7 @@ Set to nil or the empty string to disable smartrep for
   :type 'string
   :group 'back-button-keys)
 
-(defcustom back-button-global-keystrokes '("C-x <C-SPC>")
+(defcustom back-button-global-keystrokes '("")
   "List of key sequences to invoke `back-button-global'.
 
 The default binding overrides `pop-global-mark'.
@@ -343,7 +344,7 @@ The format for key sequences is as defined by `kbd'."
   :type '(repeat string)
   :group 'back-button-keys)
 
-(defcustom back-button-global-backward-keystrokes '("C-x <C-left>")
+(defcustom back-button-global-backward-keystrokes '("")
   "List of key sequences to invoke `back-button-global-backward'.
 
 The key bindings are in effect when `back-button-mode' minor mode
@@ -353,7 +354,7 @@ The format for key sequences is as defined by `kbd'."
   :type '(repeat string)
   :group 'back-button-keys)
 
-(defcustom back-button-global-forward-keystrokes '("C-x <C-right>")
+(defcustom back-button-global-forward-keystrokes '("")
   "List of key sequences to invoke `back-button-global-forward'.
 
 The key bindings are in effect when `back-button-mode' minor mode
@@ -363,7 +364,7 @@ The format for key sequences is as defined by `kbd'."
   :type '(repeat string)
   :group 'back-button-keys)
 
-(defcustom back-button-local-keystrokes '("C-x <SPC>")
+(defcustom back-button-local-keystrokes '("")
   "List of key sequences to invoke `back-button-local'.
 
 The key bindings are in effect when `back-button-mode' minor mode
@@ -373,7 +374,7 @@ The format for key sequences is as defined by `kbd'."
   :type '(repeat string)
   :group 'back-button-keys)
 
-(defcustom back-button-local-backward-keystrokes '("C-x <left>")
+(defcustom back-button-local-backward-keystrokes '("")
   "List of key sequences to invoke `back-button-local-backward'.
 
 The key bindings are in effect when `back-button-mode' minor mode
@@ -383,7 +384,7 @@ The format for key sequences is as defined by `kbd'."
   :type '(repeat string)
   :group 'back-button-keys)
 
-(defcustom back-button-local-forward-keystrokes '("C-x <right>")
+(defcustom back-button-local-forward-keystrokes '("")
   "List of key sequences to invoke `back-button-local-forward'.
 
 The key bindings are in effect when `back-button-mode' minor mode
