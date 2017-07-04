@@ -50,6 +50,8 @@ Goals of this configuration:
 
 ## How?
 
+### Dependencies
+
 You will need the following dependencies, regardless of your platform:
 
 * Emacs 24.5.1 (Newer/older versions are untested, though I'm hoping this works
@@ -61,6 +63,8 @@ You will need the following dependencies, regardless of your platform:
 * [GNU Global Tags](https://www.gnu.org/software/global/)
 * Git
 
+### Installation
+
 After that, just clone this repository with all its submodules and (hopefully)
 things should work.
 
@@ -70,13 +74,19 @@ What I do is launch Emacs using this command:
 
 ``emacs -q --load ~/Git/lightweight-emacs/lightweight_config.el``
 
-``irony-mode`` is used for completion. You will need to create a
-``.clang_complete`` file that contains compilation options for your project
-(determined via whether your project folder is a Git repository or not)
-
 You will also need to compile and install ``irony-server``. Just launch Emacs
 (assuming it works fine) and run ``irony-install-server``. **You need to
 compile that and restart Emacs after in order for C/C++ completion to work.**
+
+Anyway, once everything is cloned and set up, you can run this side-by-side
+with your current Emacs installation if you just want to check it out using
+this method.
+
+### Setup
+
+``irony-mode`` is used for completion. You will need to create a
+``.clang_complete`` file that contains compilation options for your project
+(determined via whether your project folder is a Git repository or not)
 
 Sample ``.clang_complete`` file used for C/C++ completion via irony:
 
@@ -137,23 +147,83 @@ Sample ``.dir-locals.el`` file used for header completion:
 )
 ```
 
+### Known issues
+
 Get rid of the dumb warnings from some of the plugins by byte-compiling them.
 Run the following command in the ``/modules`` folder:
 
 ``emacs -batch -f batch-byte-compile ./**/*.el``
 
-Anyway, once everything is cloned and set up, you can run this side-by-side
-with your current Emacs installation if you just want to check it out using
-this method.
+### Most important non-standard keybinds
 
+* ``C-,``/``C-.``: Finds the other header/implementation file in C/C++ modes in
+  the same/other window.
+
+* ``C-M->``/``C-M-<``: Finds the header file at point. Needs the
+  ``.dir-locals.el`` file set with the header search paths.
+
+* ``C-c h i``/``C-<f12>``: Shows all symbols defined in the current file for
+  C/C++/Python modes.
+
+* ``S-<arrow key>``: Switch cursor to buffer in direction of arrow key
+
+* ``M-S-<arrow key>``: Move buffer in direction of arrow key (will swap buffer
+  in other window if it exists)
+
+* ``C-w/M-w`` will delete/copy lines if no region is selected
+
+* ``C-enter``/``C-S-enter``/``S-enter`` all insert/prepend newlines like other
+  text editors do.
+
+* ``C-c <C-left/C-right>``/``C-c M-b/M-f``: Navigates to last/next cursor
+  position globally
+* ``C-c <left/right>``/``C-c C-b/C-f``: Navigates to last/next cursor position
+  locally
+
+* ``S-<mouse3>: Start marking rectangle regions
+
+* ``C-S-v``: yank (paste)
+
+* ``C-z``/``C-S-z``: undo/redo
+
+* ``C-x >/<``: Scroll left/right
+
+* ``C-tab``: Autocomplete
+
+* ``C-x m``/``C-x M-m``: Start Emacs shell/Normal shell
+
+There's a ton more, obviously, which you can dig through the config file to
+find. Those are the mose important ones, though.
+
+### Most important new commands
+
+* ``reload-dir-locals-for-current-buffer`` : Does what it says. No more
+  restarting Emacs!
+
+* ``kill-other-buffers``: Does what it says. No more hitting ``C-x k`` 50
+  times!
+
+### Most important non-standard notes:
+
+* I disable flycheck by default because it's slow and you need a
+  ``.dir-locals.el`` file to really make good use of it. Even then, it's still
+  slow and stupid sometimes.
+
+* However, I decided to leave it enabled for ``elpy-mode`` because for Python,
+  you can configure the warnings with your ``~/.flake8`` configration file.
+  Also Python inspection is far more reliable and less stupid in general using
+  ``flake8``. I might disable this in the future when I decide that it's too
+  slow as well and Pycharm is far better at this anyway.
 
 ## Who?
 
-Siew Yi Liang a.k.a. sonictk. Tons of plugins are used in this configration;
-their licenses and original source code have been preserved (except for some
-changes I made to ``back-button.el``, because it stomps default Emacs
-keybindings) Please kowtow to them as appropriate if you end up using this
-configuration for their kindness and benevolence.
+Siew Yi Liang a.k.a. sonictk. 
+
+Tons of plugins are used in this configration; their licenses and original
+source code have been preserved (except for some changes I made to
+``back-button.el``, because it stomps default Emacs keybindings) Please kowtow
+to them as appropriate if you end up using this configuration for their
+kindness and benevolence.
 
 
 ## Whaaaaaa~?
@@ -162,3 +232,5 @@ Changes are being made constantly to this configuration, and I make no promises
 that this won't break your installation or your heart. If it does...
 
 ¯\_༼ ಥ ‿ ಥ ༽_/¯
+
+(Please report bugs, though I can't promise I'll fix them!)
