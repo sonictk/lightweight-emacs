@@ -108,6 +108,7 @@
               (add-to-list 'name-and-pos (cons name position))))))))
 
 (global-set-key (kbd "C-c h i") 'ido-goto-symbol)
+(global-set-key (kbd "<C-f12>") 'ido-goto-symbol)
 
 ; Do not save semanticdb file to user home emacs directory
 (setq semanticdb-default-save-directory "~/Git/lightweight-emacs/semantic-cache")
