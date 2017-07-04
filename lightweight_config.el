@@ -980,11 +980,11 @@ current buffer's, reload dir-locals."
 ; Set up auto-complete for code
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/company-mode/")
 (require 'company)
-;(require 'company-c-headers)
 (setq company-backends (delete 'company-semantic company-backends))
-(define-key c-mode-map  [(ctrl tab)] 'company-complete)
-(define-key c++-mode-map  [(ctrl tab)] 'company-complete)
-;(add-to-list 'company-backends 'company-c-headers)
+;(define-key c-mode-map  [(ctrl tab)] 'company-complete)
+;(define-key c++-mode-map  [(ctrl tab)] 'company-complete)
+;(define-key python-mode-map  [(ctrl tab)] 'company-complete)
+(global-set-key [(ctrl tab)] 'company-complete)
 
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/irony-mode/")
 
@@ -1099,13 +1099,26 @@ current buffer's, reload dir-locals."
 (require 'which-key)
 (which-key-mode)
 
-; Copy line if no region is selected
-(defadvice kill-ring-save (before slick-copy activate compile) "When called
-   interactively with no active region, copy a single line instead."
-   (interactive (if mark-active (list (region-beginning) (region-end))
-                  (message "Copied line")
-                  (list (line-beginning-position)
-                        (line-end-position)))))
+; Copy/cut line if no region is selected
+(defun my-kill-ring-save (beg end flash)
+  (interactive (if (use-region-p)
+                   (list (region-beginning) (region-end) nil)
+                 (list (line-beginning-position)
+                       (line-beginning-position 2) 'flash)))
+  (kill-ring-save beg end)
+  (when flash
+    (save-excursion
+      (if (equal (current-column) 0)
+          (goto-char end)
+        (goto-char beg))
+      (sit-for blink-matching-delay))))
+(global-set-key [remap kill-ring-save] 'my-kill-ring-save)
+
+(put 'kill-region 'interactive-form      
+ '(interactive
+   (if (use-region-p)
+       (list (region-beginning) (region-end))
+     (list (line-beginning-position) (line-beginning-position 2)))))
 
 ; Function for finding all subdirectories for setting in cc-search-directories
 (defun get-all-subdirectories(dir-list)
@@ -1141,12 +1154,22 @@ current buffer's, reload dir-locals."
    (local-set-key (kbd "C-c C-l") 'etom-send-buffer-py)
    (local-set-key (kbd "C-c C-z") 'etom-show-buffer)))
 
+; Make Emacs not throw warnings on UTF-8 encoded Python scripts
+(define-coding-system-alias 'UTF-8 'utf-8) 
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/elpy")
+(require 'elpy)
+(setq elpy-modules '(elpy-module-company 
+                     elpy-module-eldoc 
+                     elpy-module-flymake 
+                     elpy-module-pyvenv 
+                     elpy-module-yasnippet 
+                     elpy-module-sane-defaults))
 (add-hook 'python-mode-hook
     (lambda ()
-        (require 'elpy)
         (elpy-enable)
         (elpy-use-ipython)
+        (company-mode)
+        (add-to-list 'company-backends (company-mode/backend-with-yas 'elpy-company-backend))
     )
 )
 
@@ -1259,6 +1282,10 @@ PWD is not in a git repo (or the git command is not found)."
       desktop-load-locked-desktop nil
       desktop-auto-save-timeout   30)
 (desktop-save-mode 1)
+
+; Allow for switching between visible windows with Shift + arrow keys
+(when (fboundp 'windmove-default-keybindings)
+  (windmove-default-keybindings))
 
 ; Cleanup and theme setup
 (defun post-load-stuff ()
