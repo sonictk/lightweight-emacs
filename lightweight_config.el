@@ -932,6 +932,15 @@ current buffer's, reload dir-locals."
              (file-name-as-directory "~/Git/lightweight-emacs/themes"))
 
 ; Highlight TODOs and other interesting code tags along with whitespace/tabs
+(defface note-face
+  '((t :foreground "chartreuse"
+       :slant italic
+       :weight bold
+       :underline t
+       ))
+  "Face for note comments."
+  :group 'basic-faces)
+(defvar note-font-lock-face 'note-face) ; This is needed for font-lock to access the face
 (custom-set-faces
   '(font-lock-warning-face ((t (:foreground "pink" :underline t :slant italic :weight bold))))
   '(hes-escape-backslash-face ((t (:foreground "tan" :slant italic :weight bold))))
@@ -955,8 +964,11 @@ current buffer's, reload dir-locals."
     "Highlight a bunch of well known comment annotations.
   This functions should be added to the hooks of major modes for programming."
     (font-lock-add-keywords
-         nil '(("\\<\\(FIX\\(ME\\)?\\|fixme\\|TODO\\|note\\|NOTE\\|OPTIMIZE\\|HACK\\|REFACTOR\\|todo\\|optimize\\|hack\\|refactor\\):"
-                          1 font-lock-warning-face t))))
+         nil '(("\\<\\(FIX\\(ME\\)?\\|fixme\\|TODO\\|OPTIMIZE\\|HACK\\|REFACTOR\\|todo\\|optimize\\|hack\\|refactor\\):"
+                          1 font-lock-warning-face t)))
+    (font-lock-add-keywords
+         nil '(("\\<\\(NOTE\\|note\\):" 1 note-font-lock-face t)))
+)
 (add-hook 'prog-mode-hook 'font-lock-comment-annotations)
 
 ; Use whitespace cleaning only for programming modes
