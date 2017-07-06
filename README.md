@@ -56,7 +56,8 @@ You will need the following dependencies, regardless of your platform:
 
 * Emacs 24.5.1 (Newer/older versions are untested, though I'm hoping this works
   with 25 out of the box)
-* [clang/llvm](https://clang.llvm.org/)
+* [clang/llvm](https://clang.llvm.org/) (The ``libclang`` DLL/.so must be in
+  your ``PATH``)
 * grep
 * gdb
 * [CMake](https://cmake.org/)
@@ -75,8 +76,14 @@ What I do is launch Emacs using this command:
 ``emacs -q --load ~/Git/lightweight-emacs/lightweight_config.el``
 
 You will also need to compile and install ``irony-server``. Just launch Emacs
-(assuming it works fine) and run ``irony-install-server``. **You need to
-compile that and restart Emacs after in order for C/C++ completion to work.**
+(assuming it works fine) and run ``irony-install-server``. You will need to add
+the following flag to the compilation command in order for ``irony-server`` to
+be linked with the correct RPATH (This is required for OSX/Linux):
+
+``-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=1``
+
+**You need to compile that and restart Emacs after in order for C/C++
+completion to work.**
 
 Anyway, once everything is cloned and set up, you can run this side-by-side
 with your current Emacs installation if you just want to check it out using
