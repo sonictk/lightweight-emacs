@@ -66,14 +66,17 @@ You will need the following dependencies, regardless of your platform:
 
 ### Installation
 
-After that, just clone this repository with all its submodules and (hopefully)
-things should work.
+Clone this repository with all its submodules first.
 
 ``git clone --recursive <git-repo-url>``
 
-What I do is launch Emacs using this command:
+or:
 
-``emacs -q --load ~/Git/lightweight-emacs/lightweight_config.el``
+```
+git clone <git-repo-url>
+git submodule init
+git submodule update --recursive
+```
 
 You will also need to compile and install ``irony-server``. Just launch Emacs
 (assuming it works fine) and run ``irony-install-server``. You will need to add
@@ -88,6 +91,13 @@ completion to work.**
 Anyway, once everything is cloned and set up, you can run this side-by-side
 with your current Emacs installation if you just want to check it out using
 this method.
+
+What I do is launch Emacs using this command:
+
+``emacs -q --load ~/Git/lightweight-emacs/lightweight_config.el``
+
+Set that as an alias or desktop file or whatever you prefer.
+
 
 ### Setup
 
@@ -187,7 +197,9 @@ Run the following command in the ``/modules`` folder:
 * ``C-c <left/right>``/``C-c C-b/C-f``: Navigates to last/next cursor position
   locally
 
-* ``S-<mouse3>: Start marking rectangle regions
+* ``S-<mouse3>``: Start marking rectangle regions
+
+* ``S-<mouse2>``: Toggle hiding/showing of regions
 
 * ``C-S-v``: yank (paste)
 
@@ -221,6 +233,7 @@ find. Those are the mose important ones, though.
   Also Python inspection is far more reliable and less stupid in general using
   ``flake8``. I might disable this in the future when I decide that it's too
   slow as well and Pycharm is far better at this anyway.
+
 
 ## Who?
 
