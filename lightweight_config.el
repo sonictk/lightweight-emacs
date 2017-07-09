@@ -228,28 +228,6 @@ current buffer's, reload dir-locals."
 (require 'undo-tree)
 (global-undo-tree-mode)
 
-; Back button functionality and buffer mark navigation improved
-(require 'back-button)
-; Override the default keybindings for buffer mark navigation
-(setq back-button-smartrep-prefix            '("C-c"))
-(setq back-button-global-keystrokes          '("C-c <C-SPC>"))
-(setq back-button-global-backward-keystrokes '("C-c <C-left>"))
-(setq back-button-global-forward-keystrokes  '("C-c <C-right>"))
-(setq back-button-global-backward-keystrokes '("C-c M-b"))
-(setq back-button-global-forward-keystrokes  '("C-c M-f"))
-(setq back-button-local-keystrokes           '("C-c <SPC>"))
-(setq back-button-local-backward-keystrokes  '("C-c <left>"))
-(setq back-button-local-forward-keystrokes   '("C-c <right>"))
-(setq back-button-local-backward-keystrokes  '("C-c C-b"))
-(setq back-button-local-forward-keystrokes   '("C-c C-f"))
-
-; Account for both kinds of mice and OSes at work/home
-(global-set-key (kbd "<mouse-8>") 'back-button-global-backward)
-(global-set-key (kbd "<mouse-9>") 'back-button-global-forward)
-(global-set-key (kbd "M-<mouse-8>") 'back-button-local-forward)
-(global-set-key (kbd "M-<mouse-9>") 'back-button-local-forward)
-(back-button-mode 1)
-
 ; Allow for swapping buffers between windows
 (require 'buffer-move)
 (global-set-key (kbd "<M-S-left>") 'buf-move-left)
@@ -1299,6 +1277,26 @@ PWD is not in a git repo (or the git command is not found)."
 ; Allow for switching between visible windows with Shift + arrow keys
 (when (fboundp 'windmove-default-keybindings)
   (windmove-default-keybindings))
+
+; Back button functionality and buffer mark navigation improved
+(require 'back-button)
+; Override the default keybindings for buffer mark navigation
+; Account for both kinds of mice and OSes at work/home
+(global-set-key (kbd "<mouse-8>") 'back-button-global-backward)
+(global-set-key (kbd "<mouse-9>") 'back-button-global-forward)
+(global-set-key (kbd "M-<mouse-8>") 'back-button-local-forward)
+(global-set-key (kbd "M-<mouse-9>") 'back-button-local-backward)
+
+(global-set-key (kbd "C-c <C-right") 'back-button-global-forward)
+(global-set-key (kbd "C-c <C-left>") 'back-button-global-backward)
+(global-set-key (kbd "C-c C-f") 'back-button-global-forward)
+(global-set-key (kbd "C-c C-b") 'back-button-global-backward)
+
+(global-set-key (kbd "C-c <right") 'back-button-local-forward)
+(global-set-key (kbd "C-c <left") 'back-button-local-backward)
+(global-set-key (kbd "C-c b") 'back-button-local-forward)
+(global-set-key (kbd "C-c f") 'back-button-local-backward)
+(back-button-mode 1)
 
 ; Cleanup and theme setup
 (defun post-load-stuff ()
