@@ -916,7 +916,16 @@ current buffer's, reload dir-locals."
        ))
   "Face for note comments."
   :group 'basic-faces)
+(defface todo-face
+  '((t :foreground "tomato1"
+       :slant italic
+       :weight bold
+       :underline t
+       ))
+  "Face for todo comments."
+  :group 'basic-faces)
 (defvar note-font-lock-face 'note-face) ; This is needed for font-lock to access the face
+(defvar todo-font-lock-face 'todo-face) ; This is needed for font-lock to access the face
 (custom-set-faces
   '(font-lock-warning-face ((t (:foreground "pink" :underline t :slant italic :weight bold))))
   '(hes-escape-backslash-face ((t (:foreground "tan" :slant italic :weight bold))))
@@ -941,7 +950,7 @@ current buffer's, reload dir-locals."
   This functions should be added to the hooks of major modes for programming."
     (font-lock-add-keywords
          nil '(("\\<\\(FIX\\(ME\\)?\\|fixme\\|TODO\\|OPTIMIZE\\|HACK\\|REFACTOR\\|todo\\|optimize\\|hack\\|refactor\\):"
-                          1 font-lock-warning-face t)))
+                          1 todo-font-lock-face t)))
     (font-lock-add-keywords
          nil '(("\\<\\(NOTE\\|note\\):" 1 note-font-lock-face t)))
 )
