@@ -192,9 +192,10 @@ Run the following command in the ``/modules`` folder:
 * ``C-enter``/``C-S-enter``/``S-enter`` all insert/prepend newlines like other
   text editors do.
 
-* ``C-c <C-left/C-right>``/``C-c M-b/M-f``: Navigates to last/next cursor
+* ``C-c <C-left/C-right>``: Navigates to last/next cursor
   position globally
-* ``C-c <left/right>``/``C-c C-b/C-f``: Navigates to last/next cursor position
+
+* ``C-c <left/right>``/``C-c b/f``: Navigates to last/next cursor position
   locally
 
 * ``S-<mouse3>``: Start marking rectangle regions
