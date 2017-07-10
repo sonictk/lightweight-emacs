@@ -909,7 +909,7 @@ current buffer's, reload dir-locals."
 
 ; Highlight TODOs and other interesting code tags along with whitespace/tabs
 (defface note-face
-  '((t :foreground "chartreuse"
+  '((t :foreground "SpringGreen3"
        :slant italic
        :weight bold
        :underline t
@@ -1053,6 +1053,7 @@ current buffer's, reload dir-locals."
 (define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
 (define-key ggtags-navigation-map (kbd "M-<") nil) ; ggtags overrides default Emacs keybinding by default
 (define-key ggtags-navigation-map (kbd "M->") nil) ; ggtags overrides default Emacs keybinding by default
+(setq-local imenu-create-index-function #'ggtags-build-imenu-index) ; Integrate IMenu into GGTAGS
 
 ; Set up re-factoring support
 (require 'srefactor)
