@@ -842,10 +842,14 @@ current buffer's, reload dir-locals."
 
 ; Enable vertical ruler for Python/C/C++ source files
 (require 'fill-column-indicator)
-(add-hook 'python-mode-hook (lambda () (fci-mode t)))
-(add-hook 'c-mode-common-hook (lambda ()(fci-mode t)))
+;(add-hook 'python-mode-hook (lambda () (fci-mode t)))
+;(add-hook 'c-mode-common-hook (lambda ()(fci-mode t)))
+;(add-hook 'emacs-lisp-mode-hook (lambda ()(fci-mode t)))
+(add-hook 'after-change-major-mode-hook (lambda ()(fci-mode t)))
 (setq fci-rule-column 80)
 (setq fci-rule-use-dashes t)
+(setq fci-rule-color "gray19")
+(setq fci-rule-width 1)
 
 ;; Scroll one line at a time (less "jumpy" than defaults)
 (setq mouse-wheel-scroll-amount '(3 ((shift) . 3))) ;; scroll 3 lines at a time when using mwheel
