@@ -411,10 +411,13 @@ current buffer's, reload dir-locals."
 ; Set tab width to 4 by default and use spaces by default
 (setq-default tab-width 4)
 (setq-default indent-tabs-mode nil)
-(setq-default tab-always-indent 'complete)
+(setq-default tab-always-indent t)
+(setq-default c-tab-always-indent nil)
+(electric-indent-mode 1)
 (setq tab-stop-list '(4 8 12 16 20 24 28 32 36 40 44 48 52 56 60
                           64 68 72 76 80 84 88 92 96 100 104 108 112
-                          116 120))
+                          116 120 124 128 132 136 140 144 148 152 156
+                          160))
 
 ; Set flag so that will not be prompted to kill running process on closing Emacs every single time
 (add-hook 'comint-exec-hook
