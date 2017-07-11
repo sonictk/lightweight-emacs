@@ -1320,7 +1320,6 @@ PWD is not in a git repo (or the git command is not found)."
   (interactive)
   (menu-bar-mode -1)
   (load-theme 'zenburn t)
-  (toggle-frame-maximized)
   (set-cursor-color "#40FF40")
   (set-face-background 'hl-line "#1a3a3a")
   (if (eq system-type 'windows-nt)
