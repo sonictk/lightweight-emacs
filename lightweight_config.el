@@ -25,7 +25,6 @@
 (setq ido-enable-flex-matching 1)
 (setq ido-everywhere 1)
 (ido-mode 1)
-(setq ido-vertical-define-keys 'C-n-and-C-p-only)
 (setq ido-use-faces t)
 (set-face-attribute 'ido-vertical-first-match-face nil
                     :background nil
@@ -37,6 +36,7 @@
                     :foreground nil)
 (ido-vertical-mode 1)
 (setq ido-save-directory-list-file "~/Git/lightweight-emacs/ido.last")
+(setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
 
 ; Allow ido-mode to be used in M-x command minibuffer
 (require 'smex)
