@@ -332,6 +332,9 @@ current buffer's, reload dir-locals."
    (interactive "*")
    (insert (format-time-string "---------------- %a, %d %b %y: %I:%M%p")))
 
+; Add support for cmake-files
+(require 'cmake-mode)
+
 ; Highlight escape character sequences correctly
 (custom-set-variables
  '(hes-mode-alist
@@ -400,6 +403,8 @@ current buffer's, reload dir-locals."
          ("\\.emacs$" . emacs-lisp-mode)
          ("\\.gen$" . gen-mode)
          ("\\.ms$" . fundamental-mode)
+         ("CMakeLists\\.txt\\'" . cmake-mode)
+         ("\\.cmake\\'" . cmake-mode)
          ("\\.m$" . objc-mode)
          ("\\.mm$" . objc-mode)
          ) auto-mode-alist))
