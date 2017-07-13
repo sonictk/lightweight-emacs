@@ -1322,6 +1322,15 @@ PWD is not in a git repo (or the git command is not found)."
 (global-set-key (kbd "C-c f") 'back-button-local-backward)
 (back-button-mode 1)
 
+; Colours in eshell
+(require 'xterm-color)
+(require 'eshell)
+(add-hook 'eshell-mode-hook
+          (lambda ()
+            (setq xterm-color-preserve-properties t)))
+(add-to-list 'eshell-preoutput-filter-functions 'xterm-color-filter)
+(setq eshell-output-filter-functions (remove 'eshell-handle-ansi-color eshell-output-filter-functions))
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)
