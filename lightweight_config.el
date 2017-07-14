@@ -19,6 +19,9 @@
 (global-set-key [(shift f3)] 'highlight-symbol-prev)
 (global-set-key [(meta f3)] 'highlight-symbol-query-replace)
 
+; Binding for line wrapping
+(global-set-key (kbd "C-M-S-w") 'visual-line-mode)
+
 ; Vertical command minibuffer
 (require 'ido)
 (require 'ido-vertical-mode)

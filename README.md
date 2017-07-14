@@ -57,7 +57,7 @@ You will need the following dependencies, regardless of your platform:
 * Emacs 24.5.1 (Newer/older versions are untested, though I'm hoping this works
   with 25 out of the box)
 * [clang/llvm](https://clang.llvm.org/) (The ``libclang`` DLL/.so must be in
-  your ``PATH``)
+  your ``PATH``) Version should be at least > 3.7.1, I'm currently using 3.9.0
 * grep
 * gdb
 * [CMake](https://cmake.org/)
@@ -211,6 +211,8 @@ Run the following command in the ``/modules`` folder:
 * ``C-tab``: Autocomplete
 
 * ``C-x m``/``C-x M-m``: Start Emacs shell/Normal shell
+
+* ``C-M-S-w``: Toggle ``visual-line-mode`` (line wrapping)
 
 There's a ton more, obviously, which you can dig through the config file to
 find. Those are the mose important ones, though.
