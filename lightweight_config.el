@@ -271,6 +271,9 @@ current buffer's, reload dir-locals."
         (goto-line (read-number "Goto line: ")))
     (nlinum-mode -1)))
 
+; Allow for displaying column no. in mode line
+(setq column-number-mode t)
+
 (when lightweight-win32
   (setq lightweight-font "outline-Liberation Mono")
 )
