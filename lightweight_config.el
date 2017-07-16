@@ -1340,6 +1340,9 @@ PWD is not in a git repo (or the git command is not found)."
 ; Allow for running compile in a specific directory
 (require 'cd-compile)
 
+; Use the silver searcher instead of grep for searching
+(require 'ag)
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)

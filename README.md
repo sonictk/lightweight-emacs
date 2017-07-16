@@ -63,6 +63,8 @@ You will need the following dependencies, regardless of your platform:
 * [CMake](https://cmake.org/)
 * [GNU Global Tags](https://www.gnu.org/software/global/)
 * Git
+* [ag (A.K.A. The Silver Searcher)](https://github.com/ggreer/the_silver_searcher). 
+  A Windows version is available [here](https://blog.kowalczyk.info/software/the-silver-searcher-for-windows.html).
 
 ### Installation
 
