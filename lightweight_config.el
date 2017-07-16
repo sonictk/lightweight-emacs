@@ -1337,6 +1337,9 @@ PWD is not in a git repo (or the git command is not found)."
 (add-to-list 'eshell-preoutput-filter-functions 'xterm-color-filter)
 (setq eshell-output-filter-functions (remove 'eshell-handle-ansi-color eshell-output-filter-functions))
 
+; Allow for running compile in a specific directory
+(require 'cd-compile)
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)
