@@ -144,6 +144,7 @@ Sample ``.dir-locals.el`` file used for header completion:
         (tab-width . 4)
         (indent-tabs-mode . t)
         (compile-command . "cmake --build ./build --config Release --target INSTALL")
+        (cd-compile-directory . "/home/sonictk/Git/project/build")
         (cc-search-directories . ("."
                     "./include"
                     "/home/sonictk/Qt5.8.0/5.8/gcc_64/include"
@@ -156,6 +157,7 @@ Sample ``.dir-locals.el`` file used for header completion:
       (tab-width . 4)
       (indent-tabs-mode . t)
       (compile-command . "cmake --build ./build --config Release --target INSTALL")
+      (cd-compile-directory . "/home/sonictk/Git/project/build")
       (cc-search-directories . ("."
                     "./include"
                     "/home/sonictk/Qt5.8.0/5.8/gcc_64/include"
