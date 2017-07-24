@@ -834,15 +834,6 @@ current buffer's, reload dir-locals."
 )
 (add-hook 'text-mode-hook 'my-set-margins)
 
-; Setup GDB debugger to display multi view for debugging by default
-(setq
- ;; use gdb-many-windows by default
- gdb-many-windows t
-
- ;; Non-nil means display source file containing the main routine at startup
- gdb-show-main t
- )
-
 ; Markdown support
 (require 'markdown-mode)
 (autoload 'markdown-mode "markdown-mode"
