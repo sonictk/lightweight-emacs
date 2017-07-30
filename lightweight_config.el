@@ -391,6 +391,7 @@ current buffer's, reload dir-locals."
         prepend)))
      (emacs-lisp-mode . "\\(\\\\\\(u[[:xdigit:]]\\{4\\}\\|U00[[:xdigit:]]\\{6\\}\\|x[[:xdigit:]]+\\|[0-7]+\\|.\\)\\)"))))
  '(yascroll:delay-to-hide nil)
+ '(cursor-color "#40FF40")
 )
 
 ; Accepted file extensions and their appropriate modes
