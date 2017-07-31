@@ -1063,6 +1063,7 @@ current buffer's, reload dir-locals."
 (define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
 (define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags)
 (define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
+(define-key ggtags-mode-map [C-down-mouse-1] 'ggtags-find-tag-mouse)
 (define-key ggtags-navigation-map (kbd "M-<") nil) ; ggtags overrides default Emacs keybinding by default
 (define-key ggtags-navigation-map (kbd "M->") nil) ; ggtags overrides default Emacs keybinding by default
 (setq-local imenu-create-index-function #'ggtags-build-imenu-index) ; Integrate IMenu into GGTAGS
