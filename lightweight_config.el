@@ -1067,6 +1067,15 @@ current buffer's, reload dir-locals."
 (define-key ggtags-navigation-map (kbd "M-<") nil) ; ggtags overrides default Emacs keybinding by default
 (define-key ggtags-navigation-map (kbd "M->") nil) ; ggtags overrides default Emacs keybinding by default
 (setq-local imenu-create-index-function #'ggtags-build-imenu-index) ; Integrate IMenu into GGTAGS
+; Set GGTAGS to use ido to handle completions (NOTE: Might be slow)
+(setq ggtags-completing-read-function
+      (lambda (&rest args)
+        (apply #'ido-completing-read
+               (car args)
+               (all-completions "" ggtags-completion-table)
+               (cddr args))))
+(setq ggtags-split-window-function
+      (lambda (w) (split-window (frame-root-window w))))
 
 ; Set up re-factoring support
 (require 'srefactor)
