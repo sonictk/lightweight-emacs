@@ -789,6 +789,9 @@ current buffer's, reload dir-locals."
 (global-set-key (kbd "C-,") 'projectile-find-other-file)
 (global-set-key (kbd "C-.") 'projectile-find-other-file-other-window)
 
+; Search using the silver searcher
+(global-set-key (kbd "C-S-f") 'projectile-ag)
+
 ; Editing
 (defun lightweight-replace-in-region (old-word new-word)
   "Perform a replace-string in the current region."

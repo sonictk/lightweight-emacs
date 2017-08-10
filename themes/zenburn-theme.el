@@ -71,7 +71,9 @@
     ("zenburn-blue-3"   . "#5C888B")
     ("zenburn-blue-4"   . "#4C7073")
     ("zenburn-blue-5"   . "#366060")
-    ("zenburn-magenta"  . "#DC8CC3"))
+    ("zenburn-magenta"  . "#DC8CC3")
+    ("zenburn-magenta-isearch"  . "hot pink")
+    ("zenburn-bg-isearch"  . "gray13"))
   "List of Zenburn colors.
 Each element has the form (NAME . HEX).
 
@@ -154,7 +156,7 @@ Also bind `class' to ((class color) (min-colors 89))."
 ;;;;; isearch
    `(isearch ((t (:foreground ,zenburn-yellow-2 :weight bold :background ,zenburn-bg+2))))
    `(isearch-fail ((t (:foreground ,zenburn-fg :background ,zenburn-red-4))))
-   `(lazy-highlight ((t (:foreground ,zenburn-magenta :weight bold :background ,zenburn-bg-05))))
+   `(lazy-highlight ((t (:foreground ,zenburn-magenta-isearch :weight bold :background ,zenburn-bg-isearch))))
 
    `(menu ((t (:foreground ,zenburn-fg :background ,zenburn-bg))))
    `(minibuffer-prompt ((t (:foreground ,zenburn-yellow))))
