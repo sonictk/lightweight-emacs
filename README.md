@@ -218,6 +218,11 @@ Run the following command in the ``/modules`` folder:
 
 * ``C-M-S-w``: Toggle ``visual-line-mode`` (line wrapping)
 
+* ``C-S-f``: Search using ``projectile-ag`` (The silver searcher). Way faster
+  than ``grep``.
+
+* ``C-S-b``: Run the ``cd-compile`` command to allow for building your project.
+
 There's a ton more, obviously, which you can dig through the config file to
 find. Those are the mose important ones, though.
 
