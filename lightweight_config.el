@@ -15,9 +15,62 @@
 
 (require 'highlight-symbol)
 (global-set-key [(control f3)] 'highlight-symbol)
+(global-set-key (kbd "C-S-M-f") 'highlight-symbol)
 (global-set-key [f3] 'highlight-symbol-next)
 (global-set-key [(shift f3)] 'highlight-symbol-prev)
 (global-set-key [(meta f3)] 'highlight-symbol-query-replace)
+; Define more readable faces for highlighting
+(set-face-attribute 'highlight-symbol-face nil
+                    :weight 'bold
+                    :background "gray10"
+                    :foreground "hot pink"
+                    :underline t)
+(defface highlight-symbol-face2
+  '((t :foreground "SpringGreen3"
+       :background "gray10"
+       :weight bold
+       :underline t
+       ))
+  "Face used by `highlight-symbol-mode'."
+  :group 'highlight-symbol)
+(defface highlight-symbol-face3
+  '((t :foreground "yellow1"
+       :background "gray10"
+       :weight bold
+       :underline t
+       ))
+  "Face used by `highlight-symbol-mode'."
+  :group 'highlight-symbol)
+(defface highlight-symbol-face4
+  '((t :foreground "cyan"
+       :background "gray10"
+       :weight bold
+       :underline t
+       ))
+  "Face used by `highlight-symbol-mode'."
+  :group 'highlight-symbol)
+(defface highlight-symbol-face5
+  '((t :foreground "violet"
+       :background "gray10"
+       :weight bold
+       :underline t
+       ))
+  "Face used by `highlight-symbol-mode'."
+  :group 'highlight-symbol)
+(defface highlight-symbol-face6
+  '((t :foreground "firebrick1"
+       :background "gray10"
+       :weight bold
+       :underline t
+       ))
+  "Face used by `highlight-symbol-mode'."
+  :group 'highlight-symbol)
+(setq highlight-symbol-colors '("highlight-symbol-face" 
+                                "highlight-symbol-face2"
+                                "highlight-symbol-face3"
+                                "highlight-symbol-face4"
+                                "highlight-symbol-face5"
+                                "highlight-symbol-face6"))
 
 ; Binding for line wrapping
 (global-set-key (kbd "C-M-S-w") 'visual-line-mode)
