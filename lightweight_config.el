@@ -587,6 +587,10 @@ current buffer's, reload dir-locals."
   (add-to-list 'compilation-error-regexp-alist-alist '(lightweight-devenv
    "*\\([0-9]+>\\)?\\(\\(?:[a-zA-Z]:\\)?[^:(\t\n]+\\)(\\([0-9]+\\)) : \\(?:see declaration\\|\\(?:warnin\\(g\\)\\|[a-z ]+\\) C[0-9]+:\\)"
     2 3 nil (4)))
+
+  ; Unbind c bug report submission
+  (define-key c++-mode-map (kbd "C-c C-b") nil)
+  (define-key c-mode-map (kbd "C-c C-b") nil)
 )
 
 (defun lightweight-replace-string (FromString ToString)
@@ -1322,13 +1326,13 @@ PWD is not in a git repo (or the git command is not found)."
 (global-set-key (kbd "M-<mouse-8>") 'back-button-local-forward)
 (global-set-key (kbd "M-<mouse-9>") 'back-button-local-backward)
 
-(global-set-key (kbd "C-c <C-right") 'back-button-global-forward)
+(global-set-key (kbd "C-c <C-right>") 'back-button-global-forward)
 (global-set-key (kbd "C-c <C-left>") 'back-button-global-backward)
 (global-set-key (kbd "C-c C-f") 'back-button-global-forward)
 (global-set-key (kbd "C-c C-b") 'back-button-global-backward)
 
-(global-set-key (kbd "C-c <right") 'back-button-local-forward)
-(global-set-key (kbd "C-c <left") 'back-button-local-backward)
+(global-set-key (kbd "C-c <right>") 'back-button-local-forward)
+(global-set-key (kbd "C-c <left>") 'back-button-local-backward)
 (global-set-key (kbd "C-c b") 'back-button-local-forward)
 (global-set-key (kbd "C-c f") 'back-button-local-backward)
 (back-button-mode 1)
