@@ -1406,6 +1406,11 @@ PWD is not in a git repo (or the git command is not found)."
 ; Use the silver searcher instead of grep for searching
 (require 'ag)
 
+; Use speedbar in same frame
+(require 'sr-speedbar)
+(setq speedbar-use-images nil)
+(global-set-key (kbd "C-S-s") 'sr-speedbar-toggle)
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)

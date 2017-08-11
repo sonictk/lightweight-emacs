@@ -223,6 +223,8 @@ Run the following command in the ``/modules`` folder:
 
 * ``C-S-b``: Run the ``cd-compile`` command to allow for building your project.
 
+* ``C-S-s``: Toggle ``sr-speedbar``.
+
 There's a ton more, obviously, which you can dig through the config file to
 find. Those are the mose important ones, though.
 
