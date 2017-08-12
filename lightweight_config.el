@@ -1411,6 +1411,15 @@ PWD is not in a git repo (or the git command is not found)."
 (setq speedbar-use-images nil)
 (global-set-key (kbd "C-S-s") 'sr-speedbar-toggle)
 
+; Use smaller speedbar font
+(make-face 'speedbar-face)
+(set-face-font 'speedbar-face "Liberation Mono-10")
+(setq speedbar-mode-hook '(lambda () (buffer-face-set 'speedbar-face)))
+
+; Open speedbar at least once to get the speedbar buffer 
+; NOTE: this is a dumb workaround
+(sr-speedbar-open)
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)
