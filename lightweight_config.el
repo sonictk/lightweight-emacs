@@ -549,6 +549,13 @@ current buffer's, reload dir-locals."
 ; Set CMake tab width to use 4 spaces instead of 2 by defaul
 (setq cmake-tab-width 4)
 
+; Set GUD-GDB hotkeys
+(global-set-key (kbd "<f8>") 'gud-nexti)
+(global-set-key (kbd "<M-f8>") 'gud-finish)
+(global-set-key (kbd "<f9>") 'gud-go)
+(global-set-key (kbd "<C-f8>") 'gud-break)
+(global-set-key (kbd "<M-f9>") 'gud-until)
+
 ; GDB Restore windows layout after debugging and also nicer default layout
 (setq gdb-many-windows nil)
 (defun set-gdb-layout(&optional c-buffer)
