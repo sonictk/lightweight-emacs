@@ -551,9 +551,10 @@ current buffer's, reload dir-locals."
 
 ; Set GUD-GDB hotkeys
 (global-set-key (kbd "<f8>") 'gud-nexti)
-(global-set-key (kbd "<M-f8>") 'gud-finish)
+(global-set-key (kbd "<M-f9>") 'gud-finish)
 (global-set-key (kbd "<f9>") 'gud-go)
 (global-set-key (kbd "<C-f8>") 'gud-break)
+(global-set-key (kbd "<M-f8>") 'gud-remove)
 (global-set-key (kbd "<M-f9>") 'gud-until)
 
 ; GDB Restore windows layout after debugging and also nicer default layout
