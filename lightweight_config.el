@@ -552,11 +552,11 @@ current buffer's, reload dir-locals."
 ; Set GUD-GDB hotkeys
 (global-set-key (kbd "<f8>") 'gud-nexti)
 (global-set-key (kbd "<C-M-f8>") 'gud-next)
-(global-set-key (kbd "<M-f9>") 'gud-finish)
-(global-set-key (kbd "<f9>") 'gud-go)
+(global-set-key (kbd "<M-f5>") 'gud-finish)
+(global-set-key (kbd "<f5>") 'gud-go)
 (global-set-key (kbd "<C-f8>") 'gud-break)
 (global-set-key (kbd "<M-f8>") 'gud-remove)
-(global-set-key (kbd "<M-f9>") 'gud-until)
+(global-set-key (kbd "<C-f5>") 'gud-until)
 (global-set-key (kbd "<f7>") 'gud-stepi)
 (global-set-key (kbd "<C-M-f7>") 'gud-step)
 
