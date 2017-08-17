@@ -550,14 +550,14 @@ current buffer's, reload dir-locals."
 (setq cmake-tab-width 4)
 
 ; Set GUD-GDB hotkeys
-(global-set-key (kbd "<C-M-f8>") 'gud-nexti)
+(global-set-key (kbd "<C-S-f8>") 'gud-nexti)
 (global-set-key (kbd "<f8>") 'gud-next)
 (global-set-key (kbd "<M-f5>") 'gud-finish)
 (global-set-key (kbd "<f5>") 'gud-go)
 (global-set-key (kbd "<C-f8>") 'gud-break)
 (global-set-key (kbd "<M-f8>") 'gud-remove)
 (global-set-key (kbd "<C-f5>") 'gud-until)
-(global-set-key (kbd "<C-M-f7>") 'gud-stepi)
+(global-set-key (kbd "<C-S-f7>") 'gud-stepi)
 (global-set-key (kbd "<f7>") 'gud-step)
 
 ; GDB Restore windows layout after debugging and also nicer default layout
