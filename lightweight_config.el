@@ -1440,5 +1440,6 @@ PWD is not in a git repo (or the git command is not found)."
   )
   (recentf-load-list)
   (global-company-mode t)
+  (sr-speedbar-open)
 )
 (add-hook 'window-setup-hook 'post-load-stuff t)
