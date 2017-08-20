@@ -1426,7 +1426,7 @@ PWD is not in a git repo (or the git command is not found)."
 (make-face 'speedbar-face)
 (set-face-font 'speedbar-face "Liberation Mono-10")
 (setq speedbar-mode-hook '(lambda () (buffer-face-set 'speedbar-face)))
-(setq sr-speedbar-skip-other-window-p t) ; Fixes issues when calling speedbar before sr-speedbar
+(setq sr-speedbar-skip-other-window-p t) ; Supposed to fix issues when calling speedbar before sr-speedbar
 
 ; Cleanup and theme setup
 (defun post-load-stuff ()
@@ -1440,6 +1440,5 @@ PWD is not in a git repo (or the git command is not found)."
   )
   (recentf-load-list)
   (global-company-mode t)
-  (sr-speedbar-open)
 )
 (add-hook 'window-setup-hook 'post-load-stuff t)
