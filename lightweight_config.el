@@ -1431,6 +1431,14 @@ PWD is not in a git repo (or the git command is not found)."
 (setq speedbar-mode-hook '(lambda () (buffer-face-set 'speedbar-face)))
 (setq sr-speedbar-skip-other-window-p t) ; Supposed to fix issues when calling speedbar before sr-speedbar
 
+(defun select-next-window ()
+  (other-window 1))
+(defun my-sr-speedbar-open-hook ()
+  (add-hook 'speedbar-before-visiting-file-hook 'select-next-window t)
+  (add-hook 'speedbar-before-visiting-tag-hook 'select-next-window t)
+  )
+(advice-add 'sr-speedbar-open :after #'my-sr-speedbar-open-hook)
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)
