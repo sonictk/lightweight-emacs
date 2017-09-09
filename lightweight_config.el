@@ -249,6 +249,8 @@ current buffer's, reload dir-locals."
         (when (equal default-directory dir))
         (reload-dir-locals-for-current-buffer)))))
 
+(global-set-key (kbd "C-M-S-l") 'reload-dir-locals-for-all-buffer-in-this-directory)
+
 ; Set swapping between header/implementation files to work
 (setq-default ff-other-file-alist
   '(("\\.cpp\\'" (".hpp" ".ipp" ".h"))
