@@ -1409,6 +1409,18 @@ PWD is not in a git repo (or the git command is not found)."
 (global-set-key (kbd "C-c f") 'back-button-local-backward)
 (back-button-mode 1)
 
+; Cycle between cases
+(require 'string-inflection)
+(global-set-key (kbd "C-c u") 'string-inflection-all-cycle)
+;; for ruby
+(add-hook 'ruby-mode-hook
+          '(lambda ()
+             (local-set-key (kbd "C-c u") 'string-inflection-ruby-style-cycle)))
+;; for java
+(add-hook 'java-mode-hook
+          '(lambda ()
+             (local-set-key (kbd "C-c u") 'string-inflection-java-style-cycle)))
+
 ; Colours in eshell
 (require 'xterm-color)
 (require 'eshell)
