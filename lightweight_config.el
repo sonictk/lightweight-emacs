@@ -862,6 +862,9 @@ current buffer's, reload dir-locals."
 (global-set-key (kbd "C-,") 'projectile-find-other-file)
 (global-set-key (kbd "C-.") 'projectile-find-other-file-other-window)
 
+; Additional keybinding for finding symbol globally within project
+(global-set-key (kbd "C-M-S-s") 'projectile-find-tag)
+
 ; Search using the silver searcher
 (global-set-key (kbd "C-S-f") 'projectile-ag)
 
