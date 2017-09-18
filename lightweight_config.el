@@ -1437,6 +1437,30 @@ PWD is not in a git repo (or the git command is not found)."
 ; Use the silver searcher instead of grep for searching
 (require 'ag)
 
+; Allow for inserting filename from ido-completion
+(defun insert-file-name (filename &optional args)
+  "Insert name of file FILENAME into buffer after point.
+
+  Prefixed with \\[universal-argument], expand the file name to
+  its fully canocalized path.  See `expand-file-name'.
+
+  Prefixed with \\[negative-argument], use relative path to file
+  name from current directory, `default-directory'.  See
+  `file-relative-name'.
+
+  The default with no prefix is to insert the file name exactly as
+  it appears in the minibuffer prompt."
+  ;; Based on insert-file in Emacs -- ashawley 20080926
+  (interactive `(,(ido-read-file-name "File Name: ")
+                 ,current-prefix-arg))
+  (cond ((eq '- args)
+         (insert (expand-file-name filename)))
+        ((not (null args))
+         (insert filename))
+        (t
+         (insert (file-relative-name filename))))
+)
+
 ; Use speedbar in same frame
 (require 'sr-speedbar)
 (setq speedbar-use-images nil)
