@@ -1461,6 +1461,9 @@ PWD is not in a git repo (or the git command is not found)."
          (insert (file-relative-name filename))))
 )
 
+; Scroll output in the compilation window automatically
+(setq compilation-scroll-output t)
+
 ; Use speedbar in same frame
 (require 'sr-speedbar)
 (setq speedbar-use-images nil)
