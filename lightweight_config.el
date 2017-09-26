@@ -1495,5 +1495,6 @@ PWD is not in a git repo (or the git command is not found)."
   )
   (recentf-load-list)
   (global-company-mode t)
+  (setq fill-column 81)
 )
 (add-hook 'window-setup-hook 'post-load-stuff t)
