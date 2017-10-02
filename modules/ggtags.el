@@ -1022,7 +1022,7 @@ definition tags."
                 (funcall (if (ggtags-sort-by-nearness-p)
                              #'file-relative-name #'ggtags-project-relative-file)
                          buffer-file-name)))
-       (shell-quote-argument name)))))
+       "--" (shell-quote-argument name)))))
 
 (defun ggtags-find-tag-mouse (event)
   (interactive "e")
@@ -1034,7 +1034,7 @@ definition tags."
 ;; Another option for `M-.'.
 (defun ggtags-find-definition (name)
   (interactive (list (ggtags-read-tag 'definition current-prefix-arg)))
-  (ggtags-find-tag 'definition (shell-quote-argument name)))
+  (ggtags-find-tag 'definition "--" (shell-quote-argument name)))
 
 (defun ggtags-setup-libpath-search (type name)
   (pcase (and ggtags-global-search-libpath-for-reference
@@ -1056,13 +1056,13 @@ definition tags."
 (defun ggtags-find-reference (name)
   (interactive (list (ggtags-read-tag 'reference current-prefix-arg)))
   (ggtags-setup-libpath-search 'reference name)
-  (ggtags-find-tag 'reference (shell-quote-argument name)))
+  (ggtags-find-tag 'reference "--" (shell-quote-argument name)))
 
 (defun ggtags-find-other-symbol (name)
   "Find tag NAME that is a reference without a definition."
   (interactive (list (ggtags-read-tag 'symbol current-prefix-arg)))
   (ggtags-setup-libpath-search 'symbol name)
-  (ggtags-find-tag 'symbol (shell-quote-argument name)))
+  (ggtags-find-tag 'symbol "--" (shell-quote-argument name)))
 
 (defun ggtags-quote-pattern (pattern)
   (prin1-to-string (substring-no-properties pattern)))
@@ -1751,8 +1751,8 @@ ggtags: history match invalid, jump to first match instead")
 ;; http://i.imgur.com/VJJTzVc.png
 (defvar ggtags-navigation-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "\C-M-S-n" 'next-error)
-    (define-key map "\C-M-S-p" 'previous-error)
+    (define-key map "\M-n" 'next-error)
+    (define-key map "\M-p" 'previous-error)
     (define-key map "\M-}" 'ggtags-navigation-next-file)
     (define-key map "\M-{" 'ggtags-navigation-previous-file)
     (define-key map "\M-=" 'ggtags-navigation-start-file)
@@ -2077,6 +2077,7 @@ When finished invoke CALLBACK in BUFFER with process exit status."
   (let* ((re (cadr (assq 'grep ggtags-global-error-regexp-alist-alist)))
          (current (current-buffer))
          (buffer (get-buffer-create " *ggtags-definition*"))
+         (args (list "--result=grep" "--path-style=absolute" name))
          ;; Need these bindings so that let-binding
          ;; `ggtags-print-definition-function' can work see
          ;; `ggtags-eldoc-function'.
@@ -2096,8 +2097,8 @@ When finished invoke CALLBACK in BUFFER with process exit status."
     (ggtags-with-current-project
       (ggtags-global-output
        buffer
-       (list (ggtags-program-path "global")
-             "--result=grep" "--path-style=absolute" name)
+       (cons (ggtags-program-path "global")
+             (if (ggtags-sort-by-nearness-p) (cons "--nearness" args) args))
        show 100))))
 
 (defvar ggtags-mode-prefix-map
