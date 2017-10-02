@@ -1751,8 +1751,8 @@ ggtags: history match invalid, jump to first match instead")
 ;; http://i.imgur.com/VJJTzVc.png
 (defvar ggtags-navigation-map
   (let ((map (make-sparse-keymap)))
-    (define-key map "\M-n" 'next-error)
-    (define-key map "\M-p" 'previous-error)
+    (define-key map (kbd "C-M-S-n") 'next-error)
+    (define-key map (kbd "C-M-S-p") 'previous-error)
     (define-key map "\M-}" 'ggtags-navigation-next-file)
     (define-key map "\M-{" 'ggtags-navigation-previous-file)
     (define-key map "\M-=" 'ggtags-navigation-start-file)
