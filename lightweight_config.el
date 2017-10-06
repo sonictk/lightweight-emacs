@@ -1464,6 +1464,10 @@ PWD is not in a git repo (or the git command is not found)."
 ; Scroll output in the compilation window automatically
 (setq compilation-scroll-output t)
 
+; Enable Googling text
+(require 'google-this)
+(google-this-mode 1)
+
 ; Use speedbar in same frame
 (require 'sr-speedbar)
 (setq speedbar-use-images nil)
