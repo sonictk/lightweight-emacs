@@ -1487,6 +1487,13 @@ PWD is not in a git repo (or the git command is not found)."
   )
 (advice-add 'sr-speedbar-open :after #'my-sr-speedbar-open-hook)
 
+; Allow for completions when using interactive search
+(eval-after-load "isearch"
+  '(progn
+     (require 'isearch-dabbrev)
+     (define-key isearch-mode-map (kbd "M-/") 'isearch-dabbrev-expand))
+)
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)
