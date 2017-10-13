@@ -458,7 +458,7 @@ BEFORE activating the function `google-this-mode' and BEFORE `require'ing the
   :group 'google-this
   :package-version '(google-this . "1.4"))
 
-(defcustom google-this-modeline-indicator " Google"
+(defcustom google-this-modeline-indicator ""
   "String to display in the modeline when command `google-this-mode' is activated."
   :type 'string
   :group 'google-this
