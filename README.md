@@ -175,10 +175,18 @@ Run the following command in the ``/modules`` folder:
 
 ``emacs -batch -f batch-byte-compile ./**/*.el``
 
+Remember to re-run this every time you pull new modules from the repository, or
+you'll be running outdated code!
+
 ### Most important non-standard keybinds
 
 * ``C-,``/``C-.``: Finds the other header/implementation file in C/C++ modes in
   the same/other window.
+
+* ``M-.`` : Go to defintion of symbol. Use ``C-S-M-n/p`` to navigate up/down in
+  the candidate list.
+
+* ``M-n/p`` : Navigate line up/down while maintaining cursor position.
 
 * ``C-M->``/``C-M-<``: Finds the header file at point. Needs the
   ``.dir-locals.el`` file set with the header search paths.
@@ -212,7 +220,8 @@ Run the following command in the ``/modules`` folder:
 
 * ``C-x >/<``: Scroll left/right
 
-* ``C-tab``: Autocomplete
+* ``C-tab``: Autocomplete (this uses ``irony-mode`` in C/C++ mode, Python uses
+  ``elpy`` to do so)
 
 * ``C-x m``/``C-x M-m``: Start Emacs shell/Normal shell
 
@@ -224,6 +233,20 @@ Run the following command in the ``/modules`` folder:
 * ``C-S-b``: Run the ``cd-compile`` command to allow for building your project.
 
 * ``C-S-s``: Toggle ``sr-speedbar``.
+
+#### GDB mode
+
+When using ``gdb``, additional keybinds become available while debugging:
+
+``C-S-f8`` : Finish execution of the current function.
+``f8`` : Step over.
+``M-f5`` : Finish execution of the current program.
+``f5`` : Continue.
+``C-f8`` : Set a new breakpoint at the current cursor position.
+``M-f8`` : Remove breakpoint from the current cursor position.
+``C-f5`` : Continue till line at current cursor position.
+``C-S-f7`` : Step into line.
+``f7`` : Step into function call at cursor position.
 
 There's a ton more, obviously, which you can dig through the config file to
 find. Those are the mose important ones, though.
