@@ -238,15 +238,15 @@ you'll be running outdated code!
 
 When using ``gdb``, additional keybinds become available while debugging:
 
-``C-S-f8`` : Finish execution of the current function.
-``f8`` : Step over.
-``M-f5`` : Finish execution of the current program.
-``f5`` : Continue.
-``C-f8`` : Set a new breakpoint at the current cursor position.
-``M-f8`` : Remove breakpoint from the current cursor position.
-``C-f5`` : Continue till line at current cursor position.
-``C-S-f7`` : Step into line.
-``f7`` : Step into function call at cursor position.
+* ``C-S-f8`` : Finish execution of the current function.
+* ``f8`` : Step over.
+* ``M-f5`` : Finish execution of the current program.
+* ``f5`` : Continue.
+* ``C-f8`` : Set a new breakpoint at the current cursor position.
+* ``M-f8`` : Remove breakpoint from the current cursor position.
+* ``C-f5`` : Continue till line at current cursor position.
+* ``C-S-f7`` : Step into line.
+* ``f7`` : Step into function call at cursor position.
 
 There's a ton more, obviously, which you can dig through the config file to
 find. Those are the mose important ones, though.
