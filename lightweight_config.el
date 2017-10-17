@@ -359,6 +359,9 @@ current buffer's, reload dir-locals."
 (require 'cc-mode)
 (require 'compile)
 
+; Set the default compilation command to use CMake
+(setq compile-command "cmake --build . --config Debug --target INSTALL")
+
 (defun lightweight-ediff-setup-windows (buffer-A buffer-B buffer-C control-buffer)
   (ediff-setup-windows-plain buffer-A buffer-B buffer-C control-buffer)
 )
