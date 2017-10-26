@@ -881,7 +881,7 @@ current buffer's, reload dir-locals."
 		    (replace-string old-word new-word)
 		    ))
   )
-(define-key global-map "\el" 'lightweight-replace-in-region)
+(define-key global-map (kbd "C-%") 'lightweight-replace-in-region)
 
 ; Compilation
 (setq compilation-context-lines 0)
