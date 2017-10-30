@@ -1048,6 +1048,10 @@ current buffer's, reload dir-locals."
 )
 (add-hook 'prog-mode-hook 'font-lock-comment-annotations)
 
+; Add constexpr highlighting in C++
+(font-lock-add-keywords 'c++-mode
+                        '(("constexpr" . 'font-lock-keyword-face)))
+
 ; Use whitespace cleaning only for programming modes
 (add-hook 'prog-mode-hook
     (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace)))
