@@ -5,6 +5,9 @@
 ; Blink the cursor forever
 (setq blink-cursor-blinks -1)
 
+; Increase line number limit for really large files
+(setq line-number-display-limit-width 9999999)
+
 ; Template system for Emacs - allows macros to do text insertion
 (require 'yasnippet)
 ;(setq yas-snippet-dirs
