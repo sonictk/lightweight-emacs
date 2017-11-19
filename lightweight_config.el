@@ -397,7 +397,7 @@ current buffer's, reload dir-locals."
 
 (defun insert-timeofday ()
    (interactive "*")
-   (insert (format-time-string "---------------- %a, %d %b %y: %I:%M%p")))
+   (insert (format-time-string "%a, %d %b %y: %I:%M%p")))
 
 ; Add support for cmake-files
 (require 'cmake-mode)
