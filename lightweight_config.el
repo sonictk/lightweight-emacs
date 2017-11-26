@@ -1097,9 +1097,15 @@ current buffer's, reload dir-locals."
 (require 'irony-eldoc)
 (setq irony-server-install-prefix "~/Git/lightweight-emacs/irony-cfg/bin/")
 (setq irony-user-dir "~/Git/lightweight-emacs/irony-cfg/")
-(add-hook 'c++-mode-hook 'irony-mode)
-(add-hook 'c-mode-hook 'irony-mode)
-(add-hook 'objc-mode-hook 'irony-mode)
+
+; Avoid activating irony for modes that inherit c-mode (like GLSL mode)
+(defun my-irony-mode-on ()
+  (when (member major-mode irony-supported-major-modes)
+    (irony-mode 1)))
+
+(add-hook 'c++-mode-hook 'my-irony-mode-on)
+(add-hook 'c-mode-hook 'my-irony-mode-on)
+(add-hook 'objc-mode-hook 'my-irony-mode-on)
 (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
 (add-hook 'irony-mode-hook #'irony-eldoc)
 ;; Windows performance tweaks
