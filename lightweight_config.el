@@ -221,6 +221,9 @@ See also `newline-and-indent'."
       (message "Opening file...")
     (message "Aborting")))
 
+; Allow toggling hiding of comments
+(require 'hide-comnt)
+
 ; Highlight doxygen comments
 (require 'doxymacs)
 (defun my-doxymacs-font-lock-hook ()
@@ -1424,6 +1427,9 @@ PWD is not in a git repo (or the git command is not found)."
 (global-set-key (kbd "C-c b") 'back-button-local-forward)
 (global-set-key (kbd "C-c f") 'back-button-local-backward)
 (back-button-mode 1)
+
+; Disable back button mode showing in the modeline
+(setq back-button-mode-lighter nil)
 
 ; Cycle between cases
 (require 'string-inflection)
