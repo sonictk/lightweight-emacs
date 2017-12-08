@@ -1086,6 +1086,9 @@ current buffer's, reload dir-locals."
 ;(define-key python-mode-map  [(ctrl tab)] 'company-complete)
 (global-set-key [(ctrl tab)] 'company-complete)
 
+; Disable idle completion, idle is the devil's work
+(setq company-idle-delay nil)
+
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/irony-mode/")
 
 (require 'irony)
