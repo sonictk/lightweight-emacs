@@ -8,6 +8,9 @@
 ; Increase line number limit for really large files
 (setq line-number-display-limit-width 9999999)
 
+; Set the default directory for find-file
+(setq default-directory "~/")
+
 ; Template system for Emacs - allows macros to do text insertion
 (require 'yasnippet)
 ;(setq yas-snippet-dirs
