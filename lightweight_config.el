@@ -1103,6 +1103,7 @@ current buffer's, reload dir-locals."
 (require 'irony-diagnostics)
 (require 'irony-iotask)
 (require 'irony-snippet)
+; TODO: This seems to be causing issues on win32 where irony will hold onto file handles unnecessarily
 (require 'irony-eldoc)
 (setq irony-server-install-prefix "~/Git/lightweight-emacs/irony-cfg/bin/")
 (setq irony-user-dir "~/Git/lightweight-emacs/irony-cfg/")
@@ -1117,6 +1118,8 @@ current buffer's, reload dir-locals."
 (add-hook 'objc-mode-hook 'my-irony-mode-on)
 (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
 (add-hook 'irony-mode-hook #'irony-eldoc)
+
+
 ;; Windows performance tweaks
 (when (boundp 'w32-pipe-read-delay)
   (setq w32-pipe-read-delay 0))
@@ -1194,6 +1197,9 @@ current buffer's, reload dir-locals."
 
 ; Display function interface at point in minibuffer
 (setq-local eldoc-documentation-function #'ggtags-eldoc-function)
+
+; Don't clutter the modeline
+(setq eldoc-minor-mode-string nil)
 
 ; Startup with split window
 (split-window-horizontally)
