@@ -1094,6 +1094,10 @@ current buffer's, reload dir-locals."
 ; Disable idle completion, idle is the devil's work
 (setq company-idle-delay nil)
 
+; Company GUI settings
+(setq company-show-numbers t)
+(setq company-tooltip-maximum-width 80)
+
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/irony-mode/")
 
 (require 'irony)
