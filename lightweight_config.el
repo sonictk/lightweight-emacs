@@ -1059,9 +1059,9 @@ current buffer's, reload dir-locals."
 
 ; Add C++11 keywords highlighting 
 (font-lock-add-keywords 'c++-mode
-                        '(("constexpr" . 'font-lock-keyword-face) 
-                          ("override" . 'font-lock-keyword-face) 
-                          ("final" . 'font-lock-keyword-face)))
+                        '(("\\bconstexpr\\b" . 'font-lock-keyword-face) 
+                          ("\\boverride\\b" . 'font-lock-keyword-face) 
+                          ("\\bfinal\\b" . 'font-lock-keyword-face)))
 
 ; Use whitespace cleaning only for programming modes
 (add-hook 'prog-mode-hook
