@@ -272,6 +272,10 @@ current buffer's, reload dir-locals."
     ("\\.h\\'" (".c" ".cpp" ".cxx" ".ixx" ".ipp")))
 )
 
+; Clang-format functionality
+(require 'clang-format)
+(global-set-key (kbd "C-M-S-c") 'clang-format-region)
+
 ; Function to kill all other buffers apart from the current one
 (defun kill-other-buffers ()
     "Kill all other buffers."
