@@ -637,6 +637,15 @@ current buffer's, reload dir-locals."
   (kill-new (buffer-file-name))
   (message (buffer-file-name)))
 
+; Function for getting current reference to file name and line position.
+(defun copy-current-line-position-to-clipboard ()
+"Copy current line in file to clipboard as '</path/to/file>:<line-number>'."
+(interactive)
+(let ((path-with-line-number
+       (concat (buffer-file-name) ":" (number-to-string (line-number-at-pos)))))
+  (kill-new path-with-line-number)
+  (message (concat path-with-line-number " copied to clipboard"))))
+
 ; Add python-mode syntax hook for SCons files
 (setq auto-mode-alist
      (cons '("SConstruct" . python-mode) auto-mode-alist))
