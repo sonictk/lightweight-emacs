@@ -1194,7 +1194,7 @@ current buffer's, reload dir-locals."
 (setq ggtags-split-window-function
       (lambda (w) (split-window (frame-root-window w))))
 
-(setq ggtags-global-window-height '30)
+(setq ggtags-global-window-height '20)
 (setq ggtags-sort-by-nearness 't)
 (setq ggtags-find-tag-hook 'recenter)
 
