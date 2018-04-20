@@ -488,7 +488,7 @@ Key bindings:
   (when doxymacs-mode
     (when (boundp 'filladapt-token-table)
       ;; add tokens to filladapt to match doxygen markup
-      (let ((bullet-regexp "[@\\]\\(param\\(?:\\s-*\\[\\(?:in\\|out\\|in,out\\)\\]\\)?\\s-+\\sw+\\|return\\)"))
+      (let ((bullet-regexp "[@\\]\\(param\\|tparam\\(?:\\s-*\\[\\(?:in\\|out\\|in,out\\)\\]\\)?\\s-+\\sw+\\|return\\)"))
 	(unless (assoc bullet-regexp filladapt-token-table)
 	  (setq filladapt-token-table
 		(append filladapt-token-table
@@ -556,7 +556,7 @@ Key bindings:
     '(0 font-lock-warning-face prepend))
    ;; keywords that take a variable name as an argument
    (list
-    (concat "\\([@\\\\]\\(param\\(?:\\s-*\\[\\(?:in\\|out\\|in,out\\)\\]\\)?"
+    (concat "\\([@\\\\]\\(param\\|tparam\\(?:\\s-*\\[\\(?:in\\|out\\|in,out\\)\\]\\)?"
 	    "\\|a\\|namespace\\|relates\\(also\\)?"
 	    "\\|var\\|def\\)\\)\\s-+\\(\\sw+\\)")
     '(1 font-lock-keyword-face prepend)
