@@ -1076,6 +1076,10 @@ current buffer's, reload dir-locals."
                           ("\\boverride\\b" . 'font-lock-keyword-face) 
                           ("\\bfinal\\b" . 'font-lock-keyword-face)))
 
+; Add rainbow delimiters highlighting
+(require 'rainbow-delimiters)
+(add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
+
 ; Use whitespace cleaning only for programming modes
 (add-hook 'prog-mode-hook
     (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace)))
