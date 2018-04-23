@@ -637,6 +637,11 @@ current buffer's, reload dir-locals."
   (kill-new (buffer-file-name))
   (message (buffer-file-name)))
 
+; Function for clearing the kill ring
+(defun clear-kill-ring ()
+  "Clears the kill ring of all entries."
+  (interactive) (setq kill-ring nil))
+
 ; Function for getting current reference to file name and line position.
 (defun copy-current-line-position-to-clipboard ()
 "Copy current line in file to clipboard as '</path/to/file>:<line-number>'."
@@ -1075,6 +1080,10 @@ current buffer's, reload dir-locals."
                         '(("\\bconstexpr\\b" . 'font-lock-keyword-face) 
                           ("\\boverride\\b" . 'font-lock-keyword-face) 
                           ("\\bfinal\\b" . 'font-lock-keyword-face)))
+
+; Add rainbow delimiters highlighting
+(require 'rainbow-delimiters)
+(add-hook 'prog-mode-hook #'rainbow-delimiters-mode)
 
 ; Use whitespace cleaning only for programming modes
 (add-hook 'prog-mode-hook

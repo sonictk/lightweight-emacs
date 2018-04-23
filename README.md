@@ -168,6 +168,47 @@ Sample ``.dir-locals.el`` file used for header completion:
 )
 ```
 
+Another sample for Windows, that sets the path for custom lookup of ``GTAGS`` files:
+
+```
+(
+ (nil . ((tab-width . 4)
+         (indent-tabs-mode . nil)))
+
+ (setenv "GTAGSLIBPATH" "C:\\Program Files\\Autodesk\\Mudbox 2019\\SDK\\include")
+
+ (c++-mode . ((c-basic-offset . 4)
+              (tab-width . 4)
+              (indent-tabs-mode . t)
+              (compile-command . "cmake --build . --config Debug --target INSTALL")
+              (cd-compile-directory . "C:\\Users\\sonictk\\Git\\mudbox\\mudbox-deformers\\build")
+              (cc-search-directories . ("."
+                                        ".\\thirdparty"
+                                        "C:\\Program Files\\Autodesk\\Mudbox 2019\\SDK\\include"
+                                        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.11.25503\\include"
+                                        "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\shared"
+                                        "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\ucrt"
+                                        "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\um"
+                                        "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\winrt"))
+              ))
+
+ (c-mode . ((c-basic-offset . 4)
+            (tab-width . 4)
+            (indent-tabs-mode . t)
+            (compile-command . "cmake --build . --config Debug --target INSTALL")
+            (cd-compile-directory . "C:\\Users\\sonictk\\Git\\mudbox\\mudbox-deformers\\build")
+            (cc-search-directories . ("."
+                                      ".\\thirdparty"
+                                      "C:\\Program Files\\Autodesk\\Mudbox 2019\\SDK\\include"
+                                      "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.11.25503\\include"
+                                      "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\shared"
+                                      "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\ucrt"
+                                      "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\um"
+                                      "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\winrt"))
+            ))
+ )
+```
+
 ### Known issues
 
 Get rid of the dumb warnings from some of the plugins by byte-compiling them.
