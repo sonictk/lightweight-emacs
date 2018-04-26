@@ -1352,10 +1352,11 @@ current buffer's, reload dir-locals."
 )
 
 ; Add MEL mode syntax highlighting
-(add-to-list 'auto-mode-alist '("\\.mel$" . mel-mode))
 (autoload 'mel-mode "mel-mode" nil t)
+(add-to-list 'auto-mode-alist '("\\.mel$" . mel-mode))
 
 ; Add MaxScript mode syntax highlighting
+(autoload 'maxscript-mode "maxscript-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.ms$" . maxscript-mode))
 (add-hook 'maxscript-mode
   (lambda()(dtrt-indent-mode t))
@@ -1372,6 +1373,10 @@ current buffer's, reload dir-locals."
 (autoload 'hlsl-mode "hlsl-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.fx\\'" . hlsl-mode))
 (add-to-list 'auto-mode-alist '("\\.hlsl\\'" . hlsl-mode))
+
+; Coffeescript support for syntax highlighting
+(autoload 'coffee-mode "coffee-mode" nil t)
+(add-to-list 'auto-mode-alist '("\\.coffee\\'" . coffee-mode))
 
 ; Better eshell
 (setq eshell-history-size 1024)
