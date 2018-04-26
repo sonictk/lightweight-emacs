@@ -172,6 +172,12 @@
 (global-set-key (kbd "C-c h i") 'ido-goto-symbol)
 (global-set-key (kbd "<C-f12>") 'ido-goto-symbol)
 
+; Because imenu (which is what ido-goto-symbol) sucks at handling namespaced
+; members, we make use of semantic as well as a more accurate, slower
+; alternative.
+(global-set-key (kbd "C-c h I") 'semantic-complete-jump-local)
+(global-set-key (kbd "<C-S-f12>") 'semantic-complete-jump-local)
+
 ; Allow for manual-rescanning of buffers
  (defun rescan-symbols-in-buffer()
    (interactive)
