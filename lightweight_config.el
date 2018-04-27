@@ -1576,6 +1576,18 @@ PWD is not in a git repo (or the git command is not found)."
      (define-key isearch-mode-map (kbd "M-/") 'isearch-dabbrev-expand))
 )
 
+
+; Disable garbage collection while the minibuffer is open
+(defun my-minibuffer-setup-hook ()
+  (setq gc-cons-threshold most-positive-fixnum))
+
+(defun my-minibuffer-exit-hook ()
+  (setq gc-cons-threshold 800000))
+
+(add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
+(add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook)
+
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)
