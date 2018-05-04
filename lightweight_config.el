@@ -1079,10 +1079,10 @@ current buffer's, reload dir-locals."
     "Highlight a bunch of well known comment annotations.
   This functions should be added to the hooks of major modes for programming."
     (font-lock-add-keywords
-         nil '(("\\<\\(FIX\\(ME\\)?\\|fixme\\|TODO\\|OPTIMIZE\\|HACK\\|REFACTOR\\|todo\\|optimize\\|hack\\|refactor\\):"
+         nil '(("\\<\\(FIX\\(ME\\)?\\|fixme\\|TODO\\|OPTIMIZE\\|HACK\\|REFACTOR\\|todo\\|optimize\\|hack\\|refactor\\)"
                           1 todo-font-lock-face t)))
     (font-lock-add-keywords
-         nil '(("\\<\\(NOTE\\|note\\):" 1 note-font-lock-face t)))
+         nil '(("\\<\\(NOTE\\|note\\)" 1 note-font-lock-face t)))
 )
 (add-hook 'prog-mode-hook 'font-lock-comment-annotations)
 
