@@ -1388,6 +1388,12 @@ current buffer's, reload dir-locals."
   (lambda()(indent-tabs-mode t))
 )
 
+; Add support for C#
+(autoload 'csharp-mode "csharp-mode" nil t)
+(add-to-list 'auto-mode-alist '("\\.cs\\'" . csharp-mode))
+
+; TODO Look into getting Omnisharp server for C# completions working
+
 ; Add support for the Rust programming language
 (autoload 'rust-mode "rust-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.rs\\'" . rust-mode))
