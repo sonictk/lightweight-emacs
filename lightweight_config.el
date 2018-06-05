@@ -1027,9 +1027,7 @@ current buffer's, reload dir-locals."
  '(mouse-wheel-scroll-amount (quote (15)))
  '(version-control nil))
 
-(defun lightweight-never-split-a-window
-    "Never, ever split a window.  Why would anyone EVER want you to do that??"
-    nil)
+(defun lightweight-never-split-a-window nil)
 (setq split-window-preferred-function 'lightweight-never-split-a-window)
 
 (add-to-list 'default-frame-alist '(font . "Liberation Mono-11.5"))
