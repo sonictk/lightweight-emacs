@@ -989,13 +989,6 @@ current buffer's, reload dir-locals."
 (setq next-line-add-newlines nil)
 (setq truncate-partial-width-windows nil)
 
-; Check if running on Macbook based off hostname and set the font size accordingly
-(if (string-equal system-name "sonictk-mbp.local")
-    ;; Set custom font as default global font
-    (add-to-list 'default-frame-alist '(font . "Liberation Mono-12"))
-    (set-face-attribute 'default nil :font "Liberation Mono-12")
-)
-
 ; Global scrollbar mode
 (require 'yascroll)
 (global-yascroll-bar-mode 1)
@@ -1030,8 +1023,17 @@ current buffer's, reload dir-locals."
 (defun lightweight-never-split-a-window nil)
 (setq split-window-preferred-function 'lightweight-never-split-a-window)
 
-(add-to-list 'default-frame-alist '(font . "Liberation Mono-11.5"))
-(set-face-attribute 'default t :font "Liberation Mono-11.5")
+; Check if running on Macbook based off hostname and set the font size accordingly
+(if (string-equal system-name "sonictk-mbp.local")
+    ;; Set custom font as default global font
+    (progn 
+        (add-to-list 'default-frame-alist '(font . "Liberation Mono-14"))
+        (set-face-attribute 'default nil :font "Liberation Mono-14"))
+    (progn
+        (add-to-list 'default-frame-alist '(font . "Liberation Mono-11.5"))
+        (set-face-attribute 'default t :font "Liberation Mono-11.5"))
+)
+
 (add-to-list 'custom-theme-load-path
              (file-name-as-directory "~/Git/lightweight-emacs/themes"))
 
