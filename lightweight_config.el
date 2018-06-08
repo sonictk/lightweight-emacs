@@ -1351,6 +1351,11 @@ current buffer's, reload dir-locals."
 
 ; Make Emacs not throw warnings on UTF-8 encoded Python scripts
 (define-coding-system-alias 'UTF-8 'utf-8) 
+
+; Default M-x pdb is incorrect
+(setq gud-pdb-command-name "python -m pdb")
+
+; Elpy Python setup
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/elpy")
 (require 'elpy)
 (setq elpy-modules '(elpy-module-company 
@@ -1359,12 +1364,16 @@ current buffer's, reload dir-locals."
                      elpy-module-pyvenv 
                      elpy-module-yasnippet 
                      elpy-module-sane-defaults))
+
+; Elpy now requires this instead for later versions
+(setq python-shell-interpreter "ipython"
+      python-shell-interpreter-args "-i --simple-prompt")
 (add-hook 'python-mode-hook
     (lambda ()
         (elpy-enable)
-        (elpy-use-ipython)
         (company-mode)
-        (add-to-list 'company-backends (company-mode/backend-with-yas 'elpy-company-backend))
+        ; This is causing issues now in Emacs 26.1 against updated versions of company-mode and elpy-mode
+        ; (add-to-list 'company-backends (company-mode/backend-with-yas 'elpy-company-backend)) 
     )
 )
 
