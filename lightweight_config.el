@@ -1407,6 +1407,10 @@ current buffer's, reload dir-locals."
 (autoload 'rust-mode "rust-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.rs\\'" . rust-mode))
 
+; Add support for NASM syntax highlighting
+(autoload 'nasm-mode "nasm-mode" nil t)
+(add-to-list 'auto-mode-alist '("\\.\\(asm\\|s\\)$" . nasm-mode))
+
 ; Shader syntax highlighting
 (autoload 'glsl-mode "glsl-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.glsl\\'" . glsl-mode))
