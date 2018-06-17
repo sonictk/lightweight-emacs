@@ -35,9 +35,6 @@
 ;; [ ] Work nicely with outline-minor-mode
 ;; [ ] Highlighting of multiline macro definition arguments
 
-; NOTES:
-; Changes made by @sonictk to allow for customization of indentation type.
-
 ;;; Code:
 
 (require 'imenu)
@@ -52,11 +49,13 @@
 
 (defcustom nasm-basic-offset (default-value 'tab-width)
   "Indentation level for `nasm-mode'."
+  :type 'integer
   :group 'nasm-mode)
 
-; NOTE (sonictk) Allow for customizing behaviour of inserting tabs/spaces
-(defcustom nasm-use-tabs (default-value 't)
-  "Indentation for `nasm-mode' to use tabs/spaces. Set to ``nil`` to use spaces and ``t`` to use tabs."
+(defcustom nasm-after-mnemonic-whitespace :tab
+  "In `nasm-mode', determines the whitespace to use after mnemonics.
+This can be :tab, :space, or nil (do nothing)."
+  :type '(choice (const :tab) (const :space) (const nil))
   :group 'nasm-mode)
 
 (defface nasm-registers
@@ -629,12 +628,10 @@ is not immediately after a mnemonic; otherwise, we insert a tab."
                  (bti (progn (back-to-indentation) (point))))
              (buffer-substring-no-properties bti point)))))
     (if (string-match nasm-full-instruction-regexp before)
-        (if (equal nasm-use-tabs t)
-            ;; We are immediately after an instruction, just insert a tab
-            (insert "\t")
-            ; If tabs are not set in prefs, use the default instead
-            (insert-char ?\s nasm-basic-offset)
-        )
+        ;; We are immediately after a mnemonic
+        (cl-case nasm-after-mnemonic-whitespace
+          (:tab   (insert "\t"))
+          (:space (insert-char ?\s nasm-basic-offset)))
       ;; We're literally anywhere else, indent the whole line
       (let ((orig (- (point-max) (point))))
         (back-to-indentation)
