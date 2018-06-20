@@ -54,10 +54,9 @@ Goals of this configuration:
 
 You will need the following dependencies, regardless of your platform:
 
-* **Emacs 25.3.1** is the current supported version. 
-  Previously supported versions include 24.5.1. This is no longer officially supported,
+* **Emacs 26.1** is the current supported version. 
+  Previously supported versions include 24.5.1 and 25.3.1. This is no longer officially supported,
   but should still be usable from older releases of this configuration.
-  Currently targeting 26.1 for next version support.
 * [clang/llvm](https://clang.llvm.org/) (The ``libclang`` DLL/.so must be in
   your ``PATH``) Version should be at least > 3.7.1, I'm currently using 3.9.0
 * grep
