@@ -897,6 +897,10 @@ current buffer's, reload dir-locals."
 ; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name))))
 (setq projectile-mode-line '(:eval (format "" )))
 
+; As of latest projectile 1.1.0, ``projectile-keymap-prefix`` is deprecated and need 
+; to use this instead to set keybindings.
+(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+
 ; Additional keybindngs for finding header files
 (global-set-key (kbd "C-M->") 'ff-find-other-file)
 (global-set-key (kbd "C-M-<") '(lambda nil (interactive) (ff-find-other-file t)))
