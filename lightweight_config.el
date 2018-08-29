@@ -1634,6 +1634,10 @@ PWD is not in a git repo (or the git command is not found)."
 (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook)
 
 
+; Aliases for unintuitive commands
+(defalias 'refresh-syntax-highlighting 'font-lock-fontify-buffer)
+
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)
