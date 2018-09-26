@@ -226,7 +226,8 @@ you'll be running outdated code!
   the same/other window.
 
 * ``M-.`` : Go to defintion of symbol. Use ``C-S-M-n/p`` to navigate up/down in
-  the candidate list.
+  the candidate list. Use ``C-S-g`` to quit and return the cursor to where it
+  was before invoking the goto command.
 
 * ``M-n/p`` : Navigate line up/down while maintaining cursor position.
 
