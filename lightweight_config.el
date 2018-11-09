@@ -1414,6 +1414,7 @@ current buffer's, reload dir-locals."
 ; Add support for NASM syntax highlighting
 (autoload 'nasm-mode "nasm-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.\\(asm\\|s\\)$" . nasm-mode))
+(add-to-list 'auto-mode-alist '("\\.\\(inc\\|s\\)$" . nasm-mode))
 
 ; Shader syntax highlighting
 (autoload 'glsl-mode "glsl-mode" nil t)
