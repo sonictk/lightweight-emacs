@@ -91,6 +91,11 @@ be linked with the correct RPATH (This is required for OSX/Linux):
 **You need to compile that and restart Emacs after in order for C/C++
 completion to work.**
 
+On Windows, the default ``irony-install-server`` won't use the right arguments to 
+use the x64 version of MSVC. You'll need to modify the command that's generated for 
+you to CMake appropriately (e.g. by adding ``-G "Visual Studio 15 2017 Win64"``) in 
+order for CMake to use the right libraries for compilation.
+
 Anyway, once everything is cloned and set up, you can run this side-by-side
 with your current Emacs installation if you just want to check it out using
 this method.
