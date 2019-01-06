@@ -215,6 +215,37 @@ Another sample for Windows, that sets the path for custom lookup of ``GTAGS`` fi
  )
 ```
 
+Another updated sample for Windows, making use of ``setq-local`` to make the changes specific to buffers. Remember to run ``gtags`` 
+as an administrator in the Windows headers directory if making use of this example (otherwise gtags will not have permissions 
+to write out the tags files)
+```
+(
+ (setq-local "GTAGSLIBPATH" "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.17763.0")
+
+ (c++-mode . ((c-basic-offset . 4)
+              (tab-width . 4)
+              (indent-tabs-mode . t)
+              (compile-command . "build.bat")
+              (cd-compile-directory . "C:\\Users\\sonictk\\Git\\experiments\\dx11tutorial")
+              (cc-search-directories . (".\\thirdparty"
+                                        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\shared"
+                                        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\ucrt"
+                                        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\um"
+                                        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\winrt"))))
+
+ (c-mode . ((c-basic-offset . 4)
+            (tab-width . 4)
+            (indent-tabs-mode . t)
+            (compile-command . "build.bat")
+            (cd-compile-directory . "C:\\Users\\sonictk\\Git\\experiments\\dx11tutorial")
+            (cc-search-directories . (".\\thirdparty"
+                                      "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\shared"
+                                      "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\ucrt"
+                                      "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\um"
+                                      "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\winrt"))))
+ )
+```
+
 ### Known issues
 
 Get rid of the dumb warnings from some of the plugins by byte-compiling them.
