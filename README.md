@@ -179,9 +179,9 @@ Another sample for Windows, that sets the path for custom lookup of ``GTAGS`` fi
 ```
 (
  (nil . ((tab-width . 4)
-         (indent-tabs-mode . nil)))
-
- (setenv "GTAGSLIBPATH" "C:\\Program Files\\Autodesk\\Mudbox 2019\\SDK\\include")
+         (indent-tabs-mode . nil))
+ ((eval . (setenv "GTAGSLIBPATH" "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.17763.0")))
+ )
 
  (c++-mode . ((c-basic-offset . 4)
               (tab-width . 4)
@@ -215,36 +215,12 @@ Another sample for Windows, that sets the path for custom lookup of ``GTAGS`` fi
  )
 ```
 
-Another updated sample for Windows, making use of ``setq-local`` to make the changes specific to buffers. Remember to run ``gtags`` 
-as an administrator in the Windows headers directory if making use of this example (otherwise gtags will not have permissions 
-to write out the tags files)
-```
-(
- (setq-local "GTAGSLIBPATH" "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.17763.0")
-
- (c++-mode . ((c-basic-offset . 4)
-              (tab-width . 4)
-              (indent-tabs-mode . t)
-              (compile-command . "build.bat")
-              (cd-compile-directory . "C:\\Users\\sonictk\\Git\\experiments\\dx11tutorial")
-              (cc-search-directories . (".\\thirdparty"
-                                        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\shared"
-                                        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\ucrt"
-                                        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\um"
-                                        "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\winrt"))))
-
- (c-mode . ((c-basic-offset . 4)
-            (tab-width . 4)
-            (indent-tabs-mode . t)
-            (compile-command . "build.bat")
-            (cd-compile-directory . "C:\\Users\\sonictk\\Git\\experiments\\dx11tutorial")
-            (cc-search-directories . (".\\thirdparty"
-                                      "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\shared"
-                                      "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\ucrt"
-                                      "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\um"
-                                      "C:\\Program Files (x86)\\Windows Kits\\10\\include\\10.0.17763.0\\winrt"))))
- )
-```
+Remember to run ``gtags`` as an administrator in the Windows headers directory
+if making use of this example (otherwise gtags will not have permissions to
+write out the tags files). You must also launch Emacs as an administrator (or
+else GLOBAL won't have read permissions for the tags files in the Windows
+includes folders.) Obviously, if you already have permissions for the
+directories and files in them, you won't need to do this.
 
 ### Known issues
 
