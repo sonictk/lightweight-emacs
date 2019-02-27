@@ -423,6 +423,9 @@ current buffer's, reload dir-locals."
 ; Add support for cmake-files
 (require 'cmake-mode)
 
+; Add support for CUDA kernel files
+(require 'cuda-mode)
+
 ; Highlight escape character sequences correctly
 (custom-set-variables
  '(hes-mode-alist
@@ -496,6 +499,7 @@ current buffer's, reload dir-locals."
          ("\\.cmake\\'" . cmake-mode)
          ("\\.m$" . objc-mode)
          ("\\.mm$" . objc-mode)
+         ("\\.cu$" . cuda-mode)
          ) auto-mode-alist))
 
 ; C++ indentation style
