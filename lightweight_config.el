@@ -1291,7 +1291,7 @@ current buffer's, reload dir-locals."
 (require 'smartparens-config)
 (show-smartparens-global-mode t)
 (smartparens-global-mode 1)
-(setq sp-show-pair-delay 1.5) ; Slow down the smartparens matching mode to improve interactive typing performance
+(setq sp-show-pair-delay 0.125) ; Slow down the smartparens matching mode to improve interactive typing performance
 
 ; when you press RET, the curly braces automatically
 ; add another newline
