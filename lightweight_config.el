@@ -976,15 +976,15 @@ current buffer's, reload dir-locals."
 (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
 
 ; Enable vertical ruler for Python/C/C++ source files
-(require 'fill-column-indicator)
+;(require 'fill-column-indicator)
 ;(add-hook 'python-mode-hook (lambda () (fci-mode t)))
 ;(add-hook 'c-mode-common-hook (lambda ()(fci-mode t)))
 ;(add-hook 'emacs-lisp-mode-hook (lambda ()(fci-mode t)))
-(add-hook 'after-change-major-mode-hook (lambda ()(fci-mode t)))
-(setq fci-rule-column 80)
-(setq fci-rule-use-dashes t)
-(setq fci-rule-color "gray19")
-(setq fci-rule-width 1)
+;(add-hook 'after-change-major-mode-hook (lambda ()(fci-mode t)))
+;(setq fci-rule-column 80)
+;(setq fci-rule-use-dashes t)
+;(setq fci-rule-color "gray19")
+;(setq fci-rule-width 1)
 
 ;; Scroll one line at a time (less "jumpy" than defaults)
 (setq mouse-wheel-scroll-amount '(3 ((shift) . 3))) ;; scroll 3 lines at a time when using mwheel
@@ -1291,7 +1291,7 @@ current buffer's, reload dir-locals."
 (require 'smartparens-config)
 (show-smartparens-global-mode t)
 (smartparens-global-mode 1)
-(setq sp-show-pair-delay 1.5) ; Slow down the smartparens matching mode to improve interactive typing performance
+(setq sp-show-pair-delay 0.125) ; Slow down the smartparens matching mode to improve interactive typing performance
 
 ; when you press RET, the curly braces automatically
 ; add another newline
