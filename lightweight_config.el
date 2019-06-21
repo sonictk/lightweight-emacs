@@ -621,6 +621,12 @@ current buffer's, reload dir-locals."
 ;             ))))))) ;; derived-mode-p doesn't work inside this, don't know why...
 ;    (set-window-buffer win sourceBuf)
 ;    win))
+;
+
+; Force the interpreter window to scroll when typing something in gdb, 
+; and scroll the window when there is output and when the window is not in focus.
+(setq comint-scroll-to-bottom-on-input t)
+(setq comint-scroll-to-bottom-on-output 'others)
 
 ; GDB Restore windows layout after debugging and also nicer default layout
 (setq gdb-many-windows nil)
