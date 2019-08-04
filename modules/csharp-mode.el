@@ -986,7 +986,7 @@ to work properly with code that includes attributes."
                                                       'c-decl-id-start)
                                  (c-forward-syntactic-ws))
                                (save-match-data
-                                 (ignore-errors
+                                 (with-no-warnings
                                    (condition-case nil
                                        (c-font-lock-declarators limit t nil)
                                      (wrong-number-of-arguments
@@ -1130,6 +1130,12 @@ to work properly with code that includes attributes."
               2 font-lock-constant-face t)
 
 
+           ;; Highlight function-invocation.
+           ;; (this may in the future use font-lock-function-call-face, if standardized)
+           ,`(,"\\.\\([A-Za-z0-9_]+\\)("
+              1 font-lock-function-name-face t)
+
+
            ))
 
 ;; verbatim string literals can be multiline
@@ -1263,7 +1269,7 @@ Currently handled:
 ;; instead of create one.
 (c-lang-defconst c-type-modifier-kwds
   ;; EMCA-344, S?
-  csharp '("readonly" "const" "volatile" "new" "unsafe"))
+  csharp '("readonly" "const" "volatile" "new"))
 
 
 ;; Tue, 20 Apr 2010  16:02
@@ -1318,7 +1324,7 @@ Currently handled:
   csharp '("public" "partial" "private" "const" "abstract" "sealed"
            "protected" "ref" "out" "static" "virtual"
            "implicit" "explicit" "fixed"
-           "override" "params" "internal" "async" "extern"))
+           "override" "params" "internal" "async" "extern" "unsafe"))
 
 
 ;; Thu, 22 Apr 2010  23:02
@@ -1357,7 +1363,7 @@ This regexp is assumed to not match any non-operator identifier."
 ;; Statement keywords followed directly by a substatement.
 ;; catch is not one of them, because catch has a paren (typically).
 (c-lang-defconst c-block-stmt-1-kwds
-  csharp '("do" "else" "try" "finally" "unsafe"))
+  csharp '("do" "else" "try" "finally"))
 
 
 ;; Statement keywords followed by a paren sexp and then by a substatement.
@@ -1378,7 +1384,7 @@ This regexp is assumed to not match any non-operator identifier."
 
 ;; Constant keywords
 (c-lang-defconst c-constant-kwds
-  csharp '("true" "false" "null"))
+  csharp '("true" "false" "null" "value"))
 
 ;; Keywords that start "primary expressions."
 (c-lang-defconst c-primary-expr-kwds
@@ -2502,7 +2508,17 @@ are the string substitutions (see `format')."
 	     t)
 	   (c-put-font-lock-face start (1+ start) 'font-lock-warning-face)))))
 
-(defun c-looking-at-inexpr-block (lim containing-sexp &optional check-at-end)
+(advice-add 'c-looking-at-inexpr-block
+            :around 'csharp--c-looking-at-inexpr-block-hack)
+
+(defun csharp--c-looking-at-inexpr-block-hack (orig-fun &rest args)
+  (apply
+   (if (eq major-mode 'csharp-mode)
+       #'csharp--c-looking-at-inexpr-block
+     orig-fun)
+   args))
+
+(defun csharp--c-looking-at-inexpr-block (lim containing-sexp &optional check-at-end)
   ;; Return non-nil if we're looking at the beginning of a block
   ;; inside an expression.  The value returned is actually a cons of
   ;; either 'inlambda, 'inexpr-statement or 'inexpr-class and the
@@ -2911,14 +2927,14 @@ Otherwise run `c-inside-bracelist-p'."
                                    (brace-list-close      . 0)
                                    (brace-list-entry      . 0)
                                    (brace-list-intro      . +)
-                                   (brace-list-open       . +)
+                                   (brace-list-open       . 0)
                                    (c                     . c-lineup-C-comments)
                                    (case-label            . +)
                                    (catch-clause          . 0)
                                    (class-close           . 0)
                                    (class-open            . 0)
                                    (comment-intro         . c-lineup-comment)
-                                   (cpp-macro             . 0)
+                                   (cpp-macro             . [0])
                                    (cpp-macro-cont        . c-lineup-dont-change)
                                    (defun-block-intro     . +)
                                    (defun-close           . 0)
@@ -2930,7 +2946,7 @@ Otherwise run `c-inside-bracelist-p'."
                                    (friend                . 0)
                                    (func-decl-cont        . +)
                                    (inclass               . +)
-                                   (inexpr-class          . +)
+                                   (inexpr-class          . 0)
                                    (inexpr-statement      . 0)
                                    (inextern-lang         . +)
                                    (inher-cont            . c-lineup-multi-inher)
@@ -3061,10 +3077,10 @@ Key bindings:
 
   ;; The paragraph-separate variable was getting stomped by
   ;; other hooks, so it must reside here.
-  (setq paragraph-separate
-        "[ \t]*\\(//+\\|\\**\\)\\([ \t]+\\|[ \t]+<.+?>\\)$\\|^\f")
+  (setq-local paragraph-separate
+              "[ \t]*\\(//+\\|\\**\\)\\([ \t]+\\|[ \t]+<.+?>\\)$\\|^\f")
 
-  (setq beginning-of-defun-function 'csharp-move-back-to-beginning-of-defun)
+  (setq-local beginning-of-defun-function 'csharp-move-back-to-beginning-of-defun)
   ;; `end-of-defun-function' can remain forward-sexp !!
 
   (set (make-local-variable 'comment-auto-fill-only-comments) t)
@@ -3092,4 +3108,3 @@ Key bindings:
 (provide 'csharp-mode)
 
 ;;; csharp-mode.el ends here
-

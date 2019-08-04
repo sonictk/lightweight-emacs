@@ -1,6 +1,7 @@
 ; Add custom module path so that nothing is saved to the global emacs config
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/omnisharp-emacs")
 
 ; Blink the cursor forever
 (setq blink-cursor-blinks -1)
@@ -1446,7 +1447,32 @@ current buffer's, reload dir-locals."
 (autoload 'csharp-mode "csharp-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.cs\\'" . csharp-mode))
 
-; TODO Look into getting Omnisharp server for C# completions working
+; Using Omnisharp server for C# intellisense
+(require 'omnisharp)
+(eval-after-load
+  'company
+  '(add-to-list 'company-backends #'company-omnisharp))
+
+(defun my-csharp-mode-setup ()
+  (omnisharp-mode)
+  (company-mode)
+  ;(flycheck-mode)
+
+  (setq indent-tabs-mode nil)
+  (setq c-syntactic-indentation t)
+  (c-set-style "ellemtel")
+  (setq c-basic-offset 4)
+  (setq truncate-lines t)
+  (setq tab-width 4)
+
+  ;csharp-mode README.md recommends this too
+  ;(electric-pair-mode 1)       ;; Emacs 24
+  ;(electric-pair-local-mode 1) ;; Emacs 25
+
+  (local-set-key (kbd "C-c r r") 'omnisharp-run-code-action-refactoring)
+  (local-set-key (kbd "C-c C-c") 'recompile))
+
+(add-hook 'csharp-mode-hook 'my-csharp-mode-setup t)
 
 ; Add support for the Rust programming language
 (autoload 'rust-mode "rust-mode" nil t)
