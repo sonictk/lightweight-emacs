@@ -22,3 +22,6 @@
 [submodule "modules/omnisharp-emacs"]
 	path = modules/omnisharp-emacs
 	url = git@github.com:OmniSharp/omnisharp-emacs.git
+[submodule "modules/swift-mode"]
+	path = modules/swift-mode
+	url = git@github.com:swift-emacs/swift-mode.git

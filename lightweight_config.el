@@ -2,6 +2,7 @@
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/omnisharp-emacs")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/swift-mode")
 
 ; Blink the cursor forever
 (setq blink-cursor-blinks -1)
@@ -427,6 +428,9 @@ current buffer's, reload dir-locals."
 ; Add support for CUDA kernel files
 (require 'cuda-mode)
 
+; Add support for Apple Swift language 
+(require 'swift-mode)
+
 ; Highlight escape character sequences correctly
 (custom-set-variables
  '(hes-mode-alist
@@ -501,6 +505,7 @@ current buffer's, reload dir-locals."
          ("\\.m$" . objc-mode)
          ("\\.mm$" . objc-mode)
          ("\\.cu$" . cuda-mode)
+         ("\\.swift$" . swift-mode)
          ) auto-mode-alist))
 
 ; C++ indentation style
