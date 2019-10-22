@@ -19,3 +19,6 @@
 [submodule "modules/elpy"]
 	path = modules/elpy
 	url = git@github.com:jorgenschaefer/elpy.git
+[submodule "modules/omnisharp-emacs"]
+	path = modules/omnisharp-emacs
+	url = git@github.com:OmniSharp/omnisharp-emacs.git
