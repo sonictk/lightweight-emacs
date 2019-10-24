@@ -88,6 +88,15 @@ be linked with the correct RPATH (This is required for OSX/Linux):
 
 ``-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=1``
 
+On OSX, you might also need to modify the ``cmake`` command to point to the
+correct directories for ``libclang`` since OSX XCode's installation might not
+work with the standard ``FindLibclang.cmake`` module:
+
+```
+-DLIBCLANG_INCLUDE_DIR\=/usr/local/opt/llvm/include/
+-DLIBCLANG_LIBRARY\=/usr/local/opt/llvm/lib/libclang.dylib
+```
+
 **You need to compile that and restart Emacs after in order for C/C++
 completion to work.**
 
