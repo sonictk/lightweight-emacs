@@ -21,6 +21,13 @@
 ;        ))
 (yas-global-mode 1)
 
+; On OSX, this is required in order to have Emacs have access to the same binaries 
+; i.e. /usr/loca/bin that the shell normally would have. Yay Apple!
+(require 'exec-path-from-shell)
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-copy-env "PYTHONPATH")
+  (exec-path-from-shell-initialize))
+
 (require 'highlight-symbol)
 (global-set-key [(control f3)] 'highlight-symbol)
 (global-set-key (kbd "C-S-M-f") 'highlight-symbol)
