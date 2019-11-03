@@ -289,7 +289,9 @@ current buffer's, reload dir-locals."
     ("\\.ixx\\'" (".cxx" ".hxx" ".h"))
     ("\\.hxx\\'" (".ixx" ".cxx" ".cpp"))
     ("\\.c\\'" (".h"))
-    ("\\.h\\'" (".c" ".cpp" ".cxx" ".ixx" ".ipp")))
+    ("\\.m\\'" (".h"))
+    ("\\.mm\\'" (".h"))
+    ("\\.h\\'" (".c" ".cpp" ".C" ".CC" ".cxx" ".ixx" ".ipp" ".m" ".mm")))
 )
 
 ; Clang-format functionality
@@ -1230,7 +1232,7 @@ current buffer's, reload dir-locals."
 
 (add-hook 'c++-mode-hook 'my-irony-mode-on)
 (add-hook 'c-mode-hook 'my-irony-mode-on)
-(add-hook 'objc-mode-hook 'my-irony-mode-on)
+(add-hook 'objc-mode-hook 'irony-mode)
 (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
 (add-hook 'irony-mode-hook #'irony-eldoc)
 
@@ -1275,7 +1277,7 @@ current buffer's, reload dir-locals."
 (require 'ggtags)
 (add-hook 'c-mode-common-hook
           (lambda ()
-            (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
+            (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode 'objc-mode 'swift-mode)
               (ggtags-mode 1))))
 
 (define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
