@@ -291,6 +291,7 @@ current buffer's, reload dir-locals."
     ("\\.c\\'" (".h"))
     ("\\.m\\'" (".h"))
     ("\\.mm\\'" (".h"))
+    ("\\.metal\\'" (".h")) 
     ("\\.h\\'" (".c" ".cpp" ".C" ".CC" ".cxx" ".ixx" ".ipp" ".m" ".mm")))
 )
 
@@ -505,6 +506,7 @@ current buffer's, reload dir-locals."
          ("\\.c$"   . c++-mode)
          ("\\.cc$"   . c++-mode)
          ("\\.c8$"   . c++-mode)
+         ("\\.metal$"   . c++-mode) ; TODO: Should probably fix this when a real Metal package appears on the scene
          ("\\.txt$" . indented-text-mode)
          ("\\.emacs$" . emacs-lisp-mode)
          ("\\.gen$" . gen-mode)
