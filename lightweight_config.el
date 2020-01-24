@@ -1027,17 +1027,6 @@ current buffer's, reload dir-locals."
    "Major mode for editing GitHub Flavored Markdown files" t)
 (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
 
-; Enable vertical ruler for Python/C/C++ source files
-;(require 'fill-column-indicator)
-;(add-hook 'python-mode-hook (lambda () (fci-mode t)))
-;(add-hook 'c-mode-common-hook (lambda ()(fci-mode t)))
-;(add-hook 'emacs-lisp-mode-hook (lambda ()(fci-mode t)))
-;(add-hook 'after-change-major-mode-hook (lambda ()(fci-mode t)))
-;(setq fci-rule-column 80)
-;(setq fci-rule-use-dashes t)
-;(setq fci-rule-color "gray19")
-;(setq fci-rule-width 1)
-
 ;; Scroll one line at a time (less "jumpy" than defaults)
 (setq mouse-wheel-scroll-amount '(3 ((shift) . 3))) ;; scroll 3 lines at a time when using mwheel
 (setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
@@ -1418,26 +1407,26 @@ current buffer's, reload dir-locals."
 (setq gud-pdb-command-name "python -m pdb")
 
 ; Elpy Python setup
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/elpy")
-(require 'elpy)
-(setq elpy-modules '(elpy-module-company 
-                     elpy-module-eldoc 
-                     elpy-module-flymake 
-                     elpy-module-pyvenv 
-                     elpy-module-yasnippet 
-                     elpy-module-sane-defaults))
+;(add-to-list 'load-path "~/Git/lightweight-emacs/modules/elpy")
+;(require 'elpy)
+;(setq elpy-modules '(elpy-module-company 
+;                     elpy-module-eldoc 
+;                     elpy-module-flymake 
+;                     elpy-module-pyvenv 
+;                     elpy-module-yasnippet 
+;                     elpy-module-sane-defaults))
 
 ; Elpy now requires this instead for later versions
-(setq python-shell-interpreter "ipython"
-      python-shell-interpreter-args "-i --simple-prompt")
-(add-hook 'python-mode-hook
-    (lambda ()
-        (elpy-enable)
-        (company-mode)
-        ; This is causing issues now in Emacs 26.1 against updated versions of company-mode and elpy-mode
-        ; (add-to-list 'company-backends (company-mode/backend-with-yas 'elpy-company-backend)) 
-    )
-)
+;(setq python-shell-interpreter "python"
+;      python-shell-interpreter-args "-i --simple-prompt")
+;(add-hook 'python-mode-hook
+;    (lambda ()
+;        (elpy-enable)
+;        (company-mode)
+;        ; This is causing issues now in Emacs 26.1 against updated versions of company-mode and elpy-mode
+;        ; (add-to-list 'company-backends (company-mode/backend-with-yas 'elpy-company-backend)) 
+;    )
+;)
 
 ; Enable generating Sphinx-compatible docstrings automatically for Python with C-c C-d
 (add-hook 'python-mode-hook (
