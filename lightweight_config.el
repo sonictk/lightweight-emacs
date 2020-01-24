@@ -724,6 +724,13 @@ current buffer's, reload dir-locals."
 (setq auto-mode-alist
      (cons '("SConscript" . python-mode) auto-mode-alist))
 
+; Anaconda mode
+(require 'anaconda-mode)
+(add-hook 'python-mode-hook 'anaconda-mode)
+(add-hook 'python-mode-hook 'anaconda-eldoc-mode)
+(eval-after-load "company"
+ '(add-to-list 'company-backends 'company-anaconda))
+
 ; CC++ mode handling
 (defun lightweight-c-hook ()
   ; 4-space tabs
@@ -1405,28 +1412,6 @@ current buffer's, reload dir-locals."
 
 ; Default M-x pdb is incorrect
 (setq gud-pdb-command-name "python -m pdb")
-
-; Elpy Python setup
-;(add-to-list 'load-path "~/Git/lightweight-emacs/modules/elpy")
-;(require 'elpy)
-;(setq elpy-modules '(elpy-module-company 
-;                     elpy-module-eldoc 
-;                     elpy-module-flymake 
-;                     elpy-module-pyvenv 
-;                     elpy-module-yasnippet 
-;                     elpy-module-sane-defaults))
-
-; Elpy now requires this instead for later versions
-;(setq python-shell-interpreter "python"
-;      python-shell-interpreter-args "-i --simple-prompt")
-;(add-hook 'python-mode-hook
-;    (lambda ()
-;        (elpy-enable)
-;        (company-mode)
-;        ; This is causing issues now in Emacs 26.1 against updated versions of company-mode and elpy-mode
-;        ; (add-to-list 'company-backends (company-mode/backend-with-yas 'elpy-company-backend)) 
-;    )
-;)
 
 ; Enable generating Sphinx-compatible docstrings automatically for Python with C-c C-d
 (add-hook 'python-mode-hook (
