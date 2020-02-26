@@ -2,6 +2,7 @@
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/omnisharp-emacs")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/swift-mode")
 
 ; Blink the cursor forever
 (setq blink-cursor-blinks -1)
@@ -19,6 +20,13 @@
 ;        "/path/to/yasnippet/snippets"         ;; the default collection
 ;        ))
 (yas-global-mode 1)
+
+; On OSX, this is required in order to have Emacs have access to the same binaries 
+; i.e. /usr/loca/bin that the shell normally would have. Yay Apple!
+(require 'exec-path-from-shell)
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-copy-env "PYTHONPATH")
+  (exec-path-from-shell-initialize))
 
 (require 'highlight-symbol)
 (global-set-key [(control f3)] 'highlight-symbol)
@@ -281,7 +289,10 @@ current buffer's, reload dir-locals."
     ("\\.ixx\\'" (".cxx" ".hxx" ".h"))
     ("\\.hxx\\'" (".ixx" ".cxx" ".cpp"))
     ("\\.c\\'" (".h"))
-    ("\\.h\\'" (".c" ".cpp" ".cxx" ".ixx" ".ipp")))
+    ("\\.m\\'" (".h"))
+    ("\\.mm\\'" (".h"))
+    ("\\.metal\\'" (".h")) 
+    ("\\.h\\'" (".c" ".cpp" ".C" ".CC" ".cxx" ".ixx" ".ipp" ".m" ".mm")))
 )
 
 ; Clang-format functionality
@@ -427,6 +438,9 @@ current buffer's, reload dir-locals."
 ; Add support for CUDA kernel files
 (require 'cuda-mode)
 
+; Add support for Apple Swift language 
+(require 'swift-mode)
+
 ; Highlight escape character sequences correctly
 (custom-set-variables
  '(hes-mode-alist
@@ -492,6 +506,7 @@ current buffer's, reload dir-locals."
          ("\\.c$"   . c++-mode)
          ("\\.cc$"   . c++-mode)
          ("\\.c8$"   . c++-mode)
+         ("\\.metal$"   . c++-mode) ; TODO: Should probably fix this when a real Metal package appears on the scene
          ("\\.txt$" . indented-text-mode)
          ("\\.emacs$" . emacs-lisp-mode)
          ("\\.gen$" . gen-mode)
@@ -501,6 +516,7 @@ current buffer's, reload dir-locals."
          ("\\.m$" . objc-mode)
          ("\\.mm$" . objc-mode)
          ("\\.cu$" . cuda-mode)
+         ("\\.swift$" . swift-mode)
          ) auto-mode-alist))
 
 ; C++ indentation style
@@ -707,6 +723,13 @@ current buffer's, reload dir-locals."
      (cons '("SConstruct" . python-mode) auto-mode-alist))
 (setq auto-mode-alist
      (cons '("SConscript" . python-mode) auto-mode-alist))
+
+; Anaconda mode
+(require 'anaconda-mode)
+(add-hook 'python-mode-hook 'anaconda-mode)
+(add-hook 'python-mode-hook 'anaconda-eldoc-mode)
+(eval-after-load "company"
+ '(add-to-list 'company-backends 'company-anaconda))
 
 ; CC++ mode handling
 (defun lightweight-c-hook ()
@@ -1011,17 +1034,6 @@ current buffer's, reload dir-locals."
    "Major mode for editing GitHub Flavored Markdown files" t)
 (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
 
-; Enable vertical ruler for Python/C/C++ source files
-;(require 'fill-column-indicator)
-;(add-hook 'python-mode-hook (lambda () (fci-mode t)))
-;(add-hook 'c-mode-common-hook (lambda ()(fci-mode t)))
-;(add-hook 'emacs-lisp-mode-hook (lambda ()(fci-mode t)))
-;(add-hook 'after-change-major-mode-hook (lambda ()(fci-mode t)))
-;(setq fci-rule-column 80)
-;(setq fci-rule-use-dashes t)
-;(setq fci-rule-color "gray19")
-;(setq fci-rule-width 1)
-
 ;; Scroll one line at a time (less "jumpy" than defaults)
 (setq mouse-wheel-scroll-amount '(3 ((shift) . 3))) ;; scroll 3 lines at a time when using mwheel
 (setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
@@ -1218,7 +1230,7 @@ current buffer's, reload dir-locals."
 
 (add-hook 'c++-mode-hook 'my-irony-mode-on)
 (add-hook 'c-mode-hook 'my-irony-mode-on)
-(add-hook 'objc-mode-hook 'my-irony-mode-on)
+(add-hook 'objc-mode-hook 'irony-mode)
 (add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
 (add-hook 'irony-mode-hook #'irony-eldoc)
 
@@ -1263,7 +1275,7 @@ current buffer's, reload dir-locals."
 (require 'ggtags)
 (add-hook 'c-mode-common-hook
           (lambda ()
-            (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode)
+            (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode 'objc-mode 'swift-mode)
               (ggtags-mode 1))))
 
 (define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
@@ -1400,28 +1412,6 @@ current buffer's, reload dir-locals."
 
 ; Default M-x pdb is incorrect
 (setq gud-pdb-command-name "python -m pdb")
-
-; Elpy Python setup
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/elpy")
-(require 'elpy)
-(setq elpy-modules '(elpy-module-company 
-                     elpy-module-eldoc 
-                     elpy-module-flymake 
-                     elpy-module-pyvenv 
-                     elpy-module-yasnippet 
-                     elpy-module-sane-defaults))
-
-; Elpy now requires this instead for later versions
-(setq python-shell-interpreter "ipython"
-      python-shell-interpreter-args "-i --simple-prompt")
-(add-hook 'python-mode-hook
-    (lambda ()
-        (elpy-enable)
-        (company-mode)
-        ; This is causing issues now in Emacs 26.1 against updated versions of company-mode and elpy-mode
-        ; (add-to-list 'company-backends (company-mode/backend-with-yas 'elpy-company-backend)) 
-    )
-)
 
 ; Enable generating Sphinx-compatible docstrings automatically for Python with C-c C-d
 (add-hook 'python-mode-hook (
