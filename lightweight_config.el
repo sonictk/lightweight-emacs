@@ -119,7 +119,7 @@
 (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 (setq smex-save-file "~/Git/lightweight-emacs/smex-items")
 (setq smex-auto-update nil)
-(setq smex-prompt-string "Enter command:")
+(setq smex-prompt-string "Command: ")
 (setq smex-history-length 10) 
 
 ; Better fuzzy matching for ido-mode
