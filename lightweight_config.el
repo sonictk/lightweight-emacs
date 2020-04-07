@@ -118,9 +118,9 @@
 ;; This is old M-x.
 (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 (setq smex-save-file "~/Git/lightweight-emacs/smex-items")
-(setq smex-auto-update nil)
+; (setq smex-auto-update nil)
 (setq smex-prompt-string "Command: ")
-(setq smex-history-length 10) 
+(setq smex-history-length 10)
 
 ; Better fuzzy matching for ido-mode
 (require 'flx-ido)
@@ -1340,9 +1340,15 @@ current buffer's, reload dir-locals."
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/smartparens")
 (require 'dash)
 (require 'smartparens-config)
+(add-to-list 'sp-ignore-modes-list 'text-mode 'markdown-mode)
 (show-smartparens-global-mode t)
 (smartparens-global-mode 1)
-(setq sp-show-pair-delay 0.125) ; Slow down the smartparens matching mode to improve interactive typing performance
+
+; (add-hook 'js-mode-hook #'smartparens-mode)
+; (add-hook 'c-mode-common-hook #'smartparens-mode)
+; (add-hook 'csharp-mode-hook #'smartparens-mode)
+
+(setq sp-show-pair-delay 0.25) ; Slow down the smartparens matching mode to improve interactive typing performance
 
 ; when you press RET, the curly braces automatically
 ; add another newline
