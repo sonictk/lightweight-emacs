@@ -1340,13 +1340,14 @@ current buffer's, reload dir-locals."
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/smartparens")
 (require 'dash)
 (require 'smartparens-config)
-(add-to-list 'sp-ignore-modes-list '(minibuffer-inactive-mode picture-mode markdown-mode text-mode))
+; (add-to-list 'sp-ignore-modes-list '(minibuffer-inactive-mode picture-mode markdown-mode text-mode artist-mode))
 (show-smartparens-global-mode t)
-(smartparens-global-mode 1)
+(smartparens-global-mode nil)
 
-; (add-hook 'js-mode-hook #'smartparens-mode)
-; (add-hook 'c-mode-common-hook #'smartparens-mode)
-; (add-hook 'csharp-mode-hook #'smartparens-mode)
+;(add-hook 'js-mode-hook #'smartparens-mode)
+;(add-hook 'c-mode-common-hook #'smartparens-mode)
+;(add-hook 'csharp-mode-hook #'smartparens-mode)
+(add-hook 'prog-mode-hook #'smartparens-mode)
 
 (setq sp-show-pair-delay 0.25) ; Slow down the smartparens matching mode to improve interactive typing performance
 
@@ -1576,6 +1577,15 @@ PWD is not in a git repo (or the git command is not found)."
       desktop-load-locked-desktop nil
       desktop-auto-save-timeout   30)
 (desktop-save-mode 1)
+(setq desktop-minor-mode-table '((auto-fill-function auto-fill-mode)
+                                 (defining-kbd-macro nil)
+                                 (isearch-mode nil)
+                                 (vc-mode nil)
+                                 (vc-dired-mode nil)
+                                 (erc-track-minor-mode nil)
+                                 (savehist-mode nil)
+                                 (global-whitespace-mode nil)
+                                 (global-smartparens-mode nil))) ; Prevent desktop read from being slow
 
 ; Allow for switching between visible windows with Shift + arrow keys
 (when (fboundp 'windmove-default-keybindings)
