@@ -1669,6 +1669,9 @@ PWD is not in a git repo (or the git command is not found)."
 ; Scroll output in the compilation window automatically
 (setq compilation-scroll-output t)
 
+; Make GC not happen too much for unicode buffers 
+(setq inhibit-compacting-font-caches t)
+
 ; Enable Googling text
 (require 'google-this)
 (google-this-mode 1)
@@ -1709,6 +1712,12 @@ PWD is not in a git repo (or the git command is not found)."
 
 (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
 (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook)
+
+; Update smex list after a file is loaded
+(defun smex-update-after-load (unused)
+  (when (boundp 'smex-cache)
+    (smex-update)))
+(add-hook 'after-load-functions 'smex-update-after-load)
 
 
 ; Aliases for unintuitive commands
