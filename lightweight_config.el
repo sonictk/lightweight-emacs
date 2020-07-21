@@ -1094,6 +1094,16 @@ current buffer's, reload dir-locals."
         (set-face-attribute 'default t :font "Liberation Mono-11.5"))
 )
 
+(if (string-equal system-name "Yis-MacBook-Pro.local")
+    ;; Set custom font as default global font
+    (progn 
+        (add-to-list 'default-frame-alist '(font . "Liberation Mono-16"))
+        (set-face-attribute 'default nil :font "Liberation Mono-16"))
+    (progn
+        (add-to-list 'default-frame-alist '(font . "Liberation Mono-13"))
+        (set-face-attribute 'default t :font "Liberation Mono-13"))
+)
+
 (add-to-list 'custom-theme-load-path
              (file-name-as-directory "~/Git/lightweight-emacs/themes"))
 
