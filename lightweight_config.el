@@ -1085,7 +1085,6 @@ current buffer's, reload dir-locals."
 
 ; Check if running on Macbook based off hostname and set the font size accordingly
 (if (string-equal system-name "sonictk-mbp.local")
-    ;; Set custom font as default global font
     (progn 
         (add-to-list 'default-frame-alist '(font . "Liberation Mono-14"))
         (set-face-attribute 'default nil :font "Liberation Mono-14"))
@@ -1094,8 +1093,7 @@ current buffer's, reload dir-locals."
         (set-face-attribute 'default t :font "Liberation Mono-11.5"))
 )
 
-(if (string-equal system-name "Yis-MacBook-Pro.local")
-    ;; Set custom font as default global font
+(if (string-equal system-name "sonictk-mbp-aapl.local")
     (progn 
         (add-to-list 'default-frame-alist '(font . "Liberation Mono-16"))
         (set-face-attribute 'default nil :font "Liberation Mono-16"))
