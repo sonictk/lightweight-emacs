@@ -87,6 +87,9 @@
                                 "highlight-symbol-face5"
                                 "highlight-symbol-face6"))
 
+; Allow for side-by-side diff viewing
+(require 'diffview)
+
 ; Binding for line wrapping
 (global-set-key (kbd "C-M-S-w") 'visual-line-mode)
 
