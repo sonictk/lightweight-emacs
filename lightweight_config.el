@@ -1198,6 +1198,9 @@ current buffer's, reload dir-locals."
 ; Disable idle completion, idle is the devil's work
 (setq company-idle-delay nil)
 
+; Increase completion time for larger C++ projects
+(setq company-async-timeout 10)
+
 ; Company GUI settings
 (setq company-show-numbers t)
 (setq company-tooltip-maximum-width 100)
