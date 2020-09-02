@@ -3,6 +3,7 @@
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/omnisharp-emacs")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/swift-mode")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/lsp")
 
 ; Blink the cursor forever
 (setq blink-cursor-blinks -1)
@@ -131,6 +132,17 @@
 ;; disable ido faces to see flx highlights.
 (setq ido-enable-flex-matching t)
 (setq ido-use-faces nil)
+
+
+; lsp mode
+(require 'lsp-mode)
+(add-hook 'c++-mode-hook #'lsp)
+(add-hook 'c-mode-hook #'lsp)
+(add-hook 'objc-mode-hook #'lsp)
+(add-hook 'csharp-mode-hook #'lsp)
+(setq read-process-output-max (* 4096 4096)) ;; 4mb
+(setq lsp-completion-provider :capf)
+(setq gc-cons-threshold 100000000)
 
 ; Indepedent space/hypen matching for ido-mode
 (require 'ido-complete-space-or-hyphen)
@@ -1224,54 +1236,13 @@ current buffer's, reload dir-locals."
 (add-hook 'company-completion-cancelled-hook 'company-maybe-turn-on-fci)
 ; FIX ends here
 
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/irony-mode/")
-
-(require 'irony)
-(require 'irony-cdb-clang-complete)
-(require 'irony-cdb)
-(require 'irony-cdb-json)
-(require 'irony-cdb-libclang)
-(require 'irony-completion)
-(require 'irony-diagnostics)
-(require 'irony-iotask)
-(require 'irony-snippet)
-; TODO: This seems to be causing issues on win32 where irony will hold onto file handles unnecessarily
-(require 'irony-eldoc)
-(setq irony-server-install-prefix "~/Git/lightweight-emacs/irony-cfg/bin/")
-(setq irony-user-dir "~/Git/lightweight-emacs/irony-cfg/")
-
-; Avoid activating irony for modes that inherit c-mode (like GLSL mode)
-(defun my-irony-mode-on ()
-  (when (member major-mode irony-supported-major-modes)
-    (irony-mode 1)))
-
-(add-hook 'c++-mode-hook 'my-irony-mode-on)
-(add-hook 'c-mode-hook 'my-irony-mode-on)
-(add-hook 'objc-mode-hook 'irony-mode)
-(add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
-(add-hook 'irony-mode-hook #'irony-eldoc)
-
-
 ;; Windows performance tweaks
 (when (boundp 'w32-pipe-read-delay)
   (setq w32-pipe-read-delay 0))
 ;; Set the buffer size to 64K on Windows (from the original 4K)
-(when (boundp 'w32-pipe-buffer-size)
-  (setq irony-server-w32-pipe-buffer-size (* 64 1024)))
 
-(require 'company-irony)
-(eval-after-load 'company
-  '(add-to-list 'company-backends 'company-irony))
-(setq company-irony-ignore-case t)
-
-(require 'company-irony-c-headers)
-;; Load with `irony-mode` as a grouped backend
-(eval-after-load 'company
-  '(add-to-list
-    'company-backends '(company-irony-c-headers company-irony)))
 
 ; Live syntax checking
-;(require 'seq)
 (require 'let-alist)
 (require 'pkg-info)
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/flycheck")
@@ -1283,10 +1254,6 @@ current buffer's, reload dir-locals."
 (put 'cc-search-directories 'safe-local-variable #'listp)
 (put 'cc-other-file-alist 'safe-local-variable #'listp)
 (put 'flycheck-clang-include-path 'safe-local-variable #'listp)
-
-(require 'flycheck-irony)
-(eval-after-load 'flycheck
-  '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
 
 ; Set up code navigation
 (require 'ggtags)
