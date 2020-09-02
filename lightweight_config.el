@@ -136,13 +136,33 @@
 
 ; lsp mode
 (require 'lsp-mode)
+(require 'lsp-modeline)
+(require 'lsp-python-ms)
+(setq lsp-python-ms-auto-install-server t)
+
 (add-hook 'c++-mode-hook #'lsp)
 (add-hook 'c-mode-hook #'lsp)
 (add-hook 'objc-mode-hook #'lsp)
 (add-hook 'csharp-mode-hook #'lsp)
+(add-hook 'python-mode-hook #'lsp)
 (setq read-process-output-max (* 4096 4096)) ;; 4mb
 (setq lsp-completion-provider :capf)
 (setq gc-cons-threshold 100000000)
+(setq lsp-auto-guess-root t)
+
+(require 'cc-mode)
+(define-key c-mode-base-map (kbd "M-RET") 'lsp-rename)
+(define-key c-mode-base-map (kbd "M-,") 'pop-tag-mark)
+(define-key c-mode-base-map (kbd "M-.") 'lsp-find-definition)
+(define-key c-mode-base-map [C-down-mouse-1] 'lsp-find-definition-mouse)
+
+; TODO only target for OSX
+(eval-after-load 'lsp-mode
+  (progn
+    (require 'lsp-sourcekit)
+    (setq lsp-sourcekit-executable
+          "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
+(add-hook 'swift-mode-hook (lambda () (lsp)))
 
 ; Indepedent space/hypen matching for ido-mode
 (require 'ido-complete-space-or-hyphen)
@@ -1239,8 +1259,6 @@ current buffer's, reload dir-locals."
 ;; Windows performance tweaks
 (when (boundp 'w32-pipe-read-delay)
   (setq w32-pipe-read-delay 0))
-;; Set the buffer size to 64K on Windows (from the original 4K)
-
 
 ; Live syntax checking
 (require 'let-alist)
@@ -1254,52 +1272,6 @@ current buffer's, reload dir-locals."
 (put 'cc-search-directories 'safe-local-variable #'listp)
 (put 'cc-other-file-alist 'safe-local-variable #'listp)
 (put 'flycheck-clang-include-path 'safe-local-variable #'listp)
-
-; Set up code navigation
-(require 'ggtags)
-(add-hook 'c-mode-common-hook
-          (lambda ()
-            (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode 'objc-mode 'swift-mode)
-              (ggtags-mode 1))))
-
-(define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
-(define-key ggtags-mode-map (kbd "C-c g h") 'ggtags-view-tag-history)
-(define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
-(define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
-(define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
-(define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags)
-(define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
-(define-key ggtags-mode-map [C-down-mouse-1] 'ggtags-find-tag-mouse)
-(define-key ggtags-navigation-map (kbd "M-<") nil) ; ggtags overrides default Emacs keybinding by default
-(define-key ggtags-navigation-map (kbd "M->") nil) ; ggtags overrides default Emacs keybinding by default
-(setq-local imenu-create-index-function #'ggtags-build-imenu-index) ; Integrate IMenu into GGTAGS
-; Set GGTAGS to use ido to handle completions (NOTE: Might be slow)
-(setq ggtags-completing-read-function
-      (lambda (&rest args)
-        (apply #'ido-completing-read
-               (car args)
-               (all-completions "" ggtags-completion-table)
-               (cddr args))))
-(setq ggtags-split-window-function
-      (lambda (w) (split-window (frame-root-window w))))
-
-(setq ggtags-global-window-height '20)
-(setq ggtags-sort-by-nearness 't)
-(setq ggtags-find-tag-hook 'recenter)
-
-; Set up re-factoring support
-(require 'srefactor)
-(require 'srefactor-lisp)
-(semantic-mode 1) ;; -> this is optional for Lisp
-(define-key c-mode-map (kbd "M-RET") 'srefactor-refactor-at-point)
-(define-key c++-mode-map (kbd "M-RET") 'srefactor-refactor-at-point)
-(global-set-key (kbd "M-RET o") 'srefactor-lisp-one-line)
-(global-set-key (kbd "M-RET m") 'srefactor-lisp-format-sexp)
-(global-set-key (kbd "M-RET d") 'srefactor-lisp-format-defun)
-(global-set-key (kbd "M-RET b") 'srefactor-lisp-format-buffer)
-
-; Display function interface at point in minibuffer
-(setq-local eldoc-documentation-function #'ggtags-eldoc-function)
 
 ; Don't clutter the modeline
 (setq eldoc-minor-mode-string nil)
@@ -1325,9 +1297,6 @@ current buffer's, reload dir-locals."
 (show-smartparens-global-mode t)
 (smartparens-global-mode nil)
 
-;(add-hook 'js-mode-hook #'smartparens-mode)
-;(add-hook 'c-mode-common-hook #'smartparens-mode)
-;(add-hook 'csharp-mode-hook #'smartparens-mode)
 (add-hook 'prog-mode-hook #'smartparens-mode)
 
 (setq sp-show-pair-delay 0.8) ; Slow down the smartparens matching mode to improve interactive typing performance
