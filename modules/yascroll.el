@@ -4,7 +4,9 @@
 
 ;; Author: Tomohiro Matsuyama <m2ym.pub@gmail.com>
 ;; Keywords: convenience
-;; Package-Requires: ((cl-lib "0.3"))
+;; Version: 0.1.9
+;; Package-Requires: ((emacs "26.1") (cl-lib "0.3"))
+;; URL: https://github.com/emacsorphanage/yascroll
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -33,10 +35,11 @@
 ;;; Utilities:
 
 (defun yascroll:listify (object)
+  "Turn OBJECT to list type."
   (if (listp object) object (list object)))
 
 (defun yascroll:vertical-motion (lines)
-  "A portable version of `vertical-motion'."
+  "A portable version of `vertical-motion' pass in LINES."
   (cond ((>= emacs-major-version 23)
          (vertical-motion lines))
         ((consp lines)
@@ -46,25 +49,28 @@
          (vertical-motion lines))))
 
 (defun yascroll:line-edge-position ()
-  "Return \(POINT PADDING) where POINT is the most neareat
-logical position to the right-edge of the window, and PADDING is
+  "Return \(POINT PADDING) where POINT is the most neareat \
+logical position to the right-edge of the window, and PADDING is \
 a positive number of padding to the edge."
   (save-excursion
-    (let* ((window-width (window-width))
-           (window-margin (destructuring-bind (left-margin . right-margin)
-                              (window-margins)
-                            (+ (or left-margin 0) (or right-margin 0))))
-           (column-bol (progn (yascroll:vertical-motion (cons 0 0))
-                              (current-column)))
+    (let* ((line-number-width
+            (if (and (boundp 'display-line-numbers-mode) display-line-numbers-mode)
+                (+ (line-number-display-width) 2)
+              0))
+           (window-width (- (window-width) line-number-width))
+           (window-hscroll (window-hscroll))
+           (tty-offset (if (display-graphic-p) 0 1))
+           ;; If truncation is off we’re computing the continued line’s first
+           ;; column. With horizontal scroll truncation is always on and we can
+           ;; use it’s value as first visible column.
+           (column-bol (if (or truncate-lines (> window-hscroll 0))
+                           window-hscroll
+                         (progn (yascroll:vertical-motion (cons 0 0))
+                                (current-column))))
            (column-eol (progn (yascroll:vertical-motion
-                               (cons (- window-width 1 (if window-system 0 1)) 0))
+                               (cons (- window-width 1 tty-offset) 0))
                               (current-column)))
-           (column-eol-visual (- column-eol column-bol))
-
-           (padding (- window-width
-                       window-margin
-                       column-eol-visual
-                       (if window-system 0 1))))
+           (padding (- window-width (- column-eol column-bol) tty-offset)))
       (list (point) padding))))
 
 
@@ -88,15 +94,15 @@ a positive number of padding to the edge."
 
 (defcustom yascroll:scroll-bar
   '(right-fringe left-fringe text-area)
-  "Position of scroll bar. The value is:
+  "Position of scroll bar.  The value is:
 
 * 'right-fringe' for rendering scroll bar in right-fringe.
 * 'left-fringe' for rendering scroll bar in left-fringe.
 * 'text-area' for rendering scroll bar in text area.
 
-The value can be also a list of them. In that case, yascroll in
+The value can be also a list of them.  In that case, yascroll in
 turn checks for a candidate of the list is available on the
-system. If no candidate satsify the condition, scroll bar will
+system.  If no candidate satsify the condition, scroll bar will
 not be displayed."
   :type '(repeat (choice (const :tag "Right Fringe" right-fringe)
                          (const :tag "Left Fringe" left-fringe)
@@ -104,24 +110,24 @@ not be displayed."
   :group 'yascroll)
 
 (defcustom yascroll:delay-to-hide 0.5
-  "Delay to hide scroll bar in seconds. nil means never hide
-scroll bar."
+  "Delay to hide scroll bar in seconds; nil means never hide scroll bar."
   :type '(choice (const :tag "Never Hide" nil)
                  (number :tag "Seconds"))
   :group 'yascroll)
 
 (defcustom yascroll:enabled-window-systems
-  '(nil x w32 ns pc)
-  "A list of `window-system's where yascroll can work."
+  '(nil x w32 ns pc mac)
+  "A list of window-system's where yascroll can work."
   :type '(repeat (choice (const :tag "Termcap" nil)
                          (const :tag "X window" x)
                          (const :tag "MS-Windows" w32)
                          (const :tag "Macintosh Cocoa" ns)
+                         (const :tag "Macintosh Emacs Port" mac)
                          (const :tag "MS-DOS" pc)))
   :group 'yascroll)
 
 (defcustom yascroll:disabled-modes
-  nil
+  '(image-mode)
   "A list of major-modes where yascroll can't work."
   :type '(repeat symbol)
   :group 'yascroll)
@@ -135,19 +141,22 @@ scroll bar."
 (make-variable-buffer-local 'yascroll:thumb-overlays)
 
 (defun yascroll:compute-thumb-size (window-lines buffer-lines)
-  "Return the proper size (height) of scroll bar thumb."
+  "Return the proper size (height) of scroll bar thumb.
+Doc-this WINDOW-LINES and BUFFER-LINES."
   (if (zerop buffer-lines)
       1
     (max 1 (floor (* (/ (float window-lines) buffer-lines) window-lines)))))
 
 (defun yascroll:compute-thumb-window-line (window-lines buffer-lines scroll-top)
-  "Return the line number of scroll bar thumb relative to window."
+  "Return the line number of scroll bar thumb relative to window.
+Doc-this WINDOW-LINES, BUFFER-LINES and SCROLL-TOP."
   (if (zerop buffer-lines)
       0
     (floor (* window-lines (/ (float scroll-top) buffer-lines)))))
 
 (defun yascroll:make-thumb-overlay-text-area ()
-  (destructuring-bind (edge-pos edge-padding)
+  "Not documented."
+  (cl-destructuring-bind (edge-pos edge-padding)
       (yascroll:line-edge-position)
     (if (= edge-pos (line-end-position))
         (let ((overlay (make-overlay edge-pos edge-pos))
@@ -168,6 +177,7 @@ scroll bar."
         overlay))))
 
 (defun yascroll:make-thumb-overlay-fringe (left-or-right)
+  "Make thumb overlay on the LEFT-OR-RIGHT fringe."
   (let* ((pos (point))
          ;; If `pos' is at the beginning of line, overlay of the
          ;; fringe will be on the previous visual line.
@@ -181,13 +191,15 @@ scroll bar."
     overlay))
 
 (defun yascroll:make-thumb-overlay-left-fringe ()
+  "Make thumb overlay on the left fringe."
   (yascroll:make-thumb-overlay-fringe 'left-fringe))
 
 (defun yascroll:make-thumb-overlay-right-fringe ()
+  "Make thumb overlay on the right fringe."
   (yascroll:make-thumb-overlay-fringe 'right-fringe))
 
 (defun yascroll:make-thumb-overlays (make-thumb-overlay window-line size)
-  "Make overlays of scroll bar thumb at WINDOW-LINE with SIZE."
+  "Make overlays of scroll bar thumb (MAKE-THUMB-OVERLAY) at WINDOW-LINE with SIZE."
   (save-excursion
     ;; Jump to the line.
     (move-to-window-line 0)
@@ -221,8 +233,9 @@ scroll bar."
                          (current-buffer))))
 
 (defun yascroll:choose-scroll-bar ()
+  "Choose scroll bar by fringe position."
   (when (memq window-system yascroll:enabled-window-systems)
-    (cl-destructuring-bind (left-width right-width outside-margins)
+    (cl-destructuring-bind (left-width right-width outside-margins &rest _)
         (window-fringes)
       (cl-loop for scroll-bar in (yascroll:listify yascroll:scroll-bar)
                if (or (eq scroll-bar 'text-area)
@@ -239,7 +252,7 @@ scroll bar."
   (yascroll:hide-scroll-bar)
   (let ((scroll-bar (yascroll:choose-scroll-bar)))
     (when scroll-bar
-      (let ((window-lines (window-height))
+      (let ((window-lines (yascroll:window-height))
             (buffer-lines (count-lines (point-min) (point-max))))
         (when (< window-lines buffer-lines)
           (let* ((scroll-top (count-lines (point-min) (window-start)))
@@ -249,7 +262,7 @@ scroll bar."
                  (thumb-size (yascroll:compute-thumb-size
                               window-lines buffer-lines))
                  (make-thumb-overlay
-                  (ecase scroll-bar
+                  (cl-ecase scroll-bar
                     (left-fringe 'yascroll:make-thumb-overlay-left-fringe)
                     (right-fringe 'yascroll:make-thumb-overlay-right-fringe)
                     (text-area 'yascroll:make-thumb-overlay-text-area))))
@@ -258,6 +271,14 @@ scroll bar."
                                             thumb-window-line
                                             thumb-size)
               (yascroll:schedule-hide-scroll-bar))))))))
+
+(defun yascroll:window-height ()
+  "`line-spacing'-aware calculation of `window-height'."
+  (if (and (fboundp 'window-pixel-height)
+           (fboundp 'line-pixel-height)
+           (display-graphic-p))
+      (/ (window-pixel-height) (line-pixel-height))
+    (window-height)))
 
 ;;;###autoload
 (defun yascroll:hide-scroll-bar ()
@@ -270,31 +291,35 @@ scroll bar."
   (and yascroll:thumb-overlays t))
 
 (defun yascroll:handle-error (&optional var)
+  "Handle errors, VAR."
   (message "yascroll: %s" var)
   (ignore-errors (yascroll-bar-mode -1))
   (message "yascroll-bar-mode disabled")
   var)
 
 (defun yascroll:safe-show-scroll-bar ()
-  "Same as `yascroll:show-scroll-bar' except that if errors
-occurs in this function, this function will suppress the errors
-and disable `yascroll-bar-mode'."
+  "Same as `yascroll:show-scroll-bar' except that if errors occurs in this \
+function, this function will suppress the errors and disable `yascroll-bar-mode`."
   (condition-case var
       (yascroll:show-scroll-bar)
     (error (yascroll:handle-error var))))
 
 (defun yascroll:update-scroll-bar ()
+  "Update scroll bar."
   (when (yascroll:scroll-bar-visible-p)
     (yascroll:safe-show-scroll-bar)))
 
 (defun yascroll:before-change (beg end)
+  "Before change BEG point and END point."
   (yascroll:hide-scroll-bar))
 
 (defun yascroll:after-window-scroll (window start)
+  "After WINDOW scrools from START."
   (when (eq (selected-window) window)
     (yascroll:safe-show-scroll-bar)))
 
 (defun yascroll:after-window-configuration-change ()
+  "Window configure change function call."
   (yascroll:update-scroll-bar))
 
 ;;;###autoload
@@ -318,6 +343,7 @@ and disable `yascroll-bar-mode'."
          (not (memq major-mode yascroll:disabled-modes)))))
 
 (defun yascroll:turn-on ()
+  "Enable `yascroll-bar-mode`."
   (when (yascroll:enabled-buffer-p (current-buffer))
     (yascroll-bar-mode 1)))
 

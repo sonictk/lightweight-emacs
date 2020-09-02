@@ -56,7 +56,7 @@
 (defun pythonic-remote-ssh-p ()
   "Determine ssh remote virtual environment."
   (and (pythonic-remote-p)
-       (s-equals-p (pythonic-remote-method) "ssh")))
+       (member (pythonic-remote-method) '("ssh" "sshx"))))
 
 (defun pythonic-remote-vagrant-p ()
   "Determine vagrant remote virtual environment."
@@ -132,7 +132,7 @@ Take FILENAME from the perspective of the localhost and translate
 it to the FILENAME Python process can read.  Python can be
 running locally or remotely.  FILENAME can have local or tramp
 format.  Result will have local format."
-  (let ((alias (pythonic-aliased-path filename)))
+  (let ((alias (pythonic-aliased-path (expand-file-name filename))))
     (if (tramp-tramp-file-p alias)
         (tramp-file-name-localname (tramp-dissect-file-name alias))
       alias)))

@@ -430,7 +430,7 @@ per the requirement of Sphinx documentation generator."
 
 (defvar sphinx-doc-mode-map
   (let ((m (make-sparse-keymap)))
-    (define-key m (kbd "C-c C-d") 'sphinx-doc)
+    (define-key m (kbd "C-c M-d") 'sphinx-doc)
     m))
 
 

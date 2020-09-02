@@ -4,7 +4,7 @@
 
 ;; Author: Jorgen Schaefer <contact@jorgenschaefer.de>
 ;; URL: http://github.com/jorgenschaefer/pyvenv
-;; Version: 1.10
+;; Version: 1.21
 ;; Keywords: Python, Virtualenv, Tools
 
 ;; This program is free software; you can redistribute it and/or
@@ -36,6 +36,7 @@
 
 ;;; Code:
 
+(require 'eshell)
 (require 'json)
 
 ;; User customization
@@ -84,6 +85,8 @@ is active, after every command."
 (defcustom pyvenv-virtualenvwrapper-python
   (or (getenv "VIRTUALENVWRAPPER_PYTHON")
       (executable-find "python")
+      (executable-find "py")
+      (executable-find "pythonw")
       "python")
   "The python process which has access to the virtualenvwrapper module.
 
@@ -92,6 +95,22 @@ virtualenvwrapper.sh does not export that variable. We make an
 educated guess, but that can be off."
   :type '(file :must-match t)
   :safe #'file-directory-p
+  :group 'pyvenv)
+
+(defcustom pyvenv-exec-shell
+  (or (executable-find "bash")
+      (executable-find "sh")
+      shell-file-name)
+  "The path to a POSIX compliant shell to use for running
+  virtualenv hooks. Useful if you use a non-POSIX shell (e.g.
+  fish)."
+  :type '(file :must-match t)
+  :group 'pyvenv)
+
+(defcustom pyvenv-default-virtual-env-name nil
+  "Default directory to use when prompting for a virtualenv directory
+in `pyvenv-activate'."
+  :type 'string
   :group 'pyvenv)
 
 ;; API for other libraries
@@ -106,6 +125,15 @@ Do not set this variable directly; use `pyvenv-activate' or
   "The name of the current virtual environment.
 
 This is usually the base name of `pyvenv-virtual-env'.")
+
+
+(defvar pyvenv-pre-create-hooks nil
+  "Hooks run before a virtual environment is created.")
+
+
+(defvar pyvenv-post-create-hooks nil
+  "Hooks run after a virtual environment is created.")
+
 
 (defvar pyvenv-pre-activate-hooks nil
   "Hooks run before a virtual environment is activated.
@@ -139,10 +167,44 @@ This is usually the base name of `pyvenv-virtual-env'.")
 (defvar pyvenv-old-exec-path nil
   "The old exec path before the last activate.")
 
+(defvar pyvenv-old-eshell-path nil
+  "The old eshell path before the last activate.")
+
+
+(defun pyvenv-create (venv-name python-executable)
+  "Create virtualenv.  VENV-NAME  PYTHON-EXECUTABLE."
+  (interactive (list
+                (read-from-minibuffer "Name of virtual environment: ")
+                (read-file-name "Python interpreter to use: "
+                                (file-name-directory (executable-find "python"))
+                                nil nil "python")))
+  (let ((venv-dir (concat (file-name-as-directory (pyvenv-workon-home))
+                          venv-name)))
+    (unless (file-exists-p venv-dir)
+      (run-hooks 'pyvenv-pre-create-hooks)
+      (cond
+       ((executable-find "virtualenv")
+        (with-current-buffer (generate-new-buffer "*virtualenv*")
+          (call-process "virtualenv" nil t t
+                        "-p" python-executable venv-dir)
+          (display-buffer (current-buffer))))
+       ((= 0 (call-process python-executable nil nil nil
+                           "-m" "venv" "-h"))
+        (with-current-buffer (generate-new-buffer "*venv*")
+          (call-process python-executable nil t t
+                        "-m" "venv" venv-dir)
+          (display-buffer (current-buffer))))
+       (t
+        (error "Pyvenv necessitates the 'virtualenv' python package")))
+      (run-hooks 'pyvenv-post-create-hooks))
+    (pyvenv-activate venv-dir)))
+
+
 ;;;###autoload
 (defun pyvenv-activate (directory)
   "Activate the virtual environment in DIRECTORY."
-  (interactive "DActivate venv: ")
+  (interactive (list (read-directory-name "Activate venv: " nil nil nil
+					  pyvenv-default-virtual-env-name)))
   (setq directory (expand-file-name directory))
   (pyvenv-deactivate)
   (setq pyvenv-virtual-env (file-name-as-directory directory)
@@ -150,12 +212,25 @@ This is usually the base name of `pyvenv-virtual-env'.")
                                  (directory-file-name directory))
         python-shell-virtualenv-path directory
         python-shell-virtualenv-root directory)
+  ;; Set venv name as parent directory for generic directories or for
+  ;; the user's default venv name
+  (when (or (member pyvenv-virtual-env-name '("venv" ".venv" "env" ".env"))
+	    (and pyvenv-default-virtual-env-name
+		 (string= pyvenv-default-virtual-env-name
+			  pyvenv-virtual-env-name)))
+    (setq pyvenv-virtual-env-name
+          (file-name-nondirectory
+           (directory-file-name
+            (file-name-directory
+             (directory-file-name directory))))))
   ;; Preserve variables from being overwritten.
   (let ((old-exec-path exec-path)
+        (old-eshell-path eshell-path-env)
         (old-process-environment process-environment))
     (unwind-protect
         (pyvenv-run-virtualenvwrapper-hook "pre_activate" pyvenv-virtual-env)
       (setq exec-path old-exec-path
+            eshell-path-env old-eshell-path
             process-environment old-process-environment)))
   (run-hooks 'pyvenv-pre-activate-hooks)
   (let ((new-directories (append
@@ -164,12 +239,20 @@ This is usually the base name of `pyvenv-virtual-env'.")
                             (list (format "%s/bin" directory)))
                           ;; Windows
                           (when (file-exists-p (format "%s/Scripts" directory))
-                            (list (format "%s/Scripts" directory))))))
+                            (list (format "%s/Scripts" directory)
+                                  ;; Apparently, some virtualenv
+                                  ;; versions on windows put the
+                                  ;; python.exe in the virtualenv root
+                                  ;; for some reason?
+                                  directory)))))
     (setq pyvenv-old-exec-path exec-path
+          pyvenv-old-eshell-path eshell-path-env
           pyvenv-old-process-environment process-environment
           ;; For some reason, Emacs adds some directories to `exec-path'
           ;; but not to `process-environment'?
           exec-path (append new-directories exec-path)
+          ;; set eshell path to same as exec-path
+          eshell-path-env (mapconcat 'identity exec-path ":")
           process-environment (append
                                (list
                                 (format "VIRTUAL_ENV=%s" directory)
@@ -199,15 +282,20 @@ This is usually the base name of `pyvenv-virtual-env'.")
   (when pyvenv-old-exec-path
     (setq exec-path pyvenv-old-exec-path
           pyvenv-old-exec-path nil))
+  (when pyvenv-old-eshell-path
+    (setq eshell-path-env pyvenv-old-eshell-path
+          pyvenv-old-eshell-path nil))
   (when pyvenv-virtual-env
     ;; Make sure this does not change `exec-path', as $PATH is
     ;; different
     (let ((old-exec-path exec-path)
+          (old-eshell-path eshell-path-env)
           (old-process-environment process-environment))
       (unwind-protect
           (pyvenv-run-virtualenvwrapper-hook "post_deactivate"
                                              pyvenv-virtual-env)
         (setq exec-path old-exec-path
+              eshell-path-env old-eshell-path
               process-environment old-process-environment)))
     (run-hooks 'pyvenv-post-deactivate-hooks))
   (setq pyvenv-virtual-env nil
@@ -220,16 +308,15 @@ This is usually the base name of `pyvenv-virtual-env'.")
 
 ;;;###autoload
 (defun pyvenv-workon (name)
-  "Activate a virtual environment from $WORKON_HOME."
+  "Activate a virtual environment from $WORKON_HOME.
+
+If the virtual environment NAME is already active, this function
+does not try to reactivate the environment."
   (interactive
    (list
     (completing-read "Work on: " (pyvenv-virtualenv-list)
                      nil t nil 'pyvenv-workon-history nil nil)))
-  (when (not (or (equal name "")
-                 ;; Some completion frameworks can return nil for the
-                 ;; default, see
-                 ;; https://github.com/jorgenschaefer/elpy/issues/144
-                 (equal name nil)))
+  (unless (member name (list "" nil pyvenv-virtual-env-name))
     (pyvenv-activate (format "%s/%s"
                              (pyvenv-workon-home)
                              name))))
@@ -247,7 +334,11 @@ configured."
       (dolist (name (directory-files workon-home))
         (when (or (file-exists-p (format "%s/%s/bin/activate"
                                          workon-home name))
+                  (file-exists-p (format "%s/%s/bin/python"
+                                         workon-home name))
                   (file-exists-p (format "%s/%s/Scripts/activate.bat"
+                                         workon-home name))
+                  (file-exists-p (format "%s/%s/python.exe"
                                          workon-home name)))
           (setq result (cons name result))))
       (sort result (lambda (a b)
@@ -266,7 +357,7 @@ configured."
                                     (pyvenv-virtualenv-list t))))
     (widget-types-convert-widget widget))
 
-  :prompt-value (lambda (widget prompt value unbound)
+  :prompt-value (lambda (_widget prompt _value _unbound)
                   (let ((name (completing-read
                                prompt
                                (cons "None"
@@ -360,14 +451,14 @@ CAREFUL! This will modify your `process-environment' and
 `exec-path'."
   (when (pyvenv-virtualenvwrapper-supported)
     (with-temp-buffer
-      (let ((tmpfile (make-temp-file "pyvenv-virtualenvwrapper-")))
+      (let ((tmpfile (make-temp-file "pyvenv-virtualenvwrapper-"))
+            (shell-file-name pyvenv-exec-shell))
         (unwind-protect
-            (progn
+            (let ((default-directory (pyvenv-workon-home)))
               (apply #'call-process
                      pyvenv-virtualenvwrapper-python
                      nil t nil
-                     "-c"
-                     "from virtualenvwrapper.hook_loader import main; main()"
+                     "-m" "virtualenvwrapper.hook_loader"
                      "--script" tmpfile
                      (if (getenv "HOOK_VERBOSE_OPTION")
                          (cons (getenv "HOOK_VERBOSE_OPTION")
@@ -379,7 +470,7 @@ CAREFUL! This will modify your `process-environment' and
                nil t nil))
           (delete-file tmpfile)))
       (goto-char (point-min))
-      (when (and (not (re-search-forward "\\(ImportError\\|ModuleNotFoundError\\): No module named '?virtualenvwrapper'?" nil t))
+      (when (and (not (re-search-forward "No module named '?virtualenvwrapper'?" nil t))
                  (re-search-forward "\n=-=-=\n" nil t))
         (let ((output (buffer-substring (point-min)
                                         (match-beginning 0))))

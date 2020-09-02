@@ -1,6 +1,4 @@
 ;;; xml-parse --- code to efficiently read/write XML data with Elisp
-;;;
-;;; $Id: xml-parse.el,v 1.4 2001/05/12 22:36:13 ryants Exp $
 
 ;; Copyright (C) 2001 John Wiegley.
 
@@ -122,11 +120,11 @@
 ;; `assoc', since they roughly have the same format as an alist.
 
 ;;;###autoload
-(defun read-xml (&optional progress-callback)
+(defun read-xml ()
   "Parse XML data at point into a Lisp structure.
 See `insert-xml' for a description of the format of this structure.
 Point is left at the end of the XML structure read."
-  (cdr (xml-parse-read progress-callback)))
+  (cdr (xml-parse-read)))
 
 (defsubst xml-tag-with-attributes-p (tag)
   "Does the TAG have attributes or not?"
@@ -240,12 +238,6 @@ Note that this only works if the opening tag starts at column 0."
 
 ;;; Internal Functions
 
-
-;;; RTS did this 30/04/2001
-(if (featurep 'xemacs)
-    (defalias 'match-string-no-properties 'match-string))
-
-
 (defun xml-parse-profile ()
   (interactive)
   (let ((elp-function-list
@@ -279,9 +271,9 @@ Note that this only works if the opening tag starts at column 0."
     (if (eq (char-before) ?\[)
 	(let ((depth 1))
 	  (while (and (> depth 0)
-		      (if (re-search-forward "[][]")
+		      (if (re-search-forward "[][]" nil t)
 			  t
-			(error "Pos %d: Unclosed open bracket in <! tag")))
+			(error "Pos %d: Unclosed open bracket in <! tag" (point))))
 	    (if (eq (char-before) ?\[)
 		(setq depth (1+ depth))
 	      (setq depth (1- depth))))
@@ -315,11 +307,8 @@ Note that this only works if the opening tag starts at column 0."
 		   (buffer-substring-no-properties beg end) lst)))
     lst))
 
-(defun xml-parse-read (&optional progress-callback)
+(defun xml-parse-read (&optional inner-p)
   (let ((beg (search-forward "<" nil t)) after)
-    (if progress-callback
-	(funcall progress-callback 
-		 (* (/ (float (point)) (float (point-max))) 100)))
     (while (and beg (memq (setq after (char-after)) '(?! ??)))
       (xml-parse-skip-tag)
       (setq beg (search-forward "<" nil t)))
@@ -363,7 +352,7 @@ Note that this only works if the opening tag starts at column 0."
 		 (list tag)
 	       (setq tag (list tag))
 	       (let ((data-beg (point)) (tag-end (last tag)))
-		 (while (and (setq data (xml-parse-read progress-callback))
+		 (while (and (setq data (xml-parse-read t))
 			     (not (stringp (cdr data))))
 		   (setq tag-end (xml-parse-concat data-beg (car data)
 						   tag-end)
