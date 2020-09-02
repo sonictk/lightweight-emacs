@@ -1271,7 +1271,7 @@ current buffer's, reload dir-locals."
     'company-backends '(company-irony-c-headers company-irony)))
 
 ; Live syntax checking
-(require 'seq)
+;(require 'seq)
 (require 'let-alist)
 (require 'pkg-info)
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/flycheck")
