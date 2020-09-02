@@ -143,7 +143,7 @@ Filters on the appropriate regex for the current major mode."
                     (setq next nil)
                     tmp)))
       )
-    candidates
+    (cl-remove-duplicates candidates :test 'equal)
     ))
 
 (defun company-c-headers--meta (candidate)

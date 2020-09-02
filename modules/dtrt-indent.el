@@ -1,10 +1,11 @@
 ;;; dtrt-indent.el --- Adapt to foreign indentation offsets
 
 ;; Copyright (C) 2003, 2007, 2008 Julian Scheid
-;; Copyright (C) 2014 Reuben Thomas
+;; Copyright (C) 2014-2020 Reuben Thomas
 
 ;; Author: Julian Scheid <julians37@googlemail.com>
-;; Version: 0.2.1
+;; Maintainer: Reuben Thomas <rrt@sc3d.org>
+;; Version: 1.2
 ;; Keywords: convenience files languages c
 
 ;; This file is free software; you can redistribute it and/or modify
@@ -27,13 +28,13 @@
 ;; A minor mode that guesses the indentation offset and
 ;; `indent-tabs-mode' originally used for creating source code files and
 ;; transparently adjusts the corresponding settings in Emacs, making it
-;; more convenient to edit foreign files.
+;; more convenient to edit others' files.
 ;;
-;; This hooks into many major modes - c-mode, java-mode, shell-mode
-;; and ruby-mode, to name but a few - and makes an educated guess on
-;; which offset is appropriate by analyzing indentation levels in the
-;; file.  (Notably, it does not touch python-mode, which includes its own
-;; offset guessing.)
+;; This hooks into many major modes - c-mode, java-mode and ruby-mode, to
+;; name but a few - and makes an educated guess on which offset is
+;; appropriate by analyzing indentation levels in the file.  Modes that have
+;; their own indentation offset guessing, such as python-mode, are not dealt
+;; with.  In modes based on SMIE, dtrt-indent delegates to smie-config-guess.
 ;;
 ;; Heuristics are used to estimate the proper indentation offset and
 ;; therefore this system is not infallible, however adjustments will
@@ -43,7 +44,7 @@
 ;; To install, M-x customize-variable dtrt-indent-mode, and turn it on.
 ;;
 ;; The default settings have been carefully chosen and tested to work
-;; reliably on a wide range of source files. However, if it doesn't work
+;; reliably on a wide range of source files.  However, if it doesn't work
 ;; for you they can be fine tuned using M-x customize-group dtrt-indent.
 ;; You can use `dtrt-indent-diagnosis' to see dtrt-indent's
 ;; measurements, `dtrt-indent-highlight' to show indentation that was
@@ -84,7 +85,7 @@
 ;; Histogram Generation
 ;;
 ;; For the remaining lines - those eligible within the fixed range - a
-;; histogram is generated. The histogram informs dtrt-indent about how
+;; histogram is generated.  The histogram informs dtrt-indent about how
 ;; many lines are indented with one space, how many with two spaces, how
 ;; many with three spaces, etc.
 ;;
@@ -131,7 +132,7 @@
 ;; For determining hard vs. soft tabs, dtrt-indent counts the number of
 ;; lines out of the eligible lines in the fixed segment that are
 ;; indented using hard tabs, and the number of lines indented using
-;; spaces. If either count is significantly higher than the other count,
+;; spaces.  If either count is significantly higher than the other count,
 ;; `indent-tabs-mode' will be modified.
 ;;
 ;; Configuration settings used at this stage:
@@ -190,11 +191,26 @@ mode.
 When dtrt-indent mode is enabled, the proper indentation offset
 and `indent-tabs-mode' will be guessed for newly opened files and
 adjusted transparently."
-  :global t :group 'dtrt-indent)
+  :lighter " dtrt-indent"
+  :group 'dtrt-indent
+  (if dtrt-indent-mode
+      (if (and (featurep 'smie) (not (eq smie-grammar 'unset)))
+          (progn
+            (when (null smie-config--buffer-local) (smie-config-guess))
+            (when dtrt-indent-run-after-smie
+              (dtrt-indent-try-set-offset)))
+        (dtrt-indent-try-set-offset))
+    (dtrt-indent-undo)))
+
+;;;###autoload
+(define-globalized-minor-mode dtrt-indent-global-mode dtrt-indent-mode
+  (lambda ()
+    (when (derived-mode-p 'prog-mode 'text-mode)
+      (dtrt-indent-mode))))
 
 (defvar dtrt-indent-language-syntax-table
-  '((c/c++/java ("\""                    0   "\""       nil "\\.")
-                ("'"                     0   "'"        nil "\\.")
+  '((c/c++/java ("\""                    0   "\""       nil "\\\\.")
+                ("'"                     0   "'"        nil "\\\\.")
                 ("/\\*"                  0   "\\*/"     nil)
                 ("//"                    0   "$"        nil)
                 ("("                     0   ")"        t)
@@ -202,36 +218,36 @@ adjusted transparently."
 
     ;; Same as c/c++/java but ignore function call arguments, to cope with
     ;; modules defined entirely within a function call, e.g. AMD style
-    (javascript ("\""                    0   "\""       nil "\\.")
-                ("'"                     0   "'"        nil "\\.")
+    (javascript ("\""                    0   "\""       nil "\\\\.")
+                ("'"                     0   "'"        nil "\\\\.")
                 ("/\\*"                  0   "\\*/"     nil)
                 ("//"                    0   "$"        nil)
                 ("/\\(.*\\)"             1   "\\1/"     nil)
                 ("\\["                   0   "\\]"      t))
 
-    (perl       ("\""                    0   "\""       nil "\\.")
-                ("'"                     0   "'"        nil "\\.")
-                ("/"                     0   "/"        nil "\\.")
+    (perl       ("\""                    0   "\""       nil "\\\\.")
+                ("'"                     0   "'"        nil "\\\\.")
+                ("/"                     0   "/"        nil "\\\\.")
                 ("#"                     0   "$"        nil)
                 ("("                     0   ")"        t)
                 ("\\["                   0   "\\]"      t))
 
-    (lua        ("\""                    0   "\""       nil "\\.")
-                ("'"                     0   "'"        nil "\\.")
+    (lua        ("\""                    0   "\""       nil "\\\\.")
+                ("'"                     0   "'"        nil "\\\\.")
                 ("--"                    0   "$"        nil)
                 ("("                     0   ")"        t)
                 ("\\[\\(=+\\)\\["        1   "\\]\\1\\]"     nil)
                 ("{"                     0   "}"        t))
 
-    (ruby       ("\""                    0   "\""       nil "\\.")
-                ("'"                     0   "'"        nil "\\.")
-                ("/"                     0   "/"        nil "\\.")
+    (ruby       ("\""                    0   "\""       nil "\\\\.")
+                ("'"                     0   "'"        nil "\\\\.")
+                ("/"                     0   "/"        nil "\\\\.")
                 ("#"                     0   "$"        nil)
                 ("("                     0   ")"        t)
                 ("\\["                   0   "\\]"      t)
                 ("{"                     0   "}"        t))
 
-    (ada        ("\""                    0   "\""       nil "\\.")
+    (ada        ("\""                    0   "\""       nil "\\\\.")
                 ("--"                    0   "$"        nil)
                 ("("                     0   ")"        t)
                 ("\\["                   0   "\\]"      t)
@@ -249,30 +265,25 @@ adjusted transparently."
     ;;
     ;; Thus it is best to ignore the code inside these block
     ;; constructs when determining the indent offset.
-    (erlang     ("\""                    0   "\""       nil "\\.")
+    (erlang     ("\""                    0   "\""       nil "\\\\.")
                 ;; next pattern avoids error on git merge conflict lines
                 ("[<][<][<]"             0   "$"        nil)
                 ("[<][<]"                0   "[>][>]"   nil)
                 ("%"                     0   "$"        nil)
+                ("^-"                    0   "\\."      nil)
                 ("{"                     0   "}"        t)
                 ("\\["                   0   "\\]"      t)
                 ("("                     0   ")"        t)
-                ("\\b\\(begin\\|case\\|fun\\|if\\|receive\\|try\\)\\b"
-                                         0   "\\bend\\b" t))
+                ("\\_<\\(?:begin\\|case\\|fun\\|if\\|receive\\|try\\)\\_>"
+                                         0   "\\_<end\\_>" t))
 
-    (css        ("\""                    0   "\""       nil "\\.")
-                ("'"                     0   "'"        nil "\\.")
+    (css        ("\""                    0   "\""       nil "\\\\.")
+                ("'"                     0   "'"        nil "\\\\.")
                 ("/\\*"                  0   "\\*/"   nil))
 
     (sgml       ("[<]!\\[(CDATA|IGNORE|RCDATA)\\["
                                          0   "\\]\\][>]"     nil)
                 ("[<]!--"                0   "[^-]--[>]"  nil))
-
-    (shell      ("\""                    0   "\""       nil "\\.")
-                ("'"                     0   "'"        nil "\\.")
-                ("[<][<]\\\\?\\([^ \t]+\\)"   1   "^\\1"     nil)
-                ("("                     0   ")"        t)
-                ("\\["                   0   "\\]"      t))
 
     (default    ("\""                    0   "\""       nil "\\\\.")))
 
@@ -310,6 +321,7 @@ quote, for example.")
 ;;   Mode            Syntax        Variable
   '((c-mode          c/c++/java    c-basic-offset)       ; C
     (c++-mode        c/c++/java    c-basic-offset)       ; C++
+    (d-mode          c/c++/java    c-basic-offset)       ; D
     (java-mode       c/c++/java    c-basic-offset)       ; Java
     (jde-mode        c/c++/java    c-basic-offset)       ; Java (JDE)
     (js-mode         javascript    js-indent-level)      ; JavaScript
@@ -321,14 +333,24 @@ quote, for example.")
     (php-mode        c/c++/java    c-basic-offset)       ; PHP
     (perl-mode       perl          perl-indent-level)    ; Perl
     (cperl-mode      perl          cperl-indent-level)   ; Perl
+    (raku-mode       perl          raku-indent-offset)   ; Perl6/Raku
     (erlang-mode     erlang        erlang-indent-level)  ; Erlang
-    (ruby-mode       ruby          ruby-indent-level)    ; Ruby
     (ada-mode        ada           ada-indent)           ; Ada
-    (sh-mode         shell         sh-indentation)       ; Shell Script
-    (css-mode        css           css-indent-offset)    ; CSS
     (sgml-mode       sgml          sgml-basic-offset)    ; SGML
     (nxml-mode       sgml          nxml-child-indent)    ; XML
     (pascal-mode     pascal        pascal-indent-level)  ; Pascal
+    (typescript-mode javascript    typescript-indent-level) ; Typescript
+
+    ;; Modes that use SMIE if available
+    (sh-mode         default       sh-basic-offset)      ; Shell Script
+    (ruby-mode       ruby          ruby-indent-level)    ; Ruby
+    (enh-ruby-mode   ruby          enh-ruby-indent-level); Ruby
+    (crystal-mode    ruby          crystal-indent-level) ; Crystal (Ruby)
+    (css-mode        css           css-indent-offset)    ; CSS
+    (rust-mode       c/c++/java    rust-indent-offset)   ; Rust
+    (rustic-mode     c/c++/java    rustic-indent-offset) ; Rust
+    (scala-mode      c/c++/java    scala-indent:step)    ; Scala
+
     (default         default       standard-indent))     ; default fallback
    "A mapping from hook variables to language types.")
 
@@ -402,6 +424,19 @@ value variable must updated in addition to the syntax indentation
 variable."
   :type '(alist :key-type variable
                 :value-type (group variable))
+  :group 'dtrt-indent)
+
+(defcustom dtrt-indent-run-after-smie nil
+  "*Non-nil means to run dtrt-indent even in modes using SMIE.
+
+Normally, dtrt-indent will detect SMIE-based modes and delegate
+to `smie-config-guess'.  However, dtrt-indent configures some
+variables that SMIE does not (e.g. the contents of
+`dtrt-indent-hook-generic-mapping-list'), so you may want to run
+dtrt-indent even in SMIE-based modes.  You can do so by enabling
+this setting."
+  :type 'boolean
+  :tag "Run dtrt-indent After SMIE"
   :group 'dtrt-indent)
 
 (defcustom dtrt-indent-min-relevant-lines 2
@@ -546,19 +581,9 @@ using more than 8 spaces per indentation level are very rare."
   :tag "Maximum Guessed Indentation Offset"
   :group 'dtrt-indent)
 
-(defcustom dtrt-indent-active-mode-line-info "[dtrt-indent] "
-  "*String to display in the modeline when dtrt-indent is active."
-  :type 'string
-  :tag "Modeline String Active Info"
-  :group 'dtrt-indent)
-
 (defvar dtrt-indent-original-indent)
 (make-variable-buffer-local
  'dtrt-indent-original-indent)
-
-(defvar dtrt-indent-mode-line-info)
-(make-variable-buffer-local
- 'dtrt-indent-mode-line-info)
 
 (defvar dtrt-indent-explicit-offset)
 (make-variable-buffer-local
@@ -653,21 +678,22 @@ from the process.  For each line not excluded, FUNC is called
 with USER-DATA as its argument and with point on the first
 non-whitespace character of the line."
   (save-excursion
-    (goto-char (point-min))
-    (while (and (re-search-forward "^[ \t]*" nil t)
-                (funcall func user-data)
-                (progn
-                  (dtrt-indent--skip-to-end-of-match
-                   nil
-                   nil
-                   (cdr
-                    (assoc language
-                           dtrt-indent-language-syntax-table))
-                   nil)
-                  (beginning-of-line)
-                  (let ((here (point)))
-                    (forward-line)
-                    (not (eq here (point)))))))))
+    (let ((case-fold-search nil))
+      (goto-char (point-min))
+      (while (and (re-search-forward "^[ \t]*" nil t)
+                  (funcall func user-data)
+                  (progn
+                    (dtrt-indent--skip-to-end-of-match
+                     nil
+                     nil
+                     (cdr
+                      (assoc language
+                             dtrt-indent-language-syntax-table))
+                     nil)
+                    (beginning-of-line)
+                    (let ((here (point)))
+                      (forward-line)
+                      (not (eq here (point))))))))))
 
 (defun dtrt-indent--calc-histogram (language)
   "Calculate an indendation histogram.
@@ -746,7 +772,7 @@ rejected: too few distinct matching offsets (%d required)"
            (t
             nil)))))
 
-(defun dtrt-indent--search-hook-mapping(mode)
+(defun dtrt-indent--search-hook-mapping (mode)
   "Search hook-mapping for MODE or its derived-mode-parent."
   (if mode
       (or (assoc mode dtrt-indent-hook-mapping-list)
@@ -902,9 +928,7 @@ merged with offset %s (%.2f%% deviation, limit %.2f%%)"
         ; update indent-offset-variable?
         (cond
          ((and best-guess
-               (not rejected)
-               (not (eq (symbol-value indent-offset-variable)
-                         best-indent-offset)))
+               (not rejected))
 
           (if dtrt-indent-explicit-offset
               (message "\
@@ -933,7 +957,6 @@ Indentation offset set with file variable; not adjusted")
               (dolist (x indent-offset-variables)
                 (set (make-local-variable x)
                      best-indent-offset))
-              (setq dtrt-indent-mode-line-info dtrt-indent-active-mode-line-info)
               best-indent-offset)))
          (t
           (when (>= dtrt-indent-verbosity 2)
@@ -968,11 +991,6 @@ Indentation offset set with file variable; not adjusted")
             (message "Note: indent-tabs-mode not adjusted"))
           nil))
         ))))
-
-(defun dtrt-indent-find-file-hook ()
-  "Try adjusting indentation offset when a file is loaded."
-  (when dtrt-indent-mode
-    (dtrt-indent-try-set-offset)))
 
 (defun dtrt-indent-adapt ()
   "Try adjusting indentation settings for the current buffer."
@@ -1022,18 +1040,9 @@ Disable dtrt-indent if offset explicitly set."
    ((eql (nth 2 (dtrt-indent--search-hook-mapping major-mode))
          (ad-get-arg 0))
     (setq dtrt-indent-explicit-offset t))
-   ((eql 'indent-tab-mode
+   ((eql 'indent-tabs-mode
          (ad-get-arg 0))
     (setq dtrt-indent-explicit-tab-mode t))))
-
-; Install global find-file-hook
-(add-hook 'find-file-hook 'dtrt-indent-find-file-hook)
-
-; Customize mode line
-(or global-mode-string (setq global-mode-string '("")))
-(or (memq 'dtrt-indent-mode-line-info global-mode-string)
-    (setq global-mode-string
-          (append global-mode-string '(dtrt-indent-mode-line-info))))
 
 (autoload 'dtrt-indent-diagnosis "dtrt-indent-diag"
   "Guess indentation for the current buffer and output diagnostics."

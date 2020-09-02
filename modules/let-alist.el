@@ -1,10 +1,10 @@
 ;;; let-alist.el --- Easily let-bind values of an assoc-list by their names -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2014-2017 Free Software Foundation, Inc.
+;; Copyright (C) 2014-2020 Free Software Foundation, Inc.
 
 ;; Author: Artur Malabarba <emacs@endlessparentheses.com>
 ;; Package-Requires: ((emacs "24.1"))
-;; Version: 1.0.5
+;; Version: 1.0.6
 ;; Keywords: extensions lisp
 ;; Prefix: let-alist
 ;; Separator: -
@@ -25,7 +25,7 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with GNU Emacs.  If not, see <http://www.gnu.org/licenses/>.
+;; along with GNU Emacs.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
 
@@ -75,6 +75,8 @@ symbol, and each cdr is the same symbol without the `.'."
         ;; Return the cons cell inside a list, so it can be appended
         ;; with other results in the clause below.
         (list (cons data (intern (replace-match "" nil nil name)))))))
+   ((vectorp data)
+    (apply #'nconc (mapcar #'let-alist--deep-dot-search data)))
    ((not (consp data)) nil)
    ((eq (car data) 'let-alist)
     ;; For nested ‘let-alist’ forms, ignore symbols appearing in the
@@ -144,38 +146,6 @@ displayed in the example above."
        (let ,(mapcar (lambda (x) `(,(car x) ,(let-alist--access-sexp (car x) var)))
                      (delete-dups (let-alist--deep-dot-search body)))
          ,@body))))
-
-;;;; ChangeLog:
-
-;; 2015-12-01  Artur Malabarba  <bruce.connor.am@gmail.com>
-;; 
-;; 	packages/let-alist: Define it as a :core package
-;; 
-;; 2015-06-11  Artur Malabarba  <bruce.connor.am@gmail.com>
-;; 
-;; 	* let-alist (let-alist--deep-dot-search): Fix cons
-;; 
-;; 2015-03-07  Artur Malabarba  <bruce.connor.am@gmail.com>
-;; 
-;; 	let-alist: Update copyright
-;; 
-;; 2014-12-22  Artur Malabarba  <bruce.connor.am@gmail.com>
-;; 
-;; 	packages/let-alist: Use `make-symbol' instead of `gensym'.
-;; 
-;; 2014-12-20  Artur Malabarba  <bruce.connor.am@gmail.com>
-;; 
-;; 	packages/let-alist: Enable access to deeper alists
-;; 
-;; 2014-12-14  Artur Malabarba  <bruce.connor.am@gmail.com>
-;; 
-;; 	let-alist.el: Add lexical binding. Version bump.
-;; 
-;; 2014-12-11  Artur Malabarba  <bruce.connor.am@gmail.com>
-;; 
-;; 	let-alist: New package
-;; 
-
 
 (provide 'let-alist)
 

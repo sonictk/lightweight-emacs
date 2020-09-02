@@ -71,10 +71,8 @@
 
 (defcustom anaconda-mode-tunnel-setup-sleep 2
   "Time in seconds `anaconda-mode' waits after tunnel creation before first RPC call."
-  :group 'anaconda-mode
   :type 'integer)
 
-
 ;;; Compatibility
 
 ;; Functions from posframe which is an optional dependency
@@ -82,9 +80,7 @@
 (declare-function posframe-hide "posframe")
 (declare-function posframe-show "posframe")
 
-
 ;;; Server.
-
 (defvar anaconda-mode-server-version "0.1.13"
   "Server version needed to run `anaconda-mode'.")
 
@@ -380,12 +376,27 @@ be bound."
                 (equal (process-get anaconda-mode-process 'remote-port)
                        (pythonic-remote-port)))))))
 
+(defun anaconda-mode-get-server-process-cwd ()
+  "Get the working directory for starting the anaconda server process.
+
+The current working directory ends up being on sys.path, which may
+result in conflicts with stdlib modules.
+
+When running python from the local machine, we start the server
+process from `anaconda-mode-installation-directory'.
+This function creates that directory if it doesn't exist yet."
+  (when (pythonic-local-p)
+    (unless (file-directory-p anaconda-mode-installation-directory)
+      (make-directory anaconda-mode-installation-directory t))
+    anaconda-mode-installation-directory))
+
 (defun anaconda-mode-bootstrap (&optional callback)
   "Run `anaconda-mode' server.
 CALLBACK function will be called when `anaconda-mode-port' will
 be bound."
   (setq anaconda-mode-process
         (pythonic-start-process :process anaconda-mode-process-name
+                                :cwd (anaconda-mode-get-server-process-cwd)
                                 :buffer (get-buffer-create anaconda-mode-process-buffer)
                                 :query-on-exit nil
                                 :filter (lambda (process output)
@@ -474,7 +485,10 @@ called when `anaconda-mode-port' will be bound."
                                       anaconda-mode-ssh-process-buffer
                                       "ssh" "-nNT"
                                       "-L" (format "%s:localhost:%s" (anaconda-mode-port) (anaconda-mode-port))
-                                      (format "%s@%s" (pythonic-remote-user) (pythonic-remote-host))
+                                      (if (pythonic-remote-user)
+                                          (format "%s@%s" (pythonic-remote-user) (pythonic-remote-host))
+                                        ;; Asssume remote host is an ssh alias
+                                        (pythonic-remote-host))
                                       "-p" (number-to-string (or (pythonic-remote-port) 22)))))
                ;; prevent race condition between tunnel setup and first use
                (sleep-for anaconda-mode-tunnel-setup-sleep)
@@ -499,7 +513,7 @@ number position, column number position and file path."
   (let ((url-request-method "POST")
         (url-request-data (anaconda-mode-jsonrpc-request command)))
     (url-retrieve
-     (format "http://localhost:%s" (anaconda-mode-port))
+     (format "http://%s:%s" anaconda-mode-localhost-address (anaconda-mode-port))
      (anaconda-mode-create-response-handler callback)
      nil
      t)))
@@ -551,7 +565,9 @@ number position, column number position and file path."
                       (let* ((error-structure (cdr (assoc 'error response)))
                              (error-message (cdr (assoc 'message error-structure)))
                              (error-data (cdr (assoc 'data error-structure)))
-                             (error-template (if error-data "%s: %s" "%s")))
+                             (error-template (concat (if error-data "%s: %s" "%s")
+                                                     " - see " anaconda-mode-process-buffer
+                                                     " for more information.")))
                         (apply 'message error-template (delq nil (list error-message error-data))))
                     (with-current-buffer anaconda-mode-request-buffer
                       (let ((result (cdr (assoc 'result response))))

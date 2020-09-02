@@ -37,12 +37,12 @@
 ;; load-path and the following into your ~/.emacs:
 ;;   (autoload 'hlsl-mode "hlsl-mode" nil t)
 ;;   (add-to-list 'auto-mode-alist '("\\.fx\\'" . hlsl-mode))
-;;   (add-to-list 'auto-mode-alist '("\\.hlsl\\'" . hlsl-mode))
+''   (add-to-list 'auto-mode-alist '("\\.hlsl\\'" . hlsl-mode))
 ;;; Code:
 
 (provide 'hlsl-mode)
 
-(eval-when-compile                        ; required and optional libraries
+(eval-when-compile			; required and optional libraries
   (require 'cc-mode)
   (require 'find-file))
 

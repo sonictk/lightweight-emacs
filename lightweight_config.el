@@ -1686,10 +1686,6 @@ PWD is not in a git repo (or the git command is not found)."
 ; Make GC not happen too much for unicode buffers 
 (setq inhibit-compacting-font-caches t)
 
-; Enable Googling text
-(require 'google-this)
-(google-this-mode 1)
-
 ; Use speedbar in same frame
 (require 'sr-speedbar)
 (setq speedbar-use-images nil)

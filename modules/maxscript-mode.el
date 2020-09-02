@@ -2,9 +2,11 @@
 ;; -*- Mode:Emacs-Lisp -*-
 
 ;; Copyright (C) 2010 akm
+;; Copyright (C) 2015 Johannes Becker
 
-;; Author:  akm <akm.gfx@gmail.com>
-;; Version: 0.1
+;; Authors:  akm <akm.gfx@gmail.com>,
+;;           Johannes Becker <alfalfasprossen@gmail.com>
+;; Version: 0.2
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -28,59 +30,53 @@
 
 (require 'regexp-opt)
 
-(defgroup maxscript-mode nil
+(defgroup maxscript nil
   "Major mode for editing Maxscript script files."
-  :group 'programming)
+  :group 'languages)
 
 (defcustom maxscript-mode-hook nil
   "*List of hook functions run by `maxscript-mode' (see `run-hooks')"
   :type 'hook
-  :group 'maxscript-mode)
+  :group 'maxscript)
 
 (defvar maxscript-mode-abbrev-table nil
   "")
 (define-abbrev-table 'maxscript-mode-abbrev-table ())
 
-(defvar maxscript-mode-map nil
+(defvar maxscript-mode-map
+  (let ((maxscript-mode-map (make-sparse-keymap)))
+    ;(define-key maxscript-mode-map ")" 'maxscript-mode-electric-insert-close-brace)
+    (define-key maxscript-mode-map (kbd "C-m") 'newline-and-indent)
+    maxscript-mode-map)
   "Keymap used in Maxscript mode buffers.")
-
-(if maxscript-mode-map
-    ()
-  (setq maxscript-mode-map (make-sparse-keymap))
-  (define-key maxscript-mode-map ")" 'maxscript-mode-electric-insert-close-brace)
-  ;;  (define-key maxscript-mode-map "\C-c\C-d" 'maxscript-run-script)
-  )
 
 (defvar maxscript-indent-level 4 "The indentation level for Maxscript scripts.")
 
-(defconst maxscript-keywords
-  (eval-when-compile
-    (regexp-opt
-     '(
+(eval-and-compile
+  (defvar maxscript-keywords
+    '(
        "about" "and" "animate" "as" "at"
        "by"
        "case" "catch" "collect" "continue" "coordsys"
        "do"
        "else" "exit"
-       "fn" "for" "from" "function"
+       "fn" "for" "from" "function" "format"
        "global"
        "if" "in"
        "local"
        "macroscript" "mapped" "max"
        "not"
        "of" "off" "on" "or"
-       "parameters" "persistent" "plugin"
+       "parameters" "persistent" "plugin" "print"
        "rcmenu" "return" "rollout" "set" "struct"
        "then" "throw" "to" "tool" "try"
        "undo" "utility"
        "when" "where" "while" "with"
-       )))
-  "MAXScript keywords.")
+       )
+    "MAXScript keywords.")
 
-(defconst maxscript-constants
-  (eval-when-compile
-    (regexp-opt
-     '(
+  (defvar maxscript-constants
+    '(
        "true" "false"
        "on" "off"
        "pi" "e"
@@ -90,13 +86,11 @@
        "undefined"
        "unsupplied"
        "dontcollect"
-       )))
-  "MAXScript constants.")
+       )
+    "MAXScript constants.")
 
-(defconst maxscript-global-variables
-  (eval-when-compile
-    (regexp-opt
-     '(
+  (defvar maxscript-global-variables
+    '(
        "activeGrid" "ambientColor" "ambientColorController" "animationRange" "animButtonEnabled" "animButtonState" "autoBackup.enabled" "autoBackup.time"
        "backgroundColor" "backgroundColorController" "backgroundImageFileName"
        "cui.commandPanelOpen" "currentMaterialLibrary"
@@ -125,22 +119,95 @@
        "selectionSets" ;SelectionSetArray
        "currentMaterialLibrary" "sceneMaterials" "meditMaterials" ;MaterialLibrary
 
-       )))
-  "MAXScript global variables.")
+       )
+    "MAXScript global variables.")
+  ) ; eval-and-compile
 
+(eval-when-compile
+  (defun mxs-ppre (re)
+    (format "\\<\\(%s\\)\\>" (regexp-opt re))))
+
+(require 'compile)
+(defconst maxscript/error-pattern
+  "^--.*?: \\(.*\\); .*?: \\([0-9]+\\); .*?: \\([0-9]+\\)$"
+  "Regexp that matches maxscript error reports.
+This is defined here because for simplicity sake I will do the highlighting of errors 
+in the regular font-lock way here in the mode-definition. I don't know how to handle
+overwriting highlighted text from compilation-minor-mode, probably would have to 
+un-highlight the specific parts first.")
+
+(defface maxscript-error-face '((t :inherit font-lock-comment-face :underline t))
+  "Face to highlight the filenames of compilation errors.")
 
 (defconst maxscript-font-lock-keywords
   (list
    '("\\(--.*$\\)"
-     1 'font-lock-comment-face)
+     0 'font-lock-comment-face)
+   '("^--.*?: \\(.*\\); .*?: \\([0-9]+\\); .*?: \\([0-9]+\\)$"
+   ;;(maxscript/error-pattern
+     1 'maxscript-error-face t) ;OVERRIDE
    '("\\(\"[^\"]*\"\\)"
-     1 'font-lock-string-face)
-   `(eval .
-          (cons (concat "\\<\\(" ,maxscript-keywords "\\)\\>") 'font-lock-keyword-face))
-   `(eval .
-          (cons (concat "\\<\\(" ,maxscript-constants "\\)\\>") 'font-lock-constant-face))
-   `(eval .
-          (cons (concat "\\<\\(" ,maxscript-global-variables "\\)\\>") 'font-lock-variable-name-face))
+     0 'font-lock-string-face)
+   ;; raw strings starting with @, highlight the @
+   '("\\(@\\)\""
+     1 'font-lock-emphasized-face)
+   ;;'("\\(\\/\\*[a-z0-9 	\n]+?\\*\\/\\)"
+   ;;  1 'font-lock-comment-face)
+   '("\\(\\(\\/\\*\\*\\*\\(?:.\\|\n\\)+?\\*\\/\\)?\\)"
+     0 'font-lock-doc-string-face t) ;OVERRIDE
+   ;; names starting with #
+   '("\\(\\#\\sw+\\)"
+     1 'font-lock-preprocessor-face)
+   ;; objects starting with $
+   '("\\(\\$\\sw+\\)"
+     1 'font-lock-preprocessor-face)
+   ;; anything within a function definition OR functioncall (too hard to detect
+   ;; with regexps) and seperated by a : is a kwarg:value pair
+   '("\\(\\sw+\\)[ 	]*:"
+     1 'font-lock-variable-name-face)
+   ;;("\\sw+"
+   ;; nil nil (0 'font-lock-emphasized-face)))
+   ;; ;; anything prepended by a : is the default value of a kwarg
+   ;;'(":[ 	]*\\(\\sw+\\)"
+   ;;   1 'font-lock-emphasized-face)
+   ;; (this would also colorize function calls which looks strange
+   ;;  I mainly do the coloring of the values in the function definition
+   ;;  to prevent the last word to be variable colored because of the = symbol)
+   ;; anything starting with fn is a function definition
+   '("\\(fn[ 	]+\\)\\(\\sw+\\)"
+     ;(1 'font-lock-keyword-face)
+     (2 'font-lock-function-name-face)
+     ;; ;; anything after an fn def with a : at the end is a kwarg
+     ;; ("[ 	]*\\(\\sw+\\)[ 	]:";"\\([ 	]*\\sw+[^:][ 	]*[^:=]\\)?"
+     ;;  nil nil (0 'font-lock-variable-name-face))
+     ;;  ;(2 'font-lock-emphasized-face))
+     ;; anything prepended by a : is the default value of a kwarg
+     (":[ 	]*\\(\\sw+\\)"
+      nil nil (1 'font-lock-emphasized-face))
+     ;;  ;((search-backward-regexp "'\\sw")) nil (1 'font-lock-emphasized-face))
+     ;; anything without : is a positional arg
+     ("\\sw+"
+      nil nil (0 'font-lock-variable-name-face)))
+   ;; any word followed by a word or closed braces is a fuction call
+   ;; TODO: this is not true in all cases and clutters the highlighting
+   ;;  with function name face words (rework regexp)
+   ;'("\\(\\sw+\\)[ 	]*\\(\\sw+\\|(.*)\\)"
+   ;  1 'font-lock-function-name-face)
+
+   ;; anything before an = is a variable unless it was a function definition
+   ;; and unless it is the last arg in a function definition
+   '("\\(\\sw+\\)\\([ 	]*=\\)"
+     1 'font-lock-variable-name-face)
+   
+   (cons (eval-when-compile
+	   (mxs-ppre maxscript-keywords))
+	 font-lock-keyword-face)
+   (cons (eval-when-compile
+	   (mxs-ppre maxscript-constants))
+	 font-lock-constant-face)
+   (cons (eval-when-compile
+	   (mxs-ppre maxscript-global-variables))
+	 font-lock-variable-name-face)
    ))
 
 
@@ -183,39 +250,40 @@
   "Insert a closing brace }."
   (interactive)
   (insert ")")
-  (maxscript-indent-line)
-  )
+  (maxscript-indent-line))
 
 
-(defun maxscript-mode ()
+(define-derived-mode maxscript-mode prog-mode "MXS"
+;;(defun maxscript-mode ()
   "Major mode for editing Maxscript script files."
-  (interactive)
-  (kill-all-local-variables)
+
   (use-local-map maxscript-mode-map)
   (setq local-abbrev-table maxscript-mode-abbrev-table)
 
   (make-local-variable 'indent-line-function)
   (setq indent-line-function 'maxscript-indent-line)
+  (setq indent-tabs-mode t)
+  (setq tab-width 4) ; a tab is 4 spaces wide
+  (setq tab-stop-list '(4 8 12 16 20 24 28 32 36 40 44 48 52 56 60))
 
-  (setq font-lock-defaults
-        '((maxscript-font-lock-keywords)
-          t
-          nil
-          ((?_ . "w") (?~ . "w"))
-          nil
-          ))
-
-  (setq mode-name (concat "MAXScript"))
-  (setq major-mode 'maxscript-mode)
-
+  (setq mxs-font-lock-keywords maxscript-font-lock-keywords)
+  (set (make-local-variable 'font-lock-defaults) '(mxs-font-lock-keywords nil t))
+  (set (make-local-variable 'comment-start) "--")
+  
+  (set-syntax-table (copy-syntax-table))
+  (modify-syntax-entry ?- ". 12")
+  (modify-syntax-entry ?/ ". 14b")
+  (modify-syntax-entry ?* ". 23b")
+  (modify-syntax-entry ?\n "> ")
+  (modify-syntax-entry ?_ "w")
+  (modify-syntax-entry ?: ".")
+  (modify-syntax-entry ?# "w")
+  (modify-syntax-entry ?$ "w")
+  (modify-syntax-entry ?+ ".")
+  
   (run-hooks 'maxscript-mode-hook)
   )
 
-;; (defun maxscript-run-script ()
-;;   (interactive)
-;;   (let ((w32-start-process-show-window t))
-;;     (apply (function start-process)
-;;            "runscript.js" nil "wscript" (list "runscript.js" buffer-file-name)))
-;;   )
-
 (provide 'maxscript-mode)
+
+;;; maxscript-mode.el ends here

@@ -31,6 +31,10 @@
 
 (require 'gud)
 
+;; String handling functions.
+(require 'subr-x)
+;; Breakpoint display/hide functions.
+(require 'gdb-mi)
 
 ;; History of argument lists passed to lldb.
 (defvar gud-lldb-history nil)
@@ -44,17 +48,17 @@
 
 (defun lldb-extract-breakpoint-id (string)
   ;; Search for "Breakpoint created: \\([^:\n]*\\):" pattern.
-  ;(message "gud-marker-acc string is: |%s|" string)
+  ;; (message "gud-marker-acc string is: |%s|" string)
   (if (string-match "Breakpoint created: \\([^:\n]*\\):" string)
       (progn
         (setq gud-breakpoint-id (match-string 1 string))
-        (message "breakpoint id: %s" gud-breakpoint-id)))
-)
+        (message "breakpoint id: %s" gud-breakpoint-id))))
 
 (defun gud-lldb-marker-filter (string)
   (setq gud-marker-acc
-    (if gud-marker-acc (concat gud-marker-acc string) string))
+        (if gud-marker-acc (concat gud-marker-acc string) string))
   (lldb-extract-breakpoint-id gud-marker-acc)
+  (lldb--update-breakpoints-in-source gud-marker-acc)
   (let (start)
     ;; Process all complete markers in this chunk
     (while (or
@@ -66,9 +70,9 @@
                           gud-marker-acc start)
             ;; (lldb) frame select -r 1
             ;; frame #1: 0x0000000100000e09 a.out`main + 25 at main.c:44
-            (string-match "^[ ]*frame.* at \\([^:\n]*\\):\\([0-9]*\\)\n"
-                           gud-marker-acc start))
-      ;(message "gud-marker-acc matches our pattern....")
+            (string-match "^frame.* at \\([^:\n]*\\):\\([0-9]*\\)\n"
+                          gud-marker-acc start))
+      ;; (message "gud-marker-acc matches our pattern....")
       (setq gud-last-frame
             (cons (match-string 1 gud-marker-acc)
                   (string-to-number (match-string 2 gud-marker-acc)))
@@ -86,7 +90,7 @@
 ;; been exec'ed.
 (defvar lldb-oneshot-break-defined nil)
 
-;;;###autoload
+;;; ###autoload
 (defun lldb (command-line)
   "Run lldb on program FILE in buffer *gud-FILE*.
 The directory containing FILE becomes the initial working directory
@@ -106,66 +110,65 @@ and source-file directory for your debugger."
     (sit-for 1))
 
   (gud-def gud-listb  "breakpoint list"
-                      "l"    "List all breakpoints.")
+           "l"    "List all breakpoints.")
   (gud-def gud-bt     "thread backtrace"
-                      "b"    "Show stack for the current thread.")
+           "b"    "Show stack for the current thread.")
   (gud-def gud-bt-all "thread backtrace all"
-                      "B"    "Show stacks for all the threads.")
+           "B"    "Show stacks for all the threads.")
 
   (gud-def gud-break  "breakpoint set -f %f -l %l"
-                      "\C-b" "Set breakpoint at current line.")
+           "\C-b" "Set breakpoint at current line.")
   (gud-def gud-tbreak
-       (progn (gud-call "breakpoint set -f %f -l %l")
+           (progn (gud-call "breakpoint set -f %f -l %l")
                   (sit-for 1)
                   (if (not lldb-oneshot-break-defined)
                       (progn
                         ;; The "\\n"'s are required to escape the newline chars
                         ;; passed to the lldb process.
                         (gud-call (concat "script exec \"def lldb_oneshot_break(frame, bp_loc):\\n"
-                                                        "    target=frame.GetThread().GetProcess().GetTarget()\\n"
-                                                        "    bp=bp_loc.GetBreakpoint()\\n"
-                                                        "    print 'Deleting oneshot breakpoint:', bp\\n"
-                                                        "    target.BreakpointDelete(bp.GetID())\""))
+                                          "    target=frame.GetThread().GetProcess().GetTarget()\\n"
+                                          "    bp=bp_loc.GetBreakpoint()\\n"
+                                          "    print 'Deleting oneshot breakpoint:', bp\\n"
+                                          "    target.BreakpointDelete(bp.GetID())\""))
                         (sit-for 1)
                         ;; Set the flag since Python knows about the function def now.
                         (setq lldb-oneshot-break-defined t)))
                   (gud-call "breakpoint command add -p %b -o 'lldb_oneshot_break(frame, bp_loc)'"))
-                  "\C-t" "Set temporary breakpoint at current line.")
+           "\C-t" "Set temporary breakpoint at current line.")
   (gud-def gud-remove "breakpoint clear -f %f -l %l"
-                      "\C-d" "Remove breakpoint at current line")
+           "\C-d" "Remove breakpoint at current line")
   (gud-def gud-step   "thread step-in"
-                      "\C-s" "Step one source line with display.")
+           "\C-s" "Step one source line with display.")
   (gud-def gud-stepi  "thread step-inst"
-                      "\C-i" "Step one instruction with display.")
+           "\C-i" "Step one instruction with display.")
   (gud-def gud-next   "thread step-over"
-                      "\C-n" "Step one line (skip functions).")
+           "\C-n" "Step one line (skip functions).")
   (gud-def gud-nexti  "thread step-inst-over"
-                      nil    "Step one instruction (skip functions).")
+           nil    "Step one instruction (skip functions).")
   (gud-def gud-cont   "process continue"
-                      "\C-r" "Continue with display.")
+           "\C-r" "Continue with display.")
   (gud-def gud-finish "thread step-out"
-                      "\C-f" "Finish executing current function.")
+           "\C-f" "Finish executing current function.")
   (gud-def gud-up
            (progn (gud-call "frame select -r 1")
                   (sit-for 1))
-                      "<"    "Up 1 stack frame.")
+           "<"    "Up 1 stack frame.")
   (gud-def gud-down
            (progn (gud-call "frame select -r -1")
                   (sit-for 1))
-                      ">"    "Down 1 stack frame.")
+           ">"    "Down 1 stack frame.")
   (gud-def gud-print  "expression -- %e"
-                      "\C-p" "Evaluate C expression at point.")
+           "\C-p" "Evaluate C expression at point.")
   (gud-def gud-pstar  "expression -- *%e"
-                      nil    "Evaluate C dereferenced pointer expression at point.")
+           nil    "Evaluate C dereferenced pointer expression at point.")
   (gud-def gud-run    "run"
-                      "r"    "Run the program.")
+           "r"    "Run the program.")
   (gud-def gud-stop-subjob    "process kill"
-                      "s"    "Stop the program.")
+           "s"    "Stop the program.")
 
   (setq comint-prompt-regexp  "\\(^\\|\n\\)\\*")
   (setq paragraph-start comint-prompt-regexp)
-  (run-hooks 'lldb-mode-hook)
-  )
+  (run-hooks 'lldb-mode-hook))
 
 ;; ;; tooltip
 ;; (defun gud-lldb-tooltip-print-command (expr)
@@ -192,6 +195,74 @@ and source-file directory for your debugger."
 (setcdr (nth 2 (nth 7 (assoc 'run gud-menu-map))) '((lldb gdbmi gdb dbx jdb)))
 ;; (setcdr (nth 2 (nth 7 (assoc 'tooltips gud-menu-map))) '((lldb gdbmi guiler dbx sdb xdb pdb)))
 
+;; Breakpoints
+
+(defun lldb--put-breakpoint (enabled bptno &optional line)
+  "Wrap `gdb-put-breakpoint-icon'."
+  (gdb-put-breakpoint-icon enabled bptno line))
+
+(defun lldb--remove-breakpoint (start end)
+  "Wrap `gdb-remove-breakpoint-icons'."
+  (gdb-remove-breakpoint-icons start end))
+
+(defun lldb--extract-filename-from-token (token)
+  "Return file name of token."
+  (string-remove-suffix
+   "'"
+   (string-remove-prefix
+    "'"
+    (string-trim
+     (substring
+      token (+ 1 (string-match-p "=" token)))))))
+
+(defun lldb--extract-linenum-from-token (token)
+  "Return line number of token."
+  (string-to-number
+   (string-trim
+    (substring
+     token (+ 1 (string-match-p "=" token))))))
+
+(defun lldb--update-breakpoints-in-source (string)
+  ;; Search for "Breakpoint created: \\([^:\n]*\\):" pattern.
+  ;;(message "gud-marker-acc string is: |%s|" string)
+  (cond
+   ;; Breakpoints were listed.
+   ((string-match "Current breakpoints:" string)
+    (gdb-remove-breakpoint-icons (point-min) (point-max))
+    (mapcar
+     (lambda (bp-string)
+       (let* ((tokens (split-string bp-string ","))
+              (filename (lldb--extract-filename-from-token (car tokens)))
+              (linenum (lldb--extract-linenum-from-token (car (cdr tokens)))))
+         (with-current-buffer (get-buffer filename)
+           (lldb--put-breakpoint t nil linenum))))
+     (seq-remove (lambda (element)
+                   (not (string-match "file = " element)))
+                 (split-string string "\n"))))
+   ;; Breakpoint was added.
+   ((string-match "(lldb) Breakpoint \\([^:\n]*\\):" string)
+    (let* ((filename-linenum
+            (split-string
+             (car (split-string
+                   (substring
+                    string (+ 4 (string-match-p " at " string))) ",")) ":"))
+           (filename (car filename-linenum))
+           (linenum (string-to-number (car (cdr filename-linenum)))))
+      (with-current-buffer (get-buffer filename)
+        (lldb--put-breakpoint t nil linenum))))
+   ;; Breakpoint was removed.
+   ((string-match "breakpoints cleared:" string)
+    (let* ((tokens (split-string string ","))
+           (filename (lldb--extract-filename-from-token (car tokens)))
+           (linenum (lldb--extract-linenum-from-token (car (cdr tokens)))))
+      (with-current-buffer (get-buffer filename)
+        (let* ((posns (gdb-line-posns linenum))
+               (start (- (car posns) 1))
+               (end (+ (cdr posns) 1)))
+          (lldb--remove-breakpoint start end)))))
+   ((string-match "Breakpoint created: \\([^:\n]*\\):" string)
+    (setq gud-breakpoint-id (match-string 1 string))
+    (message "breakpoint id: %s" gud-breakpoint-id))))
 
 (provide 'gud-lldb)
 

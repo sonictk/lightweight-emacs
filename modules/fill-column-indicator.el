@@ -3,7 +3,7 @@
 ;; Copyright (c) 2011-2014 Alp Aker
 
 ;; Author: Alp Aker <alp.tekin.aker@gmail.com>
-;; Version: 1.87
+;; Version: 1.86
 ;; Keywords: convenience
 
 ;; This program is free software; you can redistribute it and/or
@@ -153,6 +153,18 @@
 ;;   support this use case, but thus far there seems to be no demand for
 ;;   it.)
 
+;; o An issue specific to the Mac OS X (NextStep) port, versions 23.0-23.2:
+;;   Emacs won't, in these particular versions, draw a cursor on top of an
+;;   image.  Thus on graphical displays the cursor will disappear when
+;;   positioned directly on top of the fill-column rule.  The best way to
+;;   deal with this is to upgrade to v23.3 or v24 (or downgrade to v22).  If
+;;   that isn't practical, a fix is available via the mini-package
+;;   fci-osx-23-fix.el, which can be downloaded from:
+;;
+;;     github.com/alpaker/Fill-Column-Indicator
+;;
+;;  Directions for its use are given in the file header.
+
 ;; Todo
 ;; ====
 
@@ -168,8 +180,8 @@
 ;; Thanks to Ami Fischman, Christopher Genovese, Michael Hoffman, José
 ;; Alfredo Romero L., R. Lange, Joe Lisee, José Lombera, Frank Meffert,
 ;; Mitchell Peabody, sheijk, and an anonymous BT subscriber for bug reports
-;; and suggestions.  Special thanks to lomew, John Lamp, David Röthlisberger,
-;; and Pär Wieslander for code contributions.
+;; and suggestions.  Special thanks to lomew, David Röthlisberger, and Pär
+;; Wieslander for code contributions.
 
 ;;; Code:
 
@@ -378,13 +390,13 @@ U+E000-U+F8FF, inclusive)."
 
 ;; Hooks we use.
 (defconst fci-hook-assignments
-  '((after-change-functions fci-redraw-region t t)
-    (before-change-functions fci-extend-rule-for-deletion nil t)
-    (window-scroll-functions fci-update-window-for-scroll nil t)
+  '((after-change-functions fci-redraw-region t)
+    (before-change-functions fci-extend-rule-for-deletion t)
+    (window-scroll-functions fci-update-window-for-scroll t)
     (window-configuration-change-hook  fci-redraw-frame)
-    (post-command-hook  fci-post-command-check nil t)
-    (change-major-mode-hook turn-off-fci-mode nil t)
-    (longlines-mode-hook fci-update-all-windows nil t)))
+    (post-command-hook  fci-post-command-check t)
+    (change-major-mode-hook turn-off-fci-mode t)
+    (longlines-mode-hook  fci-update-all-windows t)))
 
 ;;; ---------------------------------------------------------------------
 ;;; Miscellany
@@ -439,7 +451,7 @@ on troubleshooting.)"
             (fci-set-local-vars)
             (fci-get-frame-dimens)
             (dolist (hook fci-hook-assignments)
-              (apply 'add-hook hook))
+              (add-hook (car hook) (nth 1 hook) nil (nth 2 hook)))
             (setq fci-column (or fci-rule-column fill-column)
                   fci-tab-width tab-width
                   fci-limit (if fci-newline
@@ -455,7 +467,7 @@ on troubleshooting.)"
     (fci-restore-display-table)
     (fci-restore-local-vars)
     (dolist (hook fci-hook-assignments)
-      (remove-hook (car hook) (nth 1 hook) (nth 3 hook)))
+      (remove-hook (car hook) (nth 1 hook) (nth 2 hook)))
     (fci-delete-overlays-buffer)
     (dolist (var fci-internal-vars)
       (set var nil))))
@@ -477,17 +489,9 @@ on troubleshooting.)"
 
 (defun fci-overlay-fills-background-p (olay)
   "Return true if OLAY specifies a background color."
-  (let ((olay-face (overlay-get olay 'face)))
-    (when olay-face
-      (if (facep olay-face)
-          (not (eq (face-attribute olay-face :background nil t) 'unspecified))
-        (if (consp olay-face)
-            (if (listp (cdr olay-face))
-                (if (facep (car olay-face))
-                    (not (memq t (mapcar #'(lambda (f) (eq (face-attribute f :background nil t) 'unspecified))
-                                         olay-face)))
-                  (plist-member olay-face :background))
-              (eq (car olay-face) 'background-color)))))))
+  (and (overlay-get olay 'face)
+       (not (eq (face-attribute (overlay-get olay 'face) :background nil t)
+                'unspecified))))
 
 (defun fci-competing-overlay-p (posn)
   "Return true if there is an overlay at POSN that fills the background."
@@ -797,14 +801,16 @@ rough heuristic.)"
         (goto-char end)
         (setq end (line-beginning-position 2))
         (fci-delete-overlays-region start end)
-        (fci-put-overlays-region start end))))) 
+        (when (> (+ (window-width) (window-hscroll))
+                 fci-limit)
+          (fci-put-overlays-region start end))))))
 
 (defun fci-redraw-window (win &optional start)
   "Redraw the fill-column rule in WIN starting from START."
   (fci-redraw-region (or start (window-start win)) (window-end win t) 'ignored))
 
 ;; This doesn't determine the strictly minimum amount by which the rule needs
-;; to be extended, but the amount used is always sufficient, and determining
+;; to be extended, but the amount used is always sufficient, and determininga
 ;; the genuine minimum is more expensive than doing the extra drawing.
 (defun fci-extend-rule-for-deletion (start end)
   "Extend the fill-column rule after a deletion that spans newlines."

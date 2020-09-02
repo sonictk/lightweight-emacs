@@ -62,6 +62,12 @@ print line numbers when the input is a stream."
   :type '(repeat (string))
   :group 'ag)
 
+(defcustom ag-dired-arguments
+  (list "--nocolor" "-S")
+  "Additional arguments passed to ag-dired."
+  :type '(repeat (string))
+  :group 'ag)
+
 (defcustom ag-context-lines nil
   "Number of context lines to include before and after a matching line."
   :type 'integer
@@ -110,6 +116,8 @@ If set to nil, fall back to finding VCS root directories."
   "A list of patterns for files/directories to ignore when searching."
   :type '(repeat (string))
   :group 'ag)
+(make-variable-buffer-local 'ag-ignore-list)
+(put 'ag-ignore-list 'safe-local-variable #'listp)
 
 (require 'compile)
 
@@ -204,8 +212,9 @@ different window, according to `ag-reuse-window'."
          (mapcar (lambda (item) (list "--ignore" item)) ignores)))
 
 (cl-defun ag/search (string directory
-                            &key (regexp nil) (file-regex nil) (file-type nil))
+                            &key (regexp nil) (file-regex nil) (file-type nil) (files '(".")))
   "Run ag searching for the STRING given in DIRECTORY.
+If `files` is passed, tell ag to look only on those files.
 If REGEXP is non-nil, treat STRING as a regular expression."
   (let ((default-directory (file-name-as-directory directory))
         (arguments ag-arguments)
@@ -240,7 +249,7 @@ If REGEXP is non-nil, treat STRING as a regular expression."
       (error "No such directory %s" default-directory))
     (let ((command-string
            (mapconcat #'shell-quote-argument
-                      (append (list ag-executable) arguments (list string "."))
+                      (append (list ag-executable) arguments (append `(,string) files))
                       " ")))
       ;; If we're called with a prefix, let the user modify the command before
       ;; running it. Typically this means they want to pass additional arguments.
@@ -539,11 +548,17 @@ See also `find-dired'."
          (buffer-name (if ag-reuse-buffers
                           "*ag dired*"
                         (format "*ag dired pattern:%s dir:%s*" regexp dir)))
-         (cmd (concat ag-executable " --nocolor -S -g '" regexp "' "
-                      (shell-quote-argument dir)
-                      " | grep -v '^$' | sed s/\\'/\\\\\\\\\\'/ | xargs -I '{}' "
-                      insert-directory-program " "
-                      dired-listing-switches " '{}' &")))
+         (cmd (if (string= system-type "windows-nt")
+                  (concat ag-executable " " (combine-and-quote-strings ag-dired-arguments " ") " -g \"" regexp "\" "
+                          (shell-quote-argument dir)
+                          " | grep -v \"^$\" | sed \"s/'/\\\\\\\\'/g\" | xargs -I '{}' "
+                          insert-directory-program " "
+                          dired-listing-switches " '{}' &")
+                (concat ag-executable " " (combine-and-quote-strings ag-dired-arguments " ") " -g '" regexp "' "
+                        (shell-quote-argument dir)
+                        " | grep -v '^$' | sed s/\\'/\\\\\\\\\\'/g | xargs -I '{}' "
+                        insert-directory-program " "
+                        dired-listing-switches " '{}' &"))))
     (with-current-buffer (get-buffer-create buffer-name)
       (switch-to-buffer (current-buffer))
       (widen)
