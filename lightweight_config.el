@@ -16,10 +16,6 @@
 
 ; Template system for Emacs - allows macros to do text insertion
 (require 'yasnippet)
-;(setq yas-snippet-dirs
-;      '("~/.emacs.d/snippets"                 ;; personal snippets
-;        "/path/to/yasnippet/snippets"         ;; the default collection
-;        ))
 (yas-global-mode 1)
 
 ; On OSX, this is required in order to have Emacs have access to the same binaries 
