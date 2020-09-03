@@ -129,36 +129,49 @@
 (setq ido-enable-flex-matching t)
 (setq ido-use-faces nil)
 
-
-; lsp mode
-(require 'lsp-mode)
-(require 'lsp-modeline)
-(require 'lsp-python-ms)
-(setq lsp-python-ms-auto-install-server t)
-
-(add-hook 'c++-mode-hook #'lsp)
-(add-hook 'c-mode-hook #'lsp)
-(add-hook 'objc-mode-hook #'lsp)
-(add-hook 'csharp-mode-hook #'lsp)
-(add-hook 'python-mode-hook #'lsp)
-(setq read-process-output-max (* 4096 4096)) ;; 4mb
-(setq lsp-completion-provider :capf)
-(setq gc-cons-threshold 100000000)
-(setq lsp-auto-guess-root t)
+(require 'eglot)
+(add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
+(add-hook 'c-mode-hook 'eglot-ensure)
+(add-hook 'c++-mode-hook 'eglot-ensure)
 
 (require 'cc-mode)
-(define-key c-mode-base-map (kbd "M-RET") 'lsp-rename)
-(define-key c-mode-base-map (kbd "M-,") 'pop-tag-mark)
-(define-key c-mode-base-map (kbd "M-.") 'lsp-find-definition)
-(define-key c-mode-base-map [C-down-mouse-1] 'lsp-find-definition-mouse)
+(define-key c-mode-base-map (kbd "M-RET") 'eglot-rename)
+(define-key c-mode-base-map (kbd "M-,") 'xref-find-definitions-other-window)
+(define-key c-mode-base-map (kbd "M-.") 'xref-find-definitions)
+(define-key c-mode-base-map [C-down-mouse-1] 'xref-find-defintions-at-mouse)
 
 ; TODO only target for OSX
-(eval-after-load 'lsp-mode
-  (progn
-    (require 'lsp-sourcekit)
-    (setq lsp-sourcekit-executable
-          "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
-(add-hook 'swift-mode-hook (lambda () (lsp)))
+(require 'lsp-sourcekit)
+(add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
+
+; lsp mode - wonky on MacOS
+; (require 'lsp-mode)
+; (require 'lsp-modeline)
+; (require 'lsp-python-ms)
+; (setq lsp-python-ms-auto-install-server t)
+
+; (add-hook 'c++-mode-hook #'lsp)
+; (add-hook 'c-mode-hook #'lsp)
+; (add-hook 'objc-mode-hook #'lsp)
+; (add-hook 'csharp-mode-hook #'lsp)
+; (add-hook 'python-mode-hook #'lsp)
+; (setq read-process-output-max (* 4096 4096)) ;; 4mb
+; (setq lsp-completion-provider :capf)
+; (setq gc-cons-threshold 100000000)
+; (setq lsp-auto-guess-root t)
+
+; (define-key c-mode-base-map (kbd "M-RET") 'lsp-rename)
+; (define-key c-mode-base-map (kbd "M-,") 'pop-tag-mark)
+; (define-key c-mode-base-map (kbd "M-.") 'lsp-find-definition)
+; (define-key c-mode-base-map [C-down-mouse-1] 'lsp-find-definition-mouse)
+
+; TODO only target for OSX
+; (eval-after-load 'lsp-mode
+;   (progn
+;     (require 'lsp-sourcekit)
+;     (setq lsp-sourcekit-executable
+;           "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
+; (add-hook 'swift-mode-hook (lambda () (lsp)))
 
 ; Indepedent space/hypen matching for ido-mode
 (require 'ido-complete-space-or-hyphen)
