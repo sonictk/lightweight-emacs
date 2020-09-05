@@ -130,9 +130,7 @@
 
 (require 'eglot)
 (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
-(add-to-list 'eglot-server-programs
-             `(python-mode . ("pyls" "-v" "--tcp" "--host"
-                              "localhost" "--port" :autoport)))
+
 ; TODO only target for OSX
 (add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
 (add-hook 'c-mode-hook 'eglot-ensure)
