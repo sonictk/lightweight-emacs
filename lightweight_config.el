@@ -130,6 +130,11 @@
 
 (require 'eglot)
 (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
+(add-to-list 'eglot-server-programs
+             `(python-mode . ("pyls" "-v" "--tcp" "--host"
+                              "localhost" "--port" :autoport)))
+; TODO only target for OSX
+(add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
 (add-hook 'c-mode-hook 'eglot-ensure)
 (add-hook 'c++-mode-hook 'eglot-ensure)
 
@@ -138,10 +143,6 @@
 (define-key c-mode-base-map (kbd "M-,") 'xref-find-definitions-other-window)
 (define-key c-mode-base-map (kbd "M-.") 'xref-find-definitions)
 (define-key c-mode-base-map [C-mouse-1] 'xref-find-defintions-at-mouse)
-
-; TODO only target for OSX
-; (require 'lsp-sourcekit)
-; (add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
 
 ; Indepedent space/hypen matching for ido-mode
 (require 'ido-complete-space-or-hyphen)
