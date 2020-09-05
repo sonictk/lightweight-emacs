@@ -13,9 +13,6 @@
 [submodule "modules/flycheck"]
 	path = modules/flycheck
 	url = git@github.com:flycheck/flycheck.git
-[submodule "modules/irony-mode"]
-	path = modules/irony-mode
-	url = git@github.com:Sarcasm/irony-mode.git
 [submodule "modules/elpy"]
 	path = modules/elpy
 	url = git@github.com:jorgenschaefer/elpy.git
