@@ -138,7 +138,7 @@
 (define-key c-mode-base-map (kbd "M-RET") 'eglot-rename)
 (define-key c-mode-base-map (kbd "M-,") 'xref-find-definitions-other-window)
 (define-key c-mode-base-map (kbd "M-.") 'xref-find-definitions)
-(define-key c-mode-base-map [C-down-mouse-1] 'xref-find-defintions-at-mouse)
+(define-key c-mode-base-map [C-mouse-1] 'xref-find-defintions-at-mouse)
 
 ; TODO only target for OSX
 (require 'lsp-sourcekit)
