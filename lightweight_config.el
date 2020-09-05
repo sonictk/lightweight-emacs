@@ -772,11 +772,11 @@ current buffer's, reload dir-locals."
      (cons '("SConscript" . python-mode) auto-mode-alist))
 
 ; Anaconda mode
-(require 'anaconda-mode)
-(add-hook 'python-mode-hook 'anaconda-mode)
-(add-hook 'python-mode-hook 'anaconda-eldoc-mode)
-(eval-after-load "company"
- '(add-to-list 'company-backends 'company-anaconda))
+; (require 'anaconda-mode)
+; (add-hook 'python-mode-hook 'anaconda-mode)
+; (add-hook 'python-mode-hook 'anaconda-eldoc-mode)
+; (eval-after-load "company"
+;  '(add-to-list 'company-backends 'company-anaconda))
 
 ; CC++ mode handling
 (defun lightweight-c-hook ()
