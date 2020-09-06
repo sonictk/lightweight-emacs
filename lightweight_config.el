@@ -139,11 +139,17 @@
 (add-hook 'csharp-mode-hook 'eglot-ensure)
 ; Python already works OOTB
 
+; Don't want the eldoc box showing everywhere, have a global bind for it
+(setq global-eldoc-mode nil)
+
 (require 'cc-mode)
-(define-key c-mode-base-map (kbd "M-RET") 'eglot-rename)
-(define-key c-mode-base-map (kbd "M-,") 'xref-find-definitions-other-window)
-(define-key c-mode-base-map (kbd "M-.") 'xref-find-definitions)
-(define-key c-mode-base-map [C-mouse-1] 'xref-find-defintions-at-mouse)
+;(define-key c-mode-base-map (kbd "M-RET") 'eglot-rename)
+(global-set-key (kbd "M-RET") 'eglot-rename)
+(global-set-key (kbd "M-,") 'xref-find-definitions-other-window)
+(global-set-key (kbd "M-.") 'xref-find-definitions)
+(global-set-key [C-mouse-1] 'xref-find-defintions-at-mouse)
+(global-set-key [C-mouse-2] 'eldoc-box-eglot-help-at-point)
+(global-set-key (kbd "C-M-?") 'eldoc-box-eglot-help-at-point)
 
 ; Indepedent space/hypen matching for ido-mode
 (require 'ido-complete-space-or-hyphen)
