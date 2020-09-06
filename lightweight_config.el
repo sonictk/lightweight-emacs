@@ -140,6 +140,7 @@
 ; Python already works OOTB
 
 ; Don't want the eldoc box showing everywhere, have a global bind for it
+(add-hook 'eglot--managed-mode-hook #'eldoc-box-hover-mode t)
 (setq global-eldoc-mode nil)
 
 (require 'cc-mode)
