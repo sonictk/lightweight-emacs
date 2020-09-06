@@ -135,6 +135,9 @@
 (add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
 (add-hook 'c-mode-hook 'eglot-ensure)
 (add-hook 'c++-mode-hook 'eglot-ensure)
+(add-hook 'objc-mode-hook 'eglot-ensure)
+(add-hook 'csharp-mode-hook 'eglot-ensure)
+; Python already works OOTB
 
 (require 'cc-mode)
 (define-key c-mode-base-map (kbd "M-RET") 'eglot-rename)
@@ -408,7 +411,6 @@ current buffer's, reload dir-locals."
 (tool-bar-mode 0)
 
 (load-library "view")
-(require 'cc-mode)
 (require 'compile)
 
 ; Set the default compilation command to use CMake
@@ -606,12 +608,6 @@ current buffer's, reload dir-locals."
     (setq emacs-transparency-toggle-switch t)
 (set-frame-parameter nil 'alpha 50)))
 
-; Activate CMake mode automatically
-(setq auto-mode-alist
-      (append
-       '(("CMakeLists\\.txt\\'" . cmake-mode))
-       '(("\\.cmake\\'" . cmake-mode))
-       auto-mode-alist))
 ; Set CMake tab width to use 4 spaces instead of 2 by defaul
 (setq cmake-tab-width 4)
 
@@ -968,8 +964,7 @@ current buffer's, reload dir-locals."
 ; NOTE: If this causes problems, comment it out
 (setq projectile-indexing-method 'alien)
 ; Remove redundant project name from the mode line
-; This is the default
-; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name))))
+; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name)))) 
 (setq projectile-mode-line '(:eval (format "" )))
 
 ; As of latest projectile 1.1.0, ``projectile-keymap-prefix`` is deprecated and need 
@@ -977,8 +972,6 @@ current buffer's, reload dir-locals."
 (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 
 ; Additional keybindngs for finding header files
-(global-set-key (kbd "C-M->") 'ff-find-other-file)
-(global-set-key (kbd "C-M-<") '(lambda nil (interactive) (ff-find-other-file t)))
 (global-set-key (kbd "C-,") 'projectile-find-other-file)
 (global-set-key (kbd "C-.") 'projectile-find-other-file-other-window)
 
@@ -1317,30 +1310,6 @@ current buffer's, reload dir-locals."
              (mapconcat 'identity dir-list " ")
              " -type d -not -regex \".*/\\\..*\""))))
 
-; Allow for communication between emacs and Maya
-(add-hook
- 'mel-mode-hook
- (lambda ()
-   (require 'etom)
-   (setq etom-default-host "localhost")
-   (setq etom-default-port 2222)
-   (local-set-key (kbd "C-c C-r") 'etom-send-region)
-   (local-set-key (kbd "C-c C-c") 'etom-send-buffer)
-   (local-set-key (kbd "C-c C-l") 'etom-send-buffer)
-   (local-set-key (kbd "C-c C-z") 'etom-show-buffer)))
-
-; For Python
-(add-hook
- 'python-mode-hook
- (lambda ()
-   (require 'etom)
-   (setq etom-default-host "localhost")
-   (setq etom-default-port 2222)
-   (local-set-key (kbd "C-c C-r") 'etom-send-region-py)
-   (local-set-key (kbd "C-c C-c") 'etom-send-buffer-py)
-   (local-set-key (kbd "C-c C-l") 'etom-send-buffer-py)
-   (local-set-key (kbd "C-c C-z") 'etom-show-buffer)))
-
 ; Make Emacs not throw warnings on UTF-8 encoded Python scripts
 (define-coding-system-alias 'UTF-8 'utf-8) 
 
@@ -1622,7 +1591,6 @@ PWD is not in a git repo (or the git command is not found)."
      (define-key isearch-mode-map (kbd "M-/") 'isearch-dabbrev-expand))
 )
 
-
 ; Disable garbage collection while the minibuffer is open
 (defun my-minibuffer-setup-hook ()
   (setq gc-cons-threshold most-positive-fixnum))
@@ -1639,10 +1607,8 @@ PWD is not in a git repo (or the git command is not found)."
     (smex-update)))
 (add-hook 'after-load-functions 'smex-update-after-load)
 
-
 ; Aliases for unintuitive commands
 (defalias 'refresh-syntax-highlighting 'font-lock-fontify-buffer)
-
 
 ; Cleanup and theme setup
 (defun post-load-stuff ()
