@@ -3,6 +3,7 @@
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/omnisharp-emacs")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/swift-mode")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/ivy")
 
 ; Blink the cursor forever
 (setq blink-cursor-blinks -1)
@@ -89,45 +90,47 @@
 ; Binding for line wrapping
 (global-set-key (kbd "C-M-S-w") 'visual-line-mode)
 
-; Vertical command minibuffer
-(require 'ido)
-(require 'ido-vertical-mode)
-(setq ido-enable-flex-matching 1)
-(setq ido-everywhere 1)
-(ido-mode 1)
-(setq ido-use-faces t)
-(set-face-attribute 'ido-vertical-first-match-face nil
-                    :background nil
-                    :foreground "orange")
-(set-face-attribute 'ido-vertical-only-match-face nil
-                    :background nil
-                    :foreground nil)
-(set-face-attribute 'ido-vertical-match-face nil
-                    :foreground nil)
-(ido-vertical-mode 1)
-(setq ido-save-directory-list-file "~/Git/lightweight-emacs/ido.last")
-(setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
+(setq imenu-max-item-length 255)
 
-; Allow ido-mode to be used in M-x command minibuffer
-(require 'smex)
-(smex-initialize) ; Can be omitted. This might cause a (minimal) delay
-                  ; when Smex is auto-initialized on its first run.
-(global-set-key (kbd "M-x") 'smex)
-(global-set-key (kbd "M-X") 'smex-major-mode-commands)
-;; This is old M-x.
-(global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
-(setq smex-save-file "~/Git/lightweight-emacs/smex-items")
-(setq smex-auto-update nil)
-(setq smex-prompt-string "Command: ")
-(setq smex-history-length 10)
+(require 'ivy)
+(require 'counsel)
+(require 'swiper)
+(ivy-mode 1)
+(counsel-mode 1)
+(setq ivy-use-virtual-buffers t)
+(setq enable-recursive-minibuffers t)
+(setq ivy-re-builders-alist
+      '((t . ivy--regex-fuzzy)))
+;; enable this if you want `swiper' to use it
+(setq search-default-mode #'char-fold-to-regexp)
+(global-set-key "\C-s" 'swiper)
+(global-set-key (kbd "C-c C-r") 'ivy-resume)
+(global-set-key (kbd "<f6>") 'ivy-resume)
+(global-set-key (kbd "M-x") 'counsel-M-x)
+(global-set-key (kbd "C-x C-f") 'counsel-find-file)
+(global-set-key (kbd "<f1> f") 'counsel-describe-function)
+(global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+(global-set-key (kbd "<f1> o") 'counsel-describe-symbol)
+(global-set-key (kbd "<f1> l") 'counsel-find-library)
+(global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+(global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+(global-set-key (kbd "C-c g") 'counsel-git)
+(global-set-key (kbd "C-c j") 'counsel-git-grep)
+(global-set-key (kbd "C-c k") 'counsel-ag)
+(global-set-key (kbd "C-x l") 'counsel-locate)
+(global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
+(global-set-key (kbd "C-c h i") 'counsel-imenu)
+(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
 
-; Better fuzzy matching for ido-mode
-(require 'flx-ido)
-(flx-ido-mode 1)
-;; disable ido faces to see flx highlights.
-(setq ido-enable-flex-matching t)
-(setq ido-use-faces nil)
-
+(require 'ivy-xref)
+;; xref initialization is different in Emacs 27 - there are two different
+;; variables which can be set rather than just one
+(when (>= emacs-major-version 27)
+  (setq xref-show-definitions-function #'ivy-xref-show-defs))
+;; Necessary in Emacs <27. In Emacs 27 it will affect all xref-based
+;; commands other than xref-find-definitions (e.g. project-find-regexp)
+;; as well
+(setq xref-show-xrefs-function #'ivy-xref-show-xrefs)
 (require 'eglot)
 (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
 
@@ -151,67 +154,6 @@
 (global-set-key [C-mouse-1] 'xref-find-defintions-at-mouse)
 (global-set-key [C-mouse-2] 'eldoc-box-eglot-help-at-point)
 (global-set-key (kbd "C-M-?") 'eldoc-box-eglot-help-at-point)
-
-; Indepedent space/hypen matching for ido-mode
-(require 'ido-complete-space-or-hyphen)
-
-; Allow for ido-mode to be used with imenu for looking through source file functions/members
-(defun ido-goto-symbol (&optional symbol-list)
-      "Refresh imenu and jump to a place in the buffer using Ido."
-      (interactive)
-      (unless (featurep 'imenu)
-        (require 'imenu nil t))
-      (cond
-       ((not symbol-list)
-        (let ((ido-mode ido-mode)
-              (ido-enable-flex-matching
-               (if (boundp 'ido-enable-flex-matching)
-                   ido-enable-flex-matching t))
-              name-and-pos symbol-names position)
-          (unless ido-mode
-            (ido-mode 1)
-            (setq ido-enable-flex-matching t))
-          (while (progn
-                   (imenu--cleanup)
-                   (setq imenu--index-alist nil)
-                   (ido-goto-symbol (imenu--make-index-alist))
-                   (setq selected-symbol
-                         (ido-completing-read "Symbol? " symbol-names))
-                   (string= (car imenu--rescan-item) selected-symbol)))
-          (unless (and (boundp 'mark-active) mark-active)
-            (push-mark nil t nil))
-          (setq position (cdr (assoc selected-symbol name-and-pos)))
-          (cond
-           ((overlayp position)
-            (goto-char (overlay-start position)))
-           (t
-            (goto-char position)))))
-       ((listp symbol-list)
-        (dolist (symbol symbol-list)
-          (let (name position)
-            (cond
-             ((and (listp symbol) (imenu--subalist-p symbol))
-              (ido-goto-symbol symbol))
-             ((listp symbol)
-              (setq name (car symbol))
-              (setq position (cdr symbol)))
-             ((stringp symbol)
-              (setq name symbol)
-              (setq position
-                    (get-text-property 1 'org-imenu-marker symbol))))
-            (unless (or (null position) (null name)
-                        (string= (car imenu--rescan-item) name))
-              (add-to-list 'symbol-names name)
-              (add-to-list 'name-and-pos (cons name position))))))))
-
-(global-set-key (kbd "C-c h i") 'ido-goto-symbol)
-(global-set-key (kbd "<C-f12>") 'ido-goto-symbol)
-
-; Because imenu (which is what ido-goto-symbol) sucks at handling namespaced
-; members, we make use of semantic as well as a more accurate, slower
-; alternative.
-(global-set-key (kbd "C-c h I") 'semantic-complete-jump-local)
-(global-set-key (kbd "<C-S-f12>") 'semantic-complete-jump-local)
 
 ; Allow for manual-rescanning of buffers
  (defun rescan-symbols-in-buffer()
@@ -259,16 +201,6 @@ See also `newline-and-indent'."
 (setq recentf-max-menu-items 25)
 (global-set-key "\C-x\ \C-r" 'recentf-open-files)
 (setq recentf-save-file (expand-file-name "recentf" "~/Git/lightweight-emacs/"))
-
-;; get rid of `find-file-read-only' and replace it with something
-;; more useful.
-(global-set-key (kbd "C-x C-r") 'ido-recentf-open)
-(defun ido-recentf-open ()
-  "Use `ido-completing-read' to \\[find-file] a recent file"
-  (interactive)
-  (if (find-file (ido-completing-read "Find recent file: " recentf-list))
-      (message "Opening file...")
-    (message "Aborting")))
 
 ; Allow toggling hiding of comments
 (require 'hide-comnt)
@@ -1542,30 +1474,6 @@ PWD is not in a git repo (or the git command is not found)."
 ; Use the silver searcher instead of grep for searching
 (require 'ag)
 
-; Allow for inserting filename from ido-completion
-(defun insert-file-name (filename &optional args)
-  "Insert name of file FILENAME into buffer after point.
-
-  Prefixed with \\[universal-argument], expand the file name to
-  its fully canocalized path.  See `expand-file-name'.
-
-  Prefixed with \\[negative-argument], use relative path to file
-  name from current directory, `default-directory'.  See
-  `file-relative-name'.
-
-  The default with no prefix is to insert the file name exactly as
-  it appears in the minibuffer prompt."
-  ;; Based on insert-file in Emacs -- ashawley 20080926
-  (interactive `(,(ido-read-file-name "File Name: ")
-                 ,current-prefix-arg))
-  (cond ((eq '- args)
-         (insert (expand-file-name filename)))
-        ((not (null args))
-         (insert filename))
-        (t
-         (insert (file-relative-name filename))))
-)
-
 ; Scroll output in the compilation window automatically
 (setq compilation-scroll-output t)
 
@@ -1608,12 +1516,6 @@ PWD is not in a git repo (or the git command is not found)."
 (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
 (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook)
 
-; Update smex list after a file is loaded
-(defun smex-update-after-load (unused)
-  (when (boundp 'smex-cache)
-    (smex-update)))
-(add-hook 'after-load-functions 'smex-update-after-load)
-
 ; Aliases for unintuitive commands
 (defalias 'refresh-syntax-highlighting 'font-lock-fontify-buffer)
 
@@ -1630,6 +1532,5 @@ PWD is not in a git repo (or the git command is not found)."
   (recentf-load-list)
   (global-company-mode t)
   (setq fill-column 81)
-  (smex-update)
 )
 (add-hook 'window-setup-hook 'post-load-stuff t)
