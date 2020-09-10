@@ -297,6 +297,10 @@ current buffer's, reload dir-locals."
 
 (global-hl-line-mode 1)
 
+; For long lines, Emacs slows down with hl-line-mode.
+(require 'so-long)
+(global-so-long-mode 1)
+
 ; Start maximized
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
 
