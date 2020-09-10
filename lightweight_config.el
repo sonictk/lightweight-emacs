@@ -1,9 +1,13 @@
 ; Add custom module path so that nothing is saved to the global emacs config
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/omnisharp-emacs")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/swift-mode")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/ivy")
+
+; Determine the underlying operating system
+(setq lightweight-aquamacs (featurep 'aquamacs))
+(setq lightweight-linux (featurep 'x))
+(setq lightweight-win32 (not (or lightweight-aquamacs lightweight-linux)))
 
 ; Blink the cursor forever
 (setq blink-cursor-blinks -1)
@@ -134,8 +138,16 @@
 (require 'eglot)
 (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
 
-; TODO only target for OSX
+(when lightweight-aquamacs
 (add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
+(add-to-list 'eglot-server-programs '(csharp-mode . ("/usr/local/bin/omnisharp" "-lsp"))))
+
+(when lightweight-linux
+(add-to-list 'eglot-server-programs '(csharp-mode . ("/usr/local/bin/omnisharp" "-lsp"))))
+
+(when lightweight-win32
+(add-to-list 'eglot-server-programs '(csharp-mode . ("C:/omnisharp/OmniSharp.exe" "-lsp"))))
+
 (add-hook 'c-mode-hook 'eglot-ensure)
 (add-hook 'c++-mode-hook 'eglot-ensure)
 (add-hook 'objc-mode-hook 'eglot-ensure)
@@ -289,11 +301,6 @@ current buffer's, reload dir-locals."
 ; setting very high limits for undo buffers
 (setq undo-limit 20000000)
 (setq undo-strong-limit 40000000)
-
-; Determine the underlying operating system
-(setq lightweight-aquamacs (featurep 'aquamacs))
-(setq lightweight-linux (featurep 'x))
-(setq lightweight-win32 (not (or lightweight-aquamacs lightweight-linux)))
 
 (global-hl-line-mode 1)
 
@@ -681,6 +688,7 @@ current buffer's, reload dir-locals."
 
 (require 'eldoc-box)
 (setq x-gtk-resize-child-frames 'resize-mode)
+(setq eldoc-box-max-pixel-height 600)
 
 ; CC++ mode handling
 (defun lightweight-c-hook ()
@@ -1284,33 +1292,6 @@ current buffer's, reload dir-locals."
 ; Add support for C#
 (autoload 'csharp-mode "csharp-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.cs\\'" . csharp-mode))
-
-; Using Omnisharp server for C# intellisense
-(require 'omnisharp)
-(eval-after-load
-  'company
-  '(add-to-list 'company-backends #'company-omnisharp))
-
-(defun my-csharp-mode-setup ()
-  (omnisharp-mode)
-  (company-mode)
-  ;(flycheck-mode)
-
-  (setq indent-tabs-mode nil)
-  (setq c-syntactic-indentation t)
-  (c-set-style "ellemtel")
-  (setq c-basic-offset 4)
-  (setq truncate-lines t)
-  (setq tab-width 4)
-
-  ;csharp-mode README.md recommends this too
-  ;(electric-pair-mode 1)       ;; Emacs 24
-  ;(electric-pair-local-mode 1) ;; Emacs 25
-
-  (local-set-key (kbd "C-c r r") 'omnisharp-run-code-action-refactoring)
-  (local-set-key (kbd "C-c C-c") 'recompile))
-
-(add-hook 'csharp-mode-hook 'my-csharp-mode-setup t)
 
 ; Add support for the Rust programming language
 (autoload 'rust-mode "rust-mode" nil t)

@@ -35,7 +35,7 @@ Goals of this configuration:
 
 * Optimized for C/C++/Python work, in that order. Some extra stuff like shaders
   (HLSL/GLSL), Maya support (through **etom**) and Maxscript support.
-* C/C++ completion and introspection through ``irony-mode`` and ``semantic``.
+* Code completion and introspection through ``eglot``.
 * Able to run completely side-by-side with your existing Emacs installation and
   not dump any of its configuration files anywhere outside of the repository.
 * (As far as possible) Immutable configuration; not dependent on package
@@ -54,17 +54,16 @@ Goals of this configuration:
 
 You will need the following dependencies, regardless of your platform:
 
-* **Emacs 26.1** is the current supported version. 
-  Previously supported versions include 24.5.1 and 25.3.1. This is no longer officially supported,
-  but should still be usable from older releases of this configuration.
-* [clang/llvm](https://clang.llvm.org/) (The ``libclang`` DLL/.so must be in
-  your ``PATH``) Version should be at least > 3.7.1, I'm currently using 3.9.0
+* **Emacs 27.1** is the current supported version. No earlier versions are supported
+  since native JSON support is a big thing.
+* [clang/llvm](https://clang.llvm.org/) `clangd` is required for `eglot`.
+* [OmniSharp-roslyn](https://github.com/OmniSharp/omnisharp-roslyn) Get the latest non-http release.
+* On MacOS, you will need Xcode and Xcode command-line tools installed.
 * grep
 * gdb
 * [CMake](https://cmake.org/)
-* [GNU Global Tags](https://www.gnu.org/software/global/)
 * Git
-* [ag (A.K.A. The Silver Searcher)](https://github.com/ggreer/the_silver_searcher). 
+* [ag (A.K.A. The Silver Searcher)](https://github.com/ggreer/the_silver_searcher).
   A Windows version is available [here](https://blog.kowalczyk.info/software/the-silver-searcher-for-windows.html).
 
 ### Installation
@@ -80,30 +79,6 @@ git clone <git-repo-url>
 git submodule init
 git submodule update --recursive
 ```
-
-You will also need to compile and install ``irony-server``. Just launch Emacs
-(assuming it works fine) and run ``irony-install-server``. You will need to add
-the following flag to the compilation command in order for ``irony-server`` to
-be linked with the correct RPATH (This is required for OSX/Linux):
-
-``-DCMAKE_INSTALL_RPATH_USE_LINK_PATH=1``
-
-On OSX, you might also need to modify the ``cmake`` command to point to the
-correct directories for ``libclang`` since OSX XCode's installation might not
-work with the standard ``FindLibclang.cmake`` module:
-
-```
--DLIBCLANG_INCLUDE_DIR\=/usr/local/opt/llvm/include/
--DLIBCLANG_LIBRARY\=/usr/local/opt/llvm/lib/libclang.dylib
-```
-
-**You need to compile that and restart Emacs after in order for C/C++
-completion to work.**
-
-On Windows, the default ``irony-install-server`` won't use the right arguments to 
-use the x64 version of MSVC. You'll need to modify the command that's generated for 
-you to CMake appropriately (e.g. by adding ``-G "Visual Studio 15 2017 Win64"``) in 
-order for CMake to use the right libraries for compilation.
 
 You will also need to ensure that the ``HOME`` environment variable is set to
 your ``%USERPROFILE%`` folder as well.
@@ -121,13 +96,11 @@ Set that as an alias or desktop file or whatever you prefer.
 
 ### Setup
 
-``irony-mode`` is used for completion. You will need to create a
-``.clang_complete`` file that contains compilation options for your project
-(determined via whether your project folder is a Git repository or not)
+`eglot` is used for code completion. Thus,
 
-Sample ``.clang_complete`` file used for C/C++ completion via irony:
-
-```
+* `compile_flags.txt` and `compile_commands.json` for C/C++ using `clangd`. This should be arguments given to `clang` directly.
+  Sample:
+  ```
 -std=c++14
 -Wall
 -Wextra
@@ -135,23 +108,12 @@ Sample ``.clang_complete`` file used for C/C++ completion via irony:
 -Wno-pragma-once-outside-header
 -Iinclude
 -I/home/sonictk/Qt5.8.0/5.8/gcc_64/include
-```
+  ```
 
-On Windows:
+* `C-u M-x eglot` in C# buffers and enter a `.sln` or `.csproj` file for OmniSharp.
+  (i.e. `OmniSharp.exe -lsp -s "C:\\path\\to\\solution.sln"`)
 
-```
--std=c++14
--Wall
--Wextra
--pthread
--Iinclude
--Ic:/Qt/4.8.5/include
-```
-
-You should also specify some directory-local variables in order for header
-completion and finding of system headers.
-
-Sample ``.dir-locals.el`` file used for header completion:
+Sample ``.dir-locals.el`` file:
 
 ```
 (
@@ -163,12 +125,6 @@ Sample ``.dir-locals.el`` file used for header completion:
         (indent-tabs-mode . t)
         (compile-command . "cmake --build ./build --config Release --target INSTALL")
         (cd-compile-directory . "/home/sonictk/Git/project/build")
-        (cc-search-directories . ("."
-                    "./include"
-                    "/home/sonictk/Qt5.8.0/5.8/gcc_64/include"
-                    "/usr/include"
-                    "/usr/include/c++/5.3.1"
-                    "/usr/local/include/*"))
         ))
 
  (c-mode . ((c-basic-offset . 4)
@@ -176,63 +132,10 @@ Sample ``.dir-locals.el`` file used for header completion:
       (indent-tabs-mode . t)
       (compile-command . "cmake --build ./build --config Release --target INSTALL")
       (cd-compile-directory . "/home/sonictk/Git/project/build")
-      (cc-search-directories . ("."
-                    "./include"
-                    "/home/sonictk/Qt5.8.0/5.8/gcc_64/include"
-                    "/usr/include"
-                    "/usr/include/c++/5.3.1"
-                    "/usr/local/include/*"))
       ))
 )
 ```
 
-Another sample for Windows, that sets the path for custom lookup of ``GTAGS`` files:
-
-```
-(
- (nil . ((tab-width . 4)
-         (indent-tabs-mode . nil))
- ((eval . (setenv "GTAGSLIBPATH" "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.17763.0")))
- )
-
- (c++-mode . ((c-basic-offset . 4)
-              (tab-width . 4)
-              (indent-tabs-mode . t)
-              (compile-command . "cmake --build . --config Debug --target INSTALL")
-              (cd-compile-directory . "C:\\Users\\sonictk\\Git\\mudbox\\mudbox-deformers\\build")
-              (cc-search-directories . ("."
-                                        ".\\thirdparty"
-                                        "C:\\Program Files\\Autodesk\\Mudbox 2019\\SDK\\include"
-                                        "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.11.25503\\include"
-                                        "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\shared"
-                                        "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\ucrt"
-                                        "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\um"
-                                        "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\winrt"))
-              ))
-
- (c-mode . ((c-basic-offset . 4)
-            (tab-width . 4)
-            (indent-tabs-mode . t)
-            (compile-command . "cmake --build . --config Debug --target INSTALL")
-            (cd-compile-directory . "C:\\Users\\sonictk\\Git\\mudbox\\mudbox-deformers\\build")
-            (cc-search-directories . ("."
-                                      ".\\thirdparty"
-                                      "C:\\Program Files\\Autodesk\\Mudbox 2019\\SDK\\include"
-                                      "C:\\Program Files (x86)\\Microsoft Visual Studio\\2017\\Community\\VC\\Tools\\MSVC\\14.11.25503\\include"
-                                      "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\shared"
-                                      "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\ucrt"
-                                      "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\um"
-                                      "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.14393.0\\winrt"))
-            ))
- )
-```
-
-Remember to run ``gtags`` as an administrator in the Windows headers directory
-if making use of this example (otherwise gtags will not have permissions to
-write out the tags files). You must also launch Emacs as an administrator (or
-else GLOBAL won't have read permissions for the tags files in the Windows
-includes folders.) Obviously, if you already have permissions for the
-directories and files in them, you won't need to do this.
 
 ### Known issues
 
@@ -326,22 +229,10 @@ find. Those are the mose important ones, though.
 * ``kill-other-buffers``: Does what it says. No more hitting ``C-x k`` 50
   times!
 
-### Most important non-standard notes:
-
-* I disable flycheck by default because it's slow and you need a
-  ``.dir-locals.el`` file to really make good use of it. Even then, it's still
-  slow and stupid sometimes.
-
-* However, I decided to leave it enabled for ``elpy-mode`` because for Python,
-  you can configure the warnings with your ``~/.flake8`` configration file.
-  Also Python inspection is far more reliable and less stupid in general using
-  ``flake8``. I might disable this in the future when I decide that it's too
-  slow as well and Pycharm is far better at this anyway.
-
 
 ## Who?
 
-Siew Yi Liang a.k.a. sonictk. 
+Siew Yi Liang a.k.a. sonictk.
 
 Tons of plugins are used in this configration; their licenses and original
 source code have been preserved (except for some changes I made to
