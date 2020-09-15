@@ -126,6 +126,9 @@
 (global-set-key (kbd "C-c h i") 'counsel-imenu)
 (define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
 
+; Makes C-s C-w work like normal isearch when using ivy
+(define-key ivy-minibuffer-map (kbd "C-w") 'ivy-yank-word)
+
 (require 'ivy-xref)
 ;; xref initialization is different in Emacs 27 - there are two different
 ;; variables which can be set rather than just one
