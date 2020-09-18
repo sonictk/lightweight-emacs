@@ -160,6 +160,8 @@
 ; Don't want the eldoc box showing everywhere, have a global bind for it
 (add-hook 'eglot--managed-mode-hook #'eldoc-box-hover-mode t)
 (setq global-eldoc-mode nil)
+(setq eldoc-idle-delay 1.0)
+(add-to-list 'eglot-ignored-server-capabilites :hoverProvider)
 
 (require 'cc-mode)
 ;(define-key c-mode-base-map (kbd "M-RET") 'eglot-rename)
@@ -168,7 +170,7 @@
 (global-set-key (kbd "M-.") 'xref-find-definitions)
 (global-set-key [C-mouse-1] 'xref-find-defintions-at-mouse)
 (global-set-key [C-mouse-2] 'eldoc-box-eglot-help-at-point)
-(global-set-key (kbd "C-M-?") 'eldoc-box-eglot-help-at-point)
+(global-set-key (kbd "C-c ?") 'eldoc-box-eglot-help-at-point)
 
 ; Allow for manual-rescanning of buffers
  (defun rescan-symbols-in-buffer()
