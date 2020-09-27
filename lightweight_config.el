@@ -1,8 +1,13 @@
 ; Add custom module path so that nothing is saved to the global emacs config
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/omnisharp-emacs")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/swift-mode")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/ivy")
+
+; Determine the underlying operating system
+(setq lightweight-aquamacs (featurep 'aquamacs))
+(setq lightweight-linux (featurep 'x))
+(setq lightweight-win32 (not (or lightweight-aquamacs lightweight-linux)))
 
 ; Blink the cursor forever
 (setq blink-cursor-blinks -1)
@@ -15,10 +20,6 @@
 
 ; Template system for Emacs - allows macros to do text insertion
 (require 'yasnippet)
-;(setq yas-snippet-dirs
-;      '("~/.emacs.d/snippets"                 ;; personal snippets
-;        "/path/to/yasnippet/snippets"         ;; the default collection
-;        ))
 (yas-global-mode 1)
 
 ; On OSX, this is required in order to have Emacs have access to the same binaries 
@@ -93,105 +94,83 @@
 ; Binding for line wrapping
 (global-set-key (kbd "C-M-S-w") 'visual-line-mode)
 
-; Vertical command minibuffer
-(require 'ido)
-(require 'ido-vertical-mode)
-(setq ido-enable-flex-matching 1)
-(setq ido-everywhere 1)
-(ido-mode 1)
-(setq ido-use-faces t)
-(set-face-attribute 'ido-vertical-first-match-face nil
-                    :background nil
-                    :foreground "orange")
-(set-face-attribute 'ido-vertical-only-match-face nil
-                    :background nil
-                    :foreground nil)
-(set-face-attribute 'ido-vertical-match-face nil
-                    :foreground nil)
-(ido-vertical-mode 1)
-(setq ido-save-directory-list-file "~/Git/lightweight-emacs/ido.last")
-(setq ido-vertical-define-keys 'C-n-C-p-up-down-left-right)
+(setq imenu-max-item-length 255)
 
-; Allow ido-mode to be used in M-x command minibuffer
-(require 'smex)
-(smex-initialize) ; Can be omitted. This might cause a (minimal) delay
-                  ; when Smex is auto-initialized on its first run.
-(global-set-key (kbd "M-x") 'smex)
-(global-set-key (kbd "M-X") 'smex-major-mode-commands)
-;; This is old M-x.
-(global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
-(setq smex-save-file "~/Git/lightweight-emacs/smex-items")
-(setq smex-auto-update nil)
-(setq smex-prompt-string "Command: ")
-(setq smex-history-length 10)
+(require 'ivy)
+(require 'counsel)
+(require 'swiper)
+(ivy-mode 1)
+(counsel-mode 1)
+(setq ivy-use-virtual-buffers t)
+(setq enable-recursive-minibuffers t)
+(setq ivy-re-builders-alist
+      '((t . ivy--regex-ignore-order)))
+;; enable this if you want `swiper' to use it
+(setq search-default-mode #'char-fold-to-regexp)
+(global-set-key "\C-s" 'swiper)
+(global-set-key (kbd "C-c C-r") 'ivy-resume)
+(global-set-key (kbd "<f6>") 'ivy-resume)
+(global-set-key (kbd "M-x") 'counsel-M-x)
+(global-set-key (kbd "C-x C-f") 'counsel-find-file)
+(global-set-key (kbd "<f1> f") 'counsel-describe-function)
+(global-set-key (kbd "<f1> v") 'counsel-describe-variable)
+(global-set-key (kbd "<f1> o") 'counsel-describe-symbol)
+(global-set-key (kbd "<f1> l") 'counsel-find-library)
+(global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
+(global-set-key (kbd "<f2> u") 'counsel-unicode-char)
+(global-set-key (kbd "C-c g") 'counsel-git)
+(global-set-key (kbd "C-c j") 'counsel-git-grep)
+(global-set-key (kbd "C-c k") 'counsel-ag)
+(global-set-key (kbd "C-x l") 'counsel-locate)
+(global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
+(global-set-key (kbd "C-c h i") 'counsel-imenu)
+(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
 
-; Better fuzzy matching for ido-mode
-(require 'flx-ido)
-(flx-ido-mode 1)
-;; disable ido faces to see flx highlights.
-(setq ido-enable-flex-matching t)
-(setq ido-use-faces nil)
+; Makes C-s C-w work like normal isearch when using ivy
+(define-key ivy-minibuffer-map (kbd "C-w") 'ivy-yank-word)
 
-; Indepedent space/hypen matching for ido-mode
-(require 'ido-complete-space-or-hyphen)
+(require 'ivy-xref)
+;; xref initialization is different in Emacs 27 - there are two different
+;; variables which can be set rather than just one
+(when (>= emacs-major-version 27)
+  (setq xref-show-definitions-function #'ivy-xref-show-defs))
+;; Necessary in Emacs <27. In Emacs 27 it will affect all xref-based
+;; commands other than xref-find-definitions (e.g. project-find-regexp)
+;; as well
+(setq xref-show-xrefs-function #'ivy-xref-show-xrefs)
+(require 'eglot)
+(add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
 
-; Allow for ido-mode to be used with imenu for looking through source file functions/members
-(defun ido-goto-symbol (&optional symbol-list)
-      "Refresh imenu and jump to a place in the buffer using Ido."
-      (interactive)
-      (unless (featurep 'imenu)
-        (require 'imenu nil t))
-      (cond
-       ((not symbol-list)
-        (let ((ido-mode ido-mode)
-              (ido-enable-flex-matching
-               (if (boundp 'ido-enable-flex-matching)
-                   ido-enable-flex-matching t))
-              name-and-pos symbol-names position)
-          (unless ido-mode
-            (ido-mode 1)
-            (setq ido-enable-flex-matching t))
-          (while (progn
-                   (imenu--cleanup)
-                   (setq imenu--index-alist nil)
-                   (ido-goto-symbol (imenu--make-index-alist))
-                   (setq selected-symbol
-                         (ido-completing-read "Symbol? " symbol-names))
-                   (string= (car imenu--rescan-item) selected-symbol)))
-          (unless (and (boundp 'mark-active) mark-active)
-            (push-mark nil t nil))
-          (setq position (cdr (assoc selected-symbol name-and-pos)))
-          (cond
-           ((overlayp position)
-            (goto-char (overlay-start position)))
-           (t
-            (goto-char position)))))
-       ((listp symbol-list)
-        (dolist (symbol symbol-list)
-          (let (name position)
-            (cond
-             ((and (listp symbol) (imenu--subalist-p symbol))
-              (ido-goto-symbol symbol))
-             ((listp symbol)
-              (setq name (car symbol))
-              (setq position (cdr symbol)))
-             ((stringp symbol)
-              (setq name symbol)
-              (setq position
-                    (get-text-property 1 'org-imenu-marker symbol))))
-            (unless (or (null position) (null name)
-                        (string= (car imenu--rescan-item) name))
-              (add-to-list 'symbol-names name)
-              (add-to-list 'name-and-pos (cons name position))))))))
+(when lightweight-aquamacs
+(add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
+(add-to-list 'eglot-server-programs '(csharp-mode . ("/usr/local/bin/omnisharp" "-lsp"))))
 
-(global-set-key (kbd "C-c h i") 'ido-goto-symbol)
-(global-set-key (kbd "<C-f12>") 'ido-goto-symbol)
+(when lightweight-linux
+(add-to-list 'eglot-server-programs '(csharp-mode . ("/usr/local/bin/omnisharp" "-lsp"))))
 
-; Because imenu (which is what ido-goto-symbol) sucks at handling namespaced
-; members, we make use of semantic as well as a more accurate, slower
-; alternative.
-(global-set-key (kbd "C-c h I") 'semantic-complete-jump-local)
-(global-set-key (kbd "<C-S-f12>") 'semantic-complete-jump-local)
+(when lightweight-win32
+(add-to-list 'eglot-server-programs '(csharp-mode . ("C:/omnisharp/OmniSharp.exe" "-lsp"))))
+
+(add-hook 'c-mode-hook 'eglot-ensure)
+(add-hook 'c++-mode-hook 'eglot-ensure)
+(add-hook 'objc-mode-hook 'eglot-ensure)
+(add-hook 'csharp-mode-hook 'eglot-ensure)
+; Python already works OOTB
+
+; Don't want the eldoc box showing everywhere, have a global bind for it
+(add-hook 'eglot--managed-mode-hook #'eldoc-box-hover-mode t)
+(setq global-eldoc-mode nil)
+(setq eldoc-idle-delay 1.0)
+(add-to-list 'eglot-ignored-server-capabilites :hoverProvider)
+
+(require 'cc-mode)
+;(define-key c-mode-base-map (kbd "M-RET") 'eglot-rename)
+(global-set-key (kbd "M-RET") 'eglot-rename)
+(global-set-key (kbd "M-,") 'xref-find-definitions-other-window)
+(global-set-key (kbd "M-.") 'xref-find-definitions)
+(global-set-key [C-mouse-1] 'xref-find-defintions-at-mouse)
+(global-set-key [C-mouse-2] 'eldoc-box-eglot-help-at-point)
+(global-set-key (kbd "C-c ?") 'eldoc-box-eglot-help-at-point)
 
 ; Allow for manual-rescanning of buffers
  (defun rescan-symbols-in-buffer()
@@ -239,16 +218,6 @@ See also `newline-and-indent'."
 (setq recentf-max-menu-items 25)
 (global-set-key "\C-x\ \C-r" 'recentf-open-files)
 (setq recentf-save-file (expand-file-name "recentf" "~/Git/lightweight-emacs/"))
-
-;; get rid of `find-file-read-only' and replace it with something
-;; more useful.
-(global-set-key (kbd "C-x C-r") 'ido-recentf-open)
-(defun ido-recentf-open ()
-  "Use `ido-completing-read' to \\[find-file] a recent file"
-  (interactive)
-  (if (find-file (ido-completing-read "Find recent file: " recentf-list))
-      (message "Opening file...")
-    (message "Aborting")))
 
 ; Allow toggling hiding of comments
 (require 'hide-comnt)
@@ -338,12 +307,11 @@ current buffer's, reload dir-locals."
 (setq undo-limit 20000000)
 (setq undo-strong-limit 40000000)
 
-; Determine the underlying operating system
-(setq lightweight-aquamacs (featurep 'aquamacs))
-(setq lightweight-linux (featurep 'x))
-(setq lightweight-win32 (not (or lightweight-aquamacs lightweight-linux)))
-
 (global-hl-line-mode 1)
+
+; For long lines, Emacs slows down with hl-line-mode.
+(require 'so-long)
+(global-so-long-mode 1)
 
 ; Start maximized
 (add-to-list 'default-frame-alist '(fullscreen . maximized))
@@ -398,7 +366,6 @@ current buffer's, reload dir-locals."
 (tool-bar-mode 0)
 
 (load-library "view")
-(require 'cc-mode)
 (require 'compile)
 
 ; Set the default compilation command to use CMake
@@ -596,12 +563,6 @@ current buffer's, reload dir-locals."
     (setq emacs-transparency-toggle-switch t)
 (set-frame-parameter nil 'alpha 50)))
 
-; Activate CMake mode automatically
-(setq auto-mode-alist
-      (append
-       '(("CMakeLists\\.txt\\'" . cmake-mode))
-       '(("\\.cmake\\'" . cmake-mode))
-       auto-mode-alist))
 ; Set CMake tab width to use 4 spaces instead of 2 by defaul
 (setq cmake-tab-width 4)
 
@@ -730,12 +691,9 @@ current buffer's, reload dir-locals."
 (setq auto-mode-alist
      (cons '("SConscript" . python-mode) auto-mode-alist))
 
-; Anaconda mode
-(require 'anaconda-mode)
-(add-hook 'python-mode-hook 'anaconda-mode)
-(add-hook 'python-mode-hook 'anaconda-eldoc-mode)
-(eval-after-load "company"
- '(add-to-list 'company-backends 'company-anaconda))
+(require 'eldoc-box)
+(setq x-gtk-resize-child-frames 'resize-mode)
+(setq eldoc-box-max-pixel-height 600)
 
 ; CC++ mode handling
 (defun lightweight-c-hook ()
@@ -962,17 +920,16 @@ current buffer's, reload dir-locals."
 ; NOTE: If this causes problems, comment it out
 (setq projectile-indexing-method 'alien)
 ; Remove redundant project name from the mode line
-; This is the default
-; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name))))
+; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name)))) 
 (setq projectile-mode-line '(:eval (format "" )))
+
+(setq projectile-completion-system 'ivy)
 
 ; As of latest projectile 1.1.0, ``projectile-keymap-prefix`` is deprecated and need 
 ; to use this instead to set keybindings.
 (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 
 ; Additional keybindngs for finding header files
-(global-set-key (kbd "C-M->") 'ff-find-other-file)
-(global-set-key (kbd "C-M-<") '(lambda nil (interactive) (ff-find-other-file t)))
 (global-set-key (kbd "C-,") 'projectile-find-other-file)
 (global-set-key (kbd "C-.") 'projectile-find-other-file-other-window)
 
@@ -1224,54 +1181,11 @@ current buffer's, reload dir-locals."
 (add-hook 'company-completion-cancelled-hook 'company-maybe-turn-on-fci)
 ; FIX ends here
 
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/irony-mode/")
-
-(require 'irony)
-(require 'irony-cdb-clang-complete)
-(require 'irony-cdb)
-(require 'irony-cdb-json)
-(require 'irony-cdb-libclang)
-(require 'irony-completion)
-(require 'irony-diagnostics)
-(require 'irony-iotask)
-(require 'irony-snippet)
-; TODO: This seems to be causing issues on win32 where irony will hold onto file handles unnecessarily
-(require 'irony-eldoc)
-(setq irony-server-install-prefix "~/Git/lightweight-emacs/irony-cfg/bin/")
-(setq irony-user-dir "~/Git/lightweight-emacs/irony-cfg/")
-
-; Avoid activating irony for modes that inherit c-mode (like GLSL mode)
-(defun my-irony-mode-on ()
-  (when (member major-mode irony-supported-major-modes)
-    (irony-mode 1)))
-
-(add-hook 'c++-mode-hook 'my-irony-mode-on)
-(add-hook 'c-mode-hook 'my-irony-mode-on)
-(add-hook 'objc-mode-hook 'irony-mode)
-(add-hook 'irony-mode-hook 'irony-cdb-autosetup-compile-options)
-(add-hook 'irony-mode-hook #'irony-eldoc)
-
-
 ;; Windows performance tweaks
 (when (boundp 'w32-pipe-read-delay)
   (setq w32-pipe-read-delay 0))
-;; Set the buffer size to 64K on Windows (from the original 4K)
-(when (boundp 'w32-pipe-buffer-size)
-  (setq irony-server-w32-pipe-buffer-size (* 64 1024)))
-
-(require 'company-irony)
-(eval-after-load 'company
-  '(add-to-list 'company-backends 'company-irony))
-(setq company-irony-ignore-case t)
-
-(require 'company-irony-c-headers)
-;; Load with `irony-mode` as a grouped backend
-(eval-after-load 'company
-  '(add-to-list
-    'company-backends '(company-irony-c-headers company-irony)))
 
 ; Live syntax checking
-;(require 'seq)
 (require 'let-alist)
 (require 'pkg-info)
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/flycheck")
@@ -1283,56 +1197,6 @@ current buffer's, reload dir-locals."
 (put 'cc-search-directories 'safe-local-variable #'listp)
 (put 'cc-other-file-alist 'safe-local-variable #'listp)
 (put 'flycheck-clang-include-path 'safe-local-variable #'listp)
-
-(require 'flycheck-irony)
-(eval-after-load 'flycheck
-  '(add-hook 'flycheck-mode-hook #'flycheck-irony-setup))
-
-; Set up code navigation
-(require 'ggtags)
-(add-hook 'c-mode-common-hook
-          (lambda ()
-            (when (derived-mode-p 'c-mode 'c++-mode 'java-mode 'asm-mode 'objc-mode 'swift-mode)
-              (ggtags-mode 1))))
-
-(define-key ggtags-mode-map (kbd "C-c g s") 'ggtags-find-other-symbol)
-(define-key ggtags-mode-map (kbd "C-c g h") 'ggtags-view-tag-history)
-(define-key ggtags-mode-map (kbd "C-c g r") 'ggtags-find-reference)
-(define-key ggtags-mode-map (kbd "C-c g f") 'ggtags-find-file)
-(define-key ggtags-mode-map (kbd "C-c g c") 'ggtags-create-tags)
-(define-key ggtags-mode-map (kbd "C-c g u") 'ggtags-update-tags)
-(define-key ggtags-mode-map (kbd "M-,") 'pop-tag-mark)
-(define-key ggtags-mode-map [C-down-mouse-1] 'ggtags-find-tag-mouse)
-(define-key ggtags-navigation-map (kbd "M-<") nil) ; ggtags overrides default Emacs keybinding by default
-(define-key ggtags-navigation-map (kbd "M->") nil) ; ggtags overrides default Emacs keybinding by default
-(setq-local imenu-create-index-function #'ggtags-build-imenu-index) ; Integrate IMenu into GGTAGS
-; Set GGTAGS to use ido to handle completions (NOTE: Might be slow)
-(setq ggtags-completing-read-function
-      (lambda (&rest args)
-        (apply #'ido-completing-read
-               (car args)
-               (all-completions "" ggtags-completion-table)
-               (cddr args))))
-(setq ggtags-split-window-function
-      (lambda (w) (split-window (frame-root-window w))))
-
-(setq ggtags-global-window-height '20)
-(setq ggtags-sort-by-nearness 't)
-(setq ggtags-find-tag-hook 'recenter)
-
-; Set up re-factoring support
-(require 'srefactor)
-(require 'srefactor-lisp)
-(semantic-mode 1) ;; -> this is optional for Lisp
-(define-key c-mode-map (kbd "M-RET") 'srefactor-refactor-at-point)
-(define-key c++-mode-map (kbd "M-RET") 'srefactor-refactor-at-point)
-(global-set-key (kbd "M-RET o") 'srefactor-lisp-one-line)
-(global-set-key (kbd "M-RET m") 'srefactor-lisp-format-sexp)
-(global-set-key (kbd "M-RET d") 'srefactor-lisp-format-defun)
-(global-set-key (kbd "M-RET b") 'srefactor-lisp-format-buffer)
-
-; Display function interface at point in minibuffer
-(setq-local eldoc-documentation-function #'ggtags-eldoc-function)
 
 ; Don't clutter the modeline
 (setq eldoc-minor-mode-string nil)
@@ -1358,9 +1222,6 @@ current buffer's, reload dir-locals."
 (show-smartparens-global-mode t)
 (smartparens-global-mode nil)
 
-;(add-hook 'js-mode-hook #'smartparens-mode)
-;(add-hook 'c-mode-common-hook #'smartparens-mode)
-;(add-hook 'csharp-mode-hook #'smartparens-mode)
 (add-hook 'prog-mode-hook #'smartparens-mode)
 
 (setq sp-show-pair-delay 0.8) ; Slow down the smartparens matching mode to improve interactive typing performance
@@ -1407,30 +1268,6 @@ current buffer's, reload dir-locals."
              (mapconcat 'identity dir-list " ")
              " -type d -not -regex \".*/\\\..*\""))))
 
-; Allow for communication between emacs and Maya
-(add-hook
- 'mel-mode-hook
- (lambda ()
-   (require 'etom)
-   (setq etom-default-host "localhost")
-   (setq etom-default-port 2222)
-   (local-set-key (kbd "C-c C-r") 'etom-send-region)
-   (local-set-key (kbd "C-c C-c") 'etom-send-buffer)
-   (local-set-key (kbd "C-c C-l") 'etom-send-buffer)
-   (local-set-key (kbd "C-c C-z") 'etom-show-buffer)))
-
-; For Python
-(add-hook
- 'python-mode-hook
- (lambda ()
-   (require 'etom)
-   (setq etom-default-host "localhost")
-   (setq etom-default-port 2222)
-   (local-set-key (kbd "C-c C-r") 'etom-send-region-py)
-   (local-set-key (kbd "C-c C-c") 'etom-send-buffer-py)
-   (local-set-key (kbd "C-c C-l") 'etom-send-buffer-py)
-   (local-set-key (kbd "C-c C-z") 'etom-show-buffer)))
-
 ; Make Emacs not throw warnings on UTF-8 encoded Python scripts
 (define-coding-system-alias 'UTF-8 'utf-8) 
 
@@ -1460,33 +1297,6 @@ current buffer's, reload dir-locals."
 ; Add support for C#
 (autoload 'csharp-mode "csharp-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.cs\\'" . csharp-mode))
-
-; Using Omnisharp server for C# intellisense
-(require 'omnisharp)
-(eval-after-load
-  'company
-  '(add-to-list 'company-backends #'company-omnisharp))
-
-(defun my-csharp-mode-setup ()
-  (omnisharp-mode)
-  (company-mode)
-  ;(flycheck-mode)
-
-  (setq indent-tabs-mode nil)
-  (setq c-syntactic-indentation t)
-  (c-set-style "ellemtel")
-  (setq c-basic-offset 4)
-  (setq truncate-lines t)
-  (setq tab-width 4)
-
-  ;csharp-mode README.md recommends this too
-  ;(electric-pair-mode 1)       ;; Emacs 24
-  ;(electric-pair-local-mode 1) ;; Emacs 25
-
-  (local-set-key (kbd "C-c r r") 'omnisharp-run-code-action-refactoring)
-  (local-set-key (kbd "C-c C-c") 'recompile))
-
-(add-hook 'csharp-mode-hook 'my-csharp-mode-setup t)
 
 ; Add support for the Rust programming language
 (autoload 'rust-mode "rust-mode" nil t)
@@ -1656,30 +1466,6 @@ PWD is not in a git repo (or the git command is not found)."
 ; Use the silver searcher instead of grep for searching
 (require 'ag)
 
-; Allow for inserting filename from ido-completion
-(defun insert-file-name (filename &optional args)
-  "Insert name of file FILENAME into buffer after point.
-
-  Prefixed with \\[universal-argument], expand the file name to
-  its fully canocalized path.  See `expand-file-name'.
-
-  Prefixed with \\[negative-argument], use relative path to file
-  name from current directory, `default-directory'.  See
-  `file-relative-name'.
-
-  The default with no prefix is to insert the file name exactly as
-  it appears in the minibuffer prompt."
-  ;; Based on insert-file in Emacs -- ashawley 20080926
-  (interactive `(,(ido-read-file-name "File Name: ")
-                 ,current-prefix-arg))
-  (cond ((eq '- args)
-         (insert (expand-file-name filename)))
-        ((not (null args))
-         (insert filename))
-        (t
-         (insert (file-relative-name filename))))
-)
-
 ; Scroll output in the compilation window automatically
 (setq compilation-scroll-output t)
 
@@ -1712,7 +1498,6 @@ PWD is not in a git repo (or the git command is not found)."
      (define-key isearch-mode-map (kbd "M-/") 'isearch-dabbrev-expand))
 )
 
-
 ; Disable garbage collection while the minibuffer is open
 (defun my-minibuffer-setup-hook ()
   (setq gc-cons-threshold most-positive-fixnum))
@@ -1723,16 +1508,8 @@ PWD is not in a git repo (or the git command is not found)."
 (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
 (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook)
 
-; Update smex list after a file is loaded
-(defun smex-update-after-load (unused)
-  (when (boundp 'smex-cache)
-    (smex-update)))
-(add-hook 'after-load-functions 'smex-update-after-load)
-
-
 ; Aliases for unintuitive commands
 (defalias 'refresh-syntax-highlighting 'font-lock-fontify-buffer)
-
 
 ; Cleanup and theme setup
 (defun post-load-stuff ()
@@ -1747,6 +1524,5 @@ PWD is not in a git repo (or the git command is not found)."
   (recentf-load-list)
   (global-company-mode t)
   (setq fill-column 81)
-  (smex-update)
 )
 (add-hook 'window-setup-hook 'post-load-stuff t)
