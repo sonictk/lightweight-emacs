@@ -96,6 +96,8 @@
 
 (setq imenu-max-item-length 255)
 
+(add-to-list 'completion-styles 'substring)
+
 (require 'ivy)
 (require 'counsel)
 (require 'swiper)
