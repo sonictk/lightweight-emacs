@@ -152,6 +152,9 @@ If the input is empty, select the previous history element instead."
 (setq xref-show-xrefs-function #'ivy-xref-show-xrefs)
 (require 'eglot)
 (add-to-list 'eglot-server-programs '((c++-mode c-mode) "clangd"))
+(add-to-list 'eglot-server-programs
+             `(python-mode . ("pyls" "-v" "--tcp" "--host"
+                              "localhost" "--port" :autoport)))
 
 (when lightweight-aquamacs
 (add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
