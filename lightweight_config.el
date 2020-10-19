@@ -1234,9 +1234,16 @@ current buffer's, reload dir-locals."
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/smartparens")
 (require 'dash)
 (require 'smartparens-config)
-; (add-to-list 'sp-ignore-modes-list '(minibuffer-inactive-mode picture-mode markdown-mode text-mode artist-mode))
+(add-to-list 'sp-ignore-modes-list '(minibuffer-inactive-mode picture-mode markdown-mode text-mode artist-mode))
 (show-smartparens-global-mode t)
 (smartparens-global-mode nil)
+
+(add-hook 'artist-mode-hook
+    (lambda ()
+      (turn-off-smartparens-mode)
+      (whitespace-mode)
+    )
+)
 
 (add-hook 'prog-mode-hook #'smartparens-mode)
 
