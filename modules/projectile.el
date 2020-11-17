@@ -685,6 +685,14 @@ as defined in `vc.el'."
     ("cc"  . ("h" "hh" "hpp"))
     ("hh"  . ("cc"))
 
+    ;; OCaml extensions
+    ("ml" . ("mli"))
+    ("mli" . ("ml" "mll" "mly"))
+    ("mll" . ("mli"))
+    ("mly" . ("mli"))
+    ("eliomi" . ("eliom"))
+    ("eliom" . ("eliomi"))
+
     ;; vertex shader and fragment shader extensions in glsl
     ("vert" . ("frag"))
     ("frag" . ("vert"))
@@ -2756,6 +2764,13 @@ test/impl/other files as below:
                                   :compile "sbt compile"
                                   :test "sbt test"
                                   :test-suffix "Spec")
+
+(projectile-register-project-type 'mill '("build.sc")
+                                  :project-file "build.sc"
+                                  :compile "mill all __.compile"
+                                  :test "mill all __.test"
+                                  :test-suffix "Test")
+
 ;; Clojure
 (projectile-register-project-type 'lein-test '("project.clj")
                                   :project-file "project.clj"
@@ -3423,7 +3438,12 @@ regular expression."
            (tags-exclude (projectile-tags-exclude-patterns))
            (default-directory project-root)
            (tags-file (expand-file-name projectile-tags-file-name))
-           (command (format projectile-tags-command tags-file tags-exclude default-directory))
+           (command (format projectile-tags-command
+                            tags-file
+                            tags-exclude
+                            ;; Use directory file name for MSYS2 compatibility.
+                            ;; See https://github.com/bbatsov/projectile/issues/1377 for more details
+                            (directory-file-name default-directory)))
            shell-output exit-code)
       (with-temp-buffer
         (setq exit-code
@@ -3679,16 +3699,19 @@ to run the replacement."
       ;; Emacs 25 and 26
       ;;
       ;; Adapted from `tags-query-replace' for literal strings (not regexp)
-      (setq tags-loop-scan `(let ,(unless (equal old-text (downcase old-text))
-                                    '((case-fold-search nil)))
-                              (if (search-forward ',old-text nil t)
-                                  ;; When we find a match, move back to
-                                  ;; the beginning of it so
-                                  ;; perform-replace will see it.
-                                  (goto-char (match-beginning 0))))
-            tags-loop-operate `(perform-replace ',old-text ',new-text t nil nil
-                                                nil multi-query-replace-map))
-      (with-no-warnings (tags-loop-continue (or (cons 'list files) t))))))
+      (with-no-warnings
+        (setq tags-loop-scan
+              `(let ,(unless (equal old-text (downcase old-text))
+                       '((case-fold-search nil)))
+                 (if (search-forward ',old-text nil t)
+                     ;; When we find a match, move back to
+                     ;; the beginning of it so
+                     ;; perform-replace will see it.
+                     (goto-char (match-beginning 0)))))
+        (setq tags-loop-operate
+              `(perform-replace ',old-text ',new-text t nil nil
+                                nil multi-query-replace-map))
+        (tags-loop-continue (or (cons 'list files) t))))))
 
 ;;;###autoload
 (defun projectile-replace-regexp (&optional arg)
@@ -4502,8 +4525,10 @@ overwriting each other's changes."
   (:reader (read-directory-name "Project root: " (projectile-project-root))
            :description nil)
   (with-current-buffer buf
-    (equal (file-name-as-directory (expand-file-name qualifier))
-           (projectile-project-root))))
+    (let ((directory (file-name-as-directory (expand-file-name qualifier))))
+      (and (projectile-project-buffer-p buf directory)
+           (equal directory
+                  (projectile-project-root))))))
 
 (defun projectile-ibuffer-by-project (project-root)
   "Open an IBuffer window showing all buffers in PROJECT-ROOT."
