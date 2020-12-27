@@ -706,8 +706,8 @@ current buffer's, reload dir-locals."
 
 (require 'eldoc-box)
 (setq x-gtk-resize-child-frames 'resize-mode)
-(setq eldoc-box-max-pixel-width 1600)
-(setq eldoc-box-max-pixel-height 800)
+(setq eldoc-box-max-pixel-width 1900)
+(setq eldoc-box-max-pixel-height 1000)
 
 ; CC++ mode handling
 (defun lightweight-c-hook ()
