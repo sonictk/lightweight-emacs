@@ -721,6 +721,7 @@ current buffer's, reload dir-locals."
 
   ; Additional style stuff
   (c-set-offset 'member-init-intro '++)
+  (c-set-offset 'inline-open '0)
 
   ; No hungry backspace
   (c-toggle-auto-hungry-state -1)
@@ -1031,9 +1032,11 @@ current buffer's, reload dir-locals."
 (require 'yascroll)
 (global-yascroll-bar-mode 1)
 
+; Disabled for now since a lot of programmers don't understand that trailing whitespace is stupid
+; and this causes lots of diffs.
 ; Use whitespace cleaning only for programming modes
-(add-hook 'prog-mode-hook
-    (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace)))
+; (add-hook 'prog-mode-hook
+;     (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace)))
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
