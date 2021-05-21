@@ -5,7 +5,7 @@
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/ivy")
 
 ; Determine the underlying operating system
-(setq lightweight-aquamacs (featurep 'aquamacs))
+(setq lightweight-aquamacs (string-equal system-type "darwin"))
 (setq lightweight-linux (featurep 'x))
 (setq lightweight-win32 (not (or lightweight-aquamacs lightweight-linux)))
 
@@ -161,7 +161,7 @@ If the input is empty, select the previous history element instead."
                               "localhost" "--port" :autoport)))
 
 (when lightweight-aquamacs
-(add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
+(add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/XcodeBeta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
 (add-to-list 'eglot-server-programs '(csharp-mode . ("/usr/local/bin/omnisharp" "-lsp"))))
 
 (when lightweight-linux
@@ -174,6 +174,7 @@ If the input is empty, select the previous history element instead."
 (add-hook 'c++-mode-hook 'eglot-ensure)
 (add-hook 'objc-mode-hook 'eglot-ensure)
 (add-hook 'csharp-mode-hook 'eglot-ensure)
+(add-hook 'swift-mode 'eglot-ensure)
 ; Python already works OOTB
 
 ; Don't want the eldoc box showing everywhere, have a global bind for it
@@ -360,20 +361,19 @@ current buffer's, reload dir-locals."
   (setq lightweight-font "outline-Liberation Mono")
 )
 
-(when lightweight-aquamacs
-  (cua-mode 0)
-  (osx-key-mode 0)
-  (tabbar-mode 0)
-  (setq mac-command-modifier 'meta)
-  (setq x-select-enable-clipboard t)
-  (setq aquamacs-save-options-on-quit 0)
-  (setq special-display-regexps nil)
-  (setq special-display-buffer-names nil)
-  (define-key function-key-map [return] [13])
-  (setq mac-command-key-is-meta t)
-  (scroll-bar-mode nil)
-  (setq mac-pass-command-to-system nil)
-)
+; ; (when lightweight-aquamacs
+; ;   (cua-mode 0)
+; ;   (tabbar-mode 0)
+; ;   (setq mac-command-modifier 'meta)
+; ;   (setq x-select-enable-clipboard t)
+; ;   (setq aquamacs-save-options-on-quit 0)
+; ;   (setq special-display-regexps nil)
+; ;   (setq special-display-buffer-names nil)
+; ;   (define-key function-key-map [return] [13])
+; ;   (setq mac-command-key-is-meta t)
+; ;   (scroll-bar-mode nil)
+; ;   (setq mac-pass-command-to-system nil)
+; ; )
 
 (when lightweight-linux
   (display-battery-mode 1)
