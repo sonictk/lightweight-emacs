@@ -1310,6 +1310,10 @@ current buffer's, reload dir-locals."
     )
 )
 
+; Use js-mode to highlight JSON files
+(autoload 'js-mode "js-mode" nil t)
+(add-to-list 'auto-mode-alist '("\\.json$" . js-mode))
+
 ; Add MEL mode syntax highlighting
 (autoload 'mel-mode "mel-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.mel$" . mel-mode))
