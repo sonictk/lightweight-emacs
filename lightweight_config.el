@@ -192,6 +192,8 @@ If the input is empty, select the previous history element instead."
 (global-set-key [C-mouse-2] 'eldoc-box-eglot-help-at-point)
 (global-set-key (kbd "C-c ?") 'eldoc-box-eglot-help-at-point)
 
+(require 'bison-mode)
+
 ; Allow for manual-rescanning of buffers
  (defun rescan-symbols-in-buffer()
    (interactive)
@@ -1429,6 +1431,8 @@ PWD is not in a git repo (or the git command is not found)."
       desktop-base-lock-name      "lock"
       desktop-path                (list desktop-dirname)
       desktop-save                t
+      desktop-restore-eager       5 ; Number of buffers to restore immediately; rest are lazily loaded when emacs is idle
+      desktop-lazy-verbose        nil
       desktop-files-not-to-save   "^$" ;reload tramp paths
       desktop-load-locked-desktop nil
       desktop-auto-save-timeout   30)
