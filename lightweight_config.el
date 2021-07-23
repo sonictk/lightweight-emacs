@@ -1431,7 +1431,7 @@ PWD is not in a git repo (or the git command is not found)."
       desktop-base-lock-name      "lock"
       desktop-path                (list desktop-dirname)
       desktop-save                t
-      desktop-restore-eager       5 ; Number of buffers to restore immediately; rest are lazily loaded when emacs is idle
+      desktop-restore-eager       10 ; Number of buffers to restore immediately; rest are lazily loaded when emacs is idle
       desktop-lazy-verbose        nil
       desktop-files-not-to-save   "^$" ;reload tramp paths
       desktop-load-locked-desktop nil
