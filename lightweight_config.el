@@ -29,6 +29,9 @@
   (exec-path-from-shell-copy-env "PYTHONPATH")
   (exec-path-from-shell-initialize))
 
+; Set spelling program
+(setq ispell-program-name "aspell")
+
 (require 'highlight-symbol)
 (global-set-key [(control f3)] 'highlight-symbol)
 (global-set-key (kbd "C-c h h") 'highlight-symbol)
