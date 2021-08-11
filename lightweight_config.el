@@ -22,6 +22,9 @@
 (require 'yasnippet)
 (yas-global-mode 1)
 
+; Improve performance reading from LSP servers
+(setq read-process-output-max 1048576)
+
 ; On OSX, this is required in order to have Emacs have access to the same binaries 
 ; i.e. /usr/loca/bin that the shell normally would have. Yay Apple!
 (require 'exec-path-from-shell)
@@ -1542,7 +1545,7 @@ PWD is not in a git repo (or the git command is not found)."
   (setq gc-cons-threshold most-positive-fixnum))
 
 (defun my-minibuffer-exit-hook ()
-  (setq gc-cons-threshold 800000))
+  (setq gc-cons-threshold 100000000)) ; Follows spacemacs default of 100 MB
 
 (add-hook 'minibuffer-setup-hook #'my-minibuffer-setup-hook)
 (add-hook 'minibuffer-exit-hook #'my-minibuffer-exit-hook)
