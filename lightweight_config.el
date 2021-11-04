@@ -367,6 +367,7 @@ current buffer's, reload dir-locals."
 
 (when lightweight-win32
   (setq lightweight-font "outline-Liberation Mono")
+  (setq find-program "c:/msys64/usr/bin/find.exe")
 )
 
 ; ; (when lightweight-aquamacs
