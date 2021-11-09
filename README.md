@@ -65,6 +65,8 @@ You will need the following dependencies, regardless of your platform:
 * Git
 * [ag (A.K.A. The Silver Searcher)](https://github.com/ggreer/the_silver_searcher).
   A Windows version is available [here](https://blog.kowalczyk.info/software/the-silver-searcher-for-windows.html).
+* [fd](https://github.com/sharkdp/fd/releases) as a replacement for `find`. This is not required on macOS/Linux, 
+  but is faster anyway. On Windows this is **required** for projectile to invoke the right `find` command.
 
 ### Installation
 

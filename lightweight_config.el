@@ -367,7 +367,6 @@ current buffer's, reload dir-locals."
 
 (when lightweight-win32
   (setq lightweight-font "outline-Liberation Mono")
-  (setq find-program "c:/msys64/usr/bin/find.exe")
 )
 
 ; ; (when lightweight-aquamacs
@@ -1000,7 +999,8 @@ current buffer's, reload dir-locals."
 ; Commands
 (set-variable 'grep-command "grep -irHn ")
 (when lightweight-win32
-    (set-variable 'grep-command "findstr -s -n -i -l "))
+    (set-variable 'grep-command "findstr -s -n -i -l ")
+    (setq find-program "c:/msys64/usr/bin/find.exe"))
 
 ; Smooth scroll
 (setq scroll-step 3)
