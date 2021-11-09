@@ -367,7 +367,6 @@ current buffer's, reload dir-locals."
 
 (when lightweight-win32
   (setq lightweight-font "outline-Liberation Mono")
-  (setq find-program "c:/msys64/usr/bin/find.exe")
 )
 
 ; ; (when lightweight-aquamacs
@@ -1000,7 +999,8 @@ current buffer's, reload dir-locals."
 ; Commands
 (set-variable 'grep-command "grep -irHn ")
 (when lightweight-win32
-    (set-variable 'grep-command "findstr -s -n -i -l "))
+    (set-variable 'grep-command "findstr -s -n -i -l ")
+    (setq find-program "c:/msys64/usr/bin/find.exe"))
 
 ; Smooth scroll
 (setq scroll-step 3)
@@ -1553,6 +1553,27 @@ PWD is not in a git repo (or the git command is not found)."
 
 ; Aliases for unintuitive commands
 (defalias 'refresh-syntax-highlighting 'font-lock-fontify-buffer)
+
+; Perforce support
+(require 'p4)
+(setq p4-do-find-file nil) ; prevents p4 from taking ownership of a P4 file when it is loaded
+(setq p4-auto-refresh nil)
+(setq p4-check-empty-diffs t)
+(setq p4-follow-symlinks t)
+(defun p4-tramp-workaround-find-file-hook ()
+    "do not let p4.el process remote TRAMP buffers"
+    (when
+        (and (fboundp 'tramp-tramp-file-p)
+             (not (tramp-tramp-file-p buffer-file-name)))
+      (p4-update-status)))
+
+;; p4.el adds p4-update-status to find-file-hook
+;; we replace it with a wrapper that filters out remote buffers.
+(remove-hook 'find-file-hook 'p4-update-status)
+(add-hook 'find-file-hooks 'p4-tramp-workaround-find-file-hook)
+
+; (require 'vc-p4)
+; (setq vc-p4-require-p4config t) ; Avoid delays when loading non-P4 files
 
 ; Cleanup and theme setup
 (defun post-load-stuff ()
