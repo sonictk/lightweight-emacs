@@ -3,6 +3,8 @@
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/swift-mode")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/ivy")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/wgrep")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/rg")
 
 ; Determine the underlying operating system
 (setq lightweight-aquamacs (string-equal system-type "darwin"))
@@ -97,6 +99,12 @@
 ; Allow for side-by-side diff viewing
 (require 'diffview)
 
+; Faster than ag, rg!
+(require 'wgrep)
+(require 'rg)
+(autoload 'wgrep-rg-setup "wgrep-rg")
+(add-hook 'rg-mode-hook 'wgrep-rg-setup)
+
 ; Binding for line wrapping
 (global-set-key (kbd "C-M-S-w") 'visual-line-mode)
 
@@ -132,7 +140,7 @@
 (global-set-key (kbd "<f2> u") 'counsel-unicode-char)
 (global-set-key (kbd "C-c g") 'counsel-git)
 (global-set-key (kbd "C-c j") 'counsel-git-grep)
-(global-set-key (kbd "C-c k") 'counsel-ag)
+(global-set-key (kbd "C-c k") 'counsel-rg)
 (global-set-key (kbd "C-x l") 'counsel-locate)
 (global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
 (global-set-key (kbd "C-c h i") 'counsel-imenu)
@@ -1572,6 +1580,7 @@ PWD is not in a git repo (or the git command is not found)."
 (remove-hook 'find-file-hook 'p4-update-status)
 (add-hook 'find-file-hooks 'p4-tramp-workaround-find-file-hook)
 
+; vc-p4 seems to slowdown normal file open operations even after setting the latter variable
 ; (require 'vc-p4)
 ; (setq vc-p4-require-p4config t) ; Avoid delays when loading non-P4 files
 

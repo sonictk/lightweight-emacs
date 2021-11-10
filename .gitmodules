@@ -19,3 +19,9 @@
 [submodule "modules/swift-mode"]
 	path = modules/swift-mode
 	url = git@github.com:swift-emacs/swift-mode.git
+[submodule "modules/rg"]
+	path = modules/rg
+	url = git@github.com:dajva/rg.el.git
+[submodule "modules/wgrep"]
+	path = modules/wgrep
+	url = git@github.com:mhayashi1120/Emacs-wgrep.git
