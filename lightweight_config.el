@@ -972,7 +972,7 @@ current buffer's, reload dir-locals."
 (global-set-key (kbd "C-M-S-s") 'projectile-find-tag)
 
 ; Search using the silver searcher
-(global-set-key (kbd "C-S-f") 'projectile-ag)
+(global-set-key (kbd "C-S-f") 'projectile-ripgrep)
 
 ; Editing
 (defun lightweight-replace-in-region (old-word new-word)
