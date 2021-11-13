@@ -105,6 +105,8 @@
 (autoload 'wgrep-rg-setup "wgrep-rg")
 (add-hook 'rg-mode-hook 'wgrep-rg-setup)
 
+(require 'counsel-fd)
+
 ; Binding for line wrapping
 (global-set-key (kbd "C-M-S-w") 'visual-line-mode)
 
