@@ -101,6 +101,8 @@
 
 ; Faster than ag, rg!
 (require 'wgrep)
+(require 'ripgrep)
+(require 'projectile-ripgrep)
 (require 'rg)
 (autoload 'wgrep-rg-setup "wgrep-rg")
 (add-hook 'rg-mode-hook 'wgrep-rg-setup)
@@ -1203,6 +1205,7 @@ current buffer's, reload dir-locals."
 (setq company-tooltip-maximum-width 100)
 (setq company-tooltip-limit 15)
 (setq company-selection-wrap-around t)
+(setq company-require-match nil)
 
 
 ; FIX for fci-mode distorting the popup for company completions
