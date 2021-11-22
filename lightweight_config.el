@@ -733,6 +733,23 @@ current buffer's, reload dir-locals."
 (setq eldoc-box-max-pixel-width 1900)
 (setq eldoc-box-max-pixel-height 1000)
 
+; Eldoc copy-to-buffer version
+(defun eldoc-box-eglot-copy-help-to-clipboard()
+  "Copy documentation of the symbol at point to the yank ring."
+  (interactive)
+  (when eglot--managed-mode
+    (let ((eldoc-box-position-function #'eldoc-box--default-at-point-position-function))
+      (kill-new
+       (eglot--dbind ((Hover) contents range)
+                     (jsonrpc-request (eglot--current-server-or-lose) :textDocument/hover
+                                      (eglot--TextDocumentPositionParams))
+                     (when (seq-empty-p contents) (eglot--error "No hover info here"))
+                     (eglot--hover-info contents range)))
+    )
+  )
+)
+
+
 ; CC++ mode handling
 (defun lightweight-c-hook ()
   ; 4-space tabs
