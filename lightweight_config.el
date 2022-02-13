@@ -107,6 +107,7 @@
 (autoload 'wgrep-rg-setup "wgrep-rg")
 (add-hook 'rg-mode-hook 'wgrep-rg-setup)
 
+(require 'fd-dired)
 (require 'counsel-fd)
 
 ; Binding for line wrapping
