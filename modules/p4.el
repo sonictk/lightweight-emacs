@@ -54,6 +54,11 @@
 ;;
 ;;     $ emacs -Q -batch -f batch-byte-compile /full/path/to/file/p4.el
 
+; Changes manually incorporated from:
+; https://github.com/gareth-rees/p4.el/pull/227
+; https://github.com/gareth-rees/p4.el/pull/240
+; https://github.com/gareth-rees/p4.el/pull/214
+; https://github.com/gareth-rees/p4.el/pull/225
 
 ;;; Code:
 
@@ -1334,12 +1339,25 @@ update (oldest first)."
         (sort (loop for pending in p4-update-status-pending-alist
                     do (setf (third pending)
                              (loop for b in (third pending)
-                                   if (and (buffer-live-p b)
-                                           (buffer-file-name b))
+                                   if (p4--buffer-accessible-file-p b)
                                    collect b))
                     if (third pending)
                     collect pending)
               (lambda (a b) (time-less-p (second a) (second b))))))
+
+(defun p4--buffer-accessible-file-p (buffer)
+  "Return t if the BUFFER is visiting an accessible file.
+BUFFER is a buffer in `p4-update-status-pending-alist'.  Return t
+only if BUFFER exists, is visiting a readable file, and has an
+accessible `default-directory'; then
+`p4-update-status-pending-sort' should keep it in the list of
+pending buffers."
+  (and (buffer-live-p buffer)
+       (with-current-buffer buffer
+         (file-accessible-directory-p default-directory))
+       (let ((file (buffer-file-name buffer)))
+         (and file
+              (file-readable-p file)))))
 
 (defun p4-update-mode (buffer status revision)
   "Turn p4-mode on or off in BUFFER according to Perforce status.
@@ -1778,7 +1796,7 @@ buffer and the P4 output buffer."
       (when (buffer-live-p orig-buffer)
         (p4-fontify-print-buffer t)
         (lexical-let ((depot-buffer (current-buffer)))
-          (ediff-buffers orig-buffer depot-buffer))))))
+          (ediff-buffers depot-buffer orig-buffer))))))
 
 (defun p4-ediff (prefix)
   "Use ediff to compare file with its original client version."
@@ -2117,7 +2135,13 @@ changelist."
   (let ((prompt t))
     (unless args-orig
       (let* ((diff-args (append (cons "diff" (p4-make-list-from-string p4-default-diff-options)) args))
-             (inhibit-read-only t))
+             (inhibit-read-only t)
+             ;; We need 'p4 diff' to return a text response in order to populate
+             ;; the diff buffer.  If P4DIFF or DIFF refer to a graphical diff
+             ;; tool, then things may not behave as expected. This line removes
+             ;; the P4DIFF and DIFF variables from the environment, which should
+             ;; force 'p4 diff' to return a textual response.
+             (process-environment (cl-list* "P4DIFF" "DIFF" process-environment)))
         (with-current-buffer
             (p4-make-output-buffer (p4-process-buffer-name diff-args)
                                    'p4-diff-mode)
@@ -2558,7 +2582,7 @@ the mouse over the link."
                 (filename (p4-file-revision-filename rev))
                 (revision (p4-file-revision-revision rev))
                 (user (p4-file-revision-user rev)))
-            (p4-link 7 (format "%d" change) `(change ,change) "Describe change")
+            (p4-link change-width (format "%d" change) `(change ,change) "Describe change")
             (insert " ")
             (p4-link 5 (format "#%d" revision)
                      `(rev ,revision link-depot-name ,filename)
@@ -2570,14 +2594,14 @@ the mouse over the link."
           (setf (p4-file-revision-links rev)
                 (buffer-substring (point-min) (point-max)))))))
 
-(defun p4-file-revision-annotate-desc (rev)
+(defun p4-file-revision-annotate-desc (rev desc-width)
   (let ((links (p4-file-revision-desc rev)))
     (or links
         (let ((desc (p4-file-revision-description rev)))
           (setf (p4-file-revision-desc rev)
-                (if (<= (length desc) 33)
-                    (format "%-33s: " desc)
-                  (format "%33s: " (substring desc 0 33))))))))
+                (if (<= (length desc) desc-width)
+                    (format (format "%%-%ds: " desc-width) desc)
+                  (format (format "%%%ds: " desc-width) (substring desc 0 desc-width))))))))
 
 (defun p4-parse-filelog (filespec)
   "Parse the filelog for FILESPEC.
@@ -2688,6 +2712,9 @@ only be used when p4 annotate is unavailable."
                  (current-line 0)
                  (current-repeats 0)
                  (current-percent -1)
+                 (most-recent-change (caar (last file-change-alist)))
+                 (change-width (length (number-to-string most-recent-change)))
+                 (desc-width (+ change-width 26))
                  current-change)
             (p4-run (list "print" filespec))
             (p4-fontify-print-buffer)
@@ -2703,9 +2730,9 @@ only be used when p4 annotate is unavailable."
                 (setq current-repeats 0))
               (let ((rev (cdr (assoc change file-change-alist))))
                 (case current-repeats
-                  (0 (insert (p4-file-revision-annotate-links rev)))
-                  (1 (insert (p4-file-revision-annotate-desc rev)))
-                  (t (insert (format "%33s: " "")))))
+                  (0 (insert (p4-file-revision-annotate-links rev change-width)))
+                  (1 (insert (p4-file-revision-annotate-desc rev desc-width)))
+                  (t (insert (format (format "%%%ds: " desc-width) "")))))
               (setq current-change change)
               (forward-line))
             (goto-char (point-min))
