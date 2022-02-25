@@ -57,6 +57,7 @@
 ; Changes manually incorporated from:
 ; https://github.com/gareth-rees/p4.el/pull/227
 ; https://github.com/gareth-rees/p4.el/pull/214
+; https://github.com/gareth-rees/p4.el/pull/240
 ; https://github.com/gareth-rees/p4.el/pull/225
 
 ;;; Code:
@@ -2134,7 +2135,13 @@ changelist."
   (let ((prompt t))
     (unless args-orig
       (let* ((diff-args (append (cons "diff" (p4-make-list-from-string p4-default-diff-options)) args))
-             (inhibit-read-only t))
+             (inhibit-read-only t)
+             ;; We need 'p4 diff' to return a text response in order to populate
+             ;; the diff buffer.  If P4DIFF or DIFF refer to a graphical diff
+             ;; tool, then things may not behave as expected. This line removes
+             ;; the P4DIFF and DIFF variables from the environment, which should
+             ;; force 'p4 diff' to return a textual response.
+             (process-environment (cl-list* "P4DIFF" "DIFF" process-environment)))
         (with-current-buffer
             (p4-make-output-buffer (p4-process-buffer-name diff-args)
                                    'p4-diff-mode)
@@ -2567,7 +2574,7 @@ the mouse over the link."
     (insert text)
     (p4-create-active-link p (point) properties help-echo)))
 
-(defun p4-file-revision-annotate-links (rev)
+(defun p4-file-revision-annotate-links (rev change-width)
   (let ((links (p4-file-revision-links rev)))
     (or links
         (with-temp-buffer
