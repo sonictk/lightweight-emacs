@@ -196,6 +196,9 @@ If the input is empty, select the previous history element instead."
 (add-hook 'swift-mode 'eglot-ensure)
 ; Python already works OOTB
 
+(setq eglot-autoshutdown 1)
+(setq eglot-autoreconnect nil)
+
 ; Don't want the eldoc box showing everywhere, have a global bind for it
 (add-hook 'eglot--managed-mode-hook #'eldoc-box-hover-mode t)
 (setq global-eldoc-mode nil)
