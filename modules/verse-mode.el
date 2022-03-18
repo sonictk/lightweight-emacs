@@ -11,11 +11,44 @@
 
 (add-verse-error-regexp)
 (defvar verse-constants
-  '("reservedword1"
-    "reservedword2"))
+  '("true"
+    "false"))
 
 (defvar verse-keywords
-  '("class" "string"))
+  '( ; data classes
+    "class" 
+    "string" 
+    "module" 
+    ; flow control
+    "if"
+    "then"
+    "else"
+    "loop" 
+    "async"
+    ; attributes
+    "public"
+    "native"
+    ))
+
+(defvar verse-builtin-procs
+  '(
+    "assert"
+    "Floor"
+    "Abs"
+   )
+)
+
+(defvar verse-builtin-types
+  '(
+    "int"
+    "string"
+    "char"
+    "float"
+    "rat"
+    "logic"
+    "array"
+    )
+)
 
 ;; I'd probably put in a default that you want, as opposed to nil
 (defvar verse-tab-width 4 "Width of a tab for VERSE mode")
@@ -32,8 +65,10 @@
      ("<@[^>]*>" . font-lock-constant-face)
      ;; ; : , ; { } =>  @ $ = are all special elements
      (":\\|,\\|;\\|{\\|}\\|=>\\|@\\|$\\|=" . font-lock-keyword-face)
-     ( ,(regexp-opt verse-keywords 'words) . font-lock-builtin-face)
+     ( ,(regexp-opt verse-keywords 'words) . font-lock-keyword-face)
      ( ,(regexp-opt verse-constants 'words) . font-lock-constant-face)
+     ( ,(regexp-opt verse-builtin-types 'words) . font-lock-type-face)
+     ( ,(regexp-opt verse-builtin-procs 'words) . font-lock-builtin-face)
      )))
 
 (define-derived-mode verse-mode fundamental-mode "Verse"
