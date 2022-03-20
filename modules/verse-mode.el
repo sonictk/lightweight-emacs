@@ -106,22 +106,22 @@
 
 (defvar verse-font-lock-defaults
   `((
-     ;; ; : , ; { } =>  @ $ = are all special elements
-     ; (":\\|,\\|;\\|{\\|}\\|=>\\|@\\|$\\|=" . font-lock-keyword-face)
-     ; Highlight special Verse characters TODO but this breaks other syntax highlighting. Maybe better to define these in the syntax table.
+     ; Highlight special Verse characters TODO but this breaks other syntax highlighting. Maybe better to define these in the syntax table. Somehow.
      ; ! | ? | ^ | : | := | ; | @ | = | < | > | + | - | * | /
-     ; ("!\\|?\\|^\\|:\\|:=\\|;\\|@\\|=\\|<\\|>\\|+\\|-\\|*\\|/" . font-lock-keyword-face)
-     ; Single-line comment syntax highlighting
-     ; ("#.+" . font-lock-comment-face)
-     ; Actual regex for indcmt
-     ; <#>\n([ \t].+\n)+
-     ; Block comment regex TODO: if your block comment has a `#` character the regex won't work, or other keywords in there as well
-     ; <#([^#]*)#>
-     ("<#>\n\\([ \t].+\n\\)+\\|#.+\\|<#\\([^#]*\\)#>" . font-lock-comment-face)
+     ("!\\|?\\|^\\|:\\|:=\\|;\\|@\\|=\\|<\\|>\\|+\\|-\\|*\\|/" . font-lock-keyword-face)
+     ; For character literals
+     ("'[[:alnum:]]+'" . font-lock-string-face)
      ( ,(regexp-opt verse-keywords 'words) . font-lock-keyword-face)
      ( ,(regexp-opt verse-constants 'words) . font-lock-constant-face)
      ( ,(regexp-opt verse-builtin-types 'words) . font-lock-type-face)
      ( ,(regexp-opt verse-builtin-procs 'words) . font-lock-builtin-face)
+     ; Single-line comment syntax highlighting
+     ; ("#.+" . font-lock-comment-face)
+     ; Actual regex for indcmt
+     ; <#>\n([ \t].+\n)+
+     ; Block comment regex TODO: This won't work well in all cases. Should look at: http://xahlee.info/emacs/emacs_manual/elisp/Multiline-Font-Lock.html#Multiline-Font-Lock
+     ; <#([^#]*)#>
+     ("<#>\n\\([ \t].+\n\\)+\\|#.+\\|<#\\([^#]*\\)#>" 0 font-lock-comment-face t)
      ))
 )
 
@@ -145,13 +145,13 @@
     (modify-syntax-entry ?- "w" st)
 
     ;; String/char delimiters
-    ;; ' is a char delimiter
-    (modify-syntax-entry ?\' "\"" st)
+    ;; ' is a char delimiter; however because we can't put comments in the syntax table we can't put this in either.
+    ; (modify-syntax-entry ?\' "\"" st)
     ;; " is a string delimiter too
     (modify-syntax-entry ?\" "\"" st)
 
     ; NOTE Supporting all 3 comment styles of Verse in the syntax table alone...is difficult.
-    ; So we do it as a regex instead that captures all 3 types.
+    ; So we do it as a regex instead that captures all 3 types. Cause otherwise <# #> and <#> interfere with each other.
     ; Block comment of style <# ... #>
     ; (modify-syntax-entry ?< ". 1" st)
     ; (modify-syntax-entry ?# ". 23" st) 
