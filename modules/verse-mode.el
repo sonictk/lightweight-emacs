@@ -33,7 +33,10 @@
     "then"
     "else"
     "for"
+    "in"
     "loop" 
+    "continue"
+    "until"
     "break"
     "return"
     "case"
@@ -46,6 +49,9 @@
     "race"
     "rush"
     "spawn"
+    "upon"
+    "yield"
+    "of"
     ; attributes
     "public"
     "internal"
@@ -112,7 +118,11 @@
      ; Highlight special Verse characters TODO but this breaks other syntax highlighting. Maybe better to define these in the syntax table.
      ; ! | ? | ^ | : | := | ; | @ | = | < | > | + | - | * | /
      ; ("!\\|?\\|^\\|:\\|:=\\|;\\|@\\|=\\|<\\|>\\|+\\|-\\|*\\|/" . font-lock-keyword-face)
+     ; Single-line comment syntax highlighting
      ("#.+" . font-lock-comment-face)
+     ; Actual regex for indcmt
+     ; <#>\n([ \t].+\n)+
+     ("<#>\n\\([ \t].+\n\\)+" . font-lock-comment-face)
      ( ,(regexp-opt verse-keywords 'words) . font-lock-keyword-face)
      ( ,(regexp-opt verse-constants 'words) . font-lock-constant-face)
      ( ,(regexp-opt verse-builtin-types 'words) . font-lock-type-face)
@@ -146,9 +156,9 @@
     (modify-syntax-entry ?\" "\"" st)
 
     ; Block comment of style <# ... #>
-    (modify-syntax-entry ?< ". 1bn" st)
-    (modify-syntax-entry ?# ". 23bn" st) 
-    (modify-syntax-entry ?> ". 24bn" st)
+    (modify-syntax-entry ?< ". 1" st)
+    (modify-syntax-entry ?# ". 23" st) 
+    (modify-syntax-entry ?> ". 4" st)
 
     ; Line comments of style # ...
     ;  (modify-syntax-entry ?# "<" st)
@@ -194,13 +204,7 @@
   :syntax-table verse-mode-syntax-table
   ;:abbrev-table verse-mode-abbrev-table
 
-  ;; you again used quote when you had '((verse-hilite))
-  ;; I just updated the variable to have the proper nesting (as noted above)
-  ;; and use the value directly here
   (setq font-lock-defaults verse-font-lock-defaults)
-
-  ;; when there's an override, use it
-  ;; otherwise it gets the default value
   (when verse-tab-width
     (setq tab-width verse-tab-width))
 
@@ -208,11 +212,8 @@
   ; Idiomatic Verse code uses spaces instead of tabs, including for indentation.
   (setq indent-tabs-mode nil)
 
-  ;; for comments
-  ;; overriding these vars gets you what (I think) you want
-  ;; they're made buffer local when you set them
   (setq comment-start "#")
-  ; (setq comment-end "")
+  (setq comment-end "")
 
   ;; Note that there's no need to manually call `verse-mode-hook'; `define-derived-mode'
   ;; will define `verse-mode' to call it properly right before it exits
