@@ -3,14 +3,13 @@
   (setq-default compilation-error-regexp-alist
    (append
     '(
-      ("\\(D:.+\\.\\(verse\\|versetest\\)\\)\(\\([0-9]+\\),\\([0-9]+\\), \\([0-9]+\\),\\([0-9]+\\)\)" 1 3 4 2)
+      ; ("\\(D:.+\\.\\(verse\\|versetest\\)\\)\(\\([0-9]+\\),\\([0-9]+\\), \\([0-9]+\\),\\([0-9]+\\)\)" 1 3 4 2)
       )
     compilation-error-regexp-alist
     )
   )
 )
 
-(add-verse-error-regexp)
 (defvar verse-constants
   '("true"
     "false"
@@ -100,17 +99,11 @@
   )
 )
 
-;; I'd probably put in a default that you want, as opposed to nil
 (defvar verse-tab-width 4 "Width of a tab for VERSE mode")
 
 ; Should look at Simple Minded Indentation Engine and Verse BNF grammar to indent instead
 ; Otherwise indentation is just wrong
 
-;; Two small edits.
-;; First is to put an extra set of parens () around the list
-;; which is the format that font-lock-defaults wants
-;; Second, you used ' (quote) at the outermost level where you wanted ` (backquote)
-;; you were very close
 (defvar verse-font-lock-defaults
   `((
      ;; ; : , ; { } =>  @ $ = are all special elements
@@ -119,10 +112,12 @@
      ; ! | ? | ^ | : | := | ; | @ | = | < | > | + | - | * | /
      ; ("!\\|?\\|^\\|:\\|:=\\|;\\|@\\|=\\|<\\|>\\|+\\|-\\|*\\|/" . font-lock-keyword-face)
      ; Single-line comment syntax highlighting
-     ("#.+" . font-lock-comment-face)
+     ; ("#.+" . font-lock-comment-face)
      ; Actual regex for indcmt
      ; <#>\n([ \t].+\n)+
-     ("<#>\n\\([ \t].+\n\\)+" . font-lock-comment-face)
+     ; Block comment regex TODO: if your block comment has a `#` character the regex won't work, or other keywords in there as well
+     ; <#([^#]*)#>
+     ("<#>\n\\([ \t].+\n\\)+\\|#.+\\|<#\\([^#]*\\)#>" . font-lock-comment-face)
      ( ,(regexp-opt verse-keywords 'words) . font-lock-keyword-face)
      ( ,(regexp-opt verse-constants 'words) . font-lock-constant-face)
      ( ,(regexp-opt verse-builtin-types 'words) . font-lock-type-face)
@@ -155,18 +150,16 @@
     ;; " is a string delimiter too
     (modify-syntax-entry ?\" "\"" st)
 
+    ; NOTE Supporting all 3 comment styles of Verse in the syntax table alone...is difficult.
+    ; So we do it as a regex instead that captures all 3 types.
     ; Block comment of style <# ... #>
-    (modify-syntax-entry ?< ". 1" st)
-    (modify-syntax-entry ?# ". 23" st) 
-    (modify-syntax-entry ?> ". 4" st)
+    ; (modify-syntax-entry ?< ". 1" st)
+    ; (modify-syntax-entry ?# ". 23" st) 
+    ; (modify-syntax-entry ?> ". 4" st)
 
     ; Line comments of style # ...
-    ;  (modify-syntax-entry ?# "<" st)
-    ;  (modify-syntax-entry ?\n ">" st)
-    
-    ; TODO Can I combine both types of comments in the same syntax table?
-
-    ; TODO How to support <#> indented-style comments? Probably not with the syntax table, will need a regexp.
+    ; (modify-syntax-entry ?# "<" st)
+    ; (modify-syntax-entry ?\n ">" st)
 
     ; '==' as punctuation
     (modify-syntax-entry ?= ".")
@@ -219,6 +212,8 @@
   ;; will define `verse-mode' to call it properly right before it exits
   ; (font-lock-fontify-buffer)
   ;(abbrev-mode)
+
+  (add-verse-error-regexp)
 )
 
 ;;;###autoload
