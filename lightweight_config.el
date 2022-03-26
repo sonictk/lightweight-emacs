@@ -214,6 +214,60 @@ If the input is empty, select the previous history element instead."
 (global-set-key [C-mouse-2] 'eldoc-box-eglot-help-at-point)
 (global-set-key (kbd "C-c ?") 'eldoc-box-eglot-help-at-point)
 
+; Allow for peek window definition. This is a modified version of: https://tuhdo.github.io/emacs-frame-peek.html 
+; that works with xref.
+(defun xref-peek-definition ()
+  "Peek at definition at point using xref."
+  (interactive)
+  (let ((func (lambda ()
+                (call-interactively 'xref-find-definitions))))
+    (make-peek-frame func)))
+
+(defun make-peek-frame (find-definition-function &rest args)
+  "Make a new frame for peeking definition"
+    (let (summary
+          doc-frame
+          x y
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          ;; 1. Find the absolute position of the current beginning of the symbol at point, ;;
+          ;; in pixels.                                                                     ;;
+          ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+          (abs-pixel-pos (save-excursion
+                           (beginning-of-thing 'symbol)
+                           (window-absolute-pixel-position))))
+      (setq x (car abs-pixel-pos))
+      (setq y (+ (cdr abs-pixel-pos) (frame-char-height)))
+
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;; 2. Create a new invisible frame, with the current buffer in it. ;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      (setq doc-frame (make-frame '((minibuffer . nil)
+                                    (name . "*xref Peek Definition*")
+                                    (width . 120)
+                                    (visibility . nil)
+                                    (height . 40))))
+
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;; 3. Position the new frame right under the beginning of the symbol at point. ;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      (set-frame-position doc-frame x y)
+
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;; 4. Jump to the symbol at point. ;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      (with-selected-frame doc-frame
+        (apply find-definition-function args)
+        (read-only-mode)
+        ; (when semantic-stickyfunc-mode (semantic-stickyfunc-mode -1))
+        (recenter-top-bottom))
+
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      ;; 5. Make frame visible again ;;
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      (make-frame-visible doc-frame)))
+
+(global-set-key (kbd "C-M-,") 'xref-peek-definition)
+
 (require 'bison-mode)
 
 ; Allow for manual-rescanning of buffers
@@ -358,7 +412,7 @@ current buffer's, reload dir-locals."
 (global-so-long-mode 1)
 
 ; Start maximized
-(add-to-list 'default-frame-alist '(fullscreen . maximized))
+(add-to-list 'initial-frame-alist '(fullscreen . maximized))
 
 (setq inhibit-startup-screen t)
 
