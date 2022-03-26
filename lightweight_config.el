@@ -245,7 +245,7 @@ If the input is empty, select the previous history element instead."
                                     (name . "*xref Peek Definition*")
                                     (width . 120)
                                     (visibility . nil)
-                                    (height . 40))))
+                                    (height . 25))))
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       ;; 3. Position the new frame right under the beginning of the symbol at point. ;;
