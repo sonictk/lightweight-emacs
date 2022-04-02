@@ -257,7 +257,7 @@ If the input is empty, select the previous history element instead."
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       (with-selected-frame doc-frame
         (apply find-definition-function args)
-        (read-only-mode)
+        ; (read-only-mode) ;TODO Find a way to make the frame only be read-only, not affect the buffer as well. Since that will affect other frames that also have the buffer open.
         ; (when semantic-stickyfunc-mode (semantic-stickyfunc-mode -1))
         (recenter-top-bottom))
 
