@@ -245,6 +245,7 @@ If the input is empty, select the previous history element instead."
                                     (name . "*xref Peek Definition*")
                                     (width . 120)
                                     (visibility . nil)
+                                    (z-group . above)
                                     (height . 25))))
 
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
