@@ -62,6 +62,10 @@
     "abstract"
     "final"
     "decides"
+    "transacts"
+    "pure"
+    "impure"
+    "override"
     ; identifiers
     "self"
     "self_class"
