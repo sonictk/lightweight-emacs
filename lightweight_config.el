@@ -1544,9 +1544,6 @@ PWD is not in a git repo (or the git command is not found)."
 (require 'cd-compile)
 (global-set-key (kbd "C-S-b") 'cd-compile)
 
-; Use the silver searcher instead of grep for searching
-(require 'ag)
-
 ; Scroll output in the compilation window automatically
 (setq compilation-scroll-output t)
 
