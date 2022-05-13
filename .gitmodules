@@ -25,3 +25,6 @@
 [submodule "modules/wgrep"]
 	path = modules/wgrep
 	url = git@github.com:mhayashi1120/Emacs-wgrep.git
+[submodule "modules/compat.el"]
+	path = modules/compat.el
+	url = git@github.com:phikal/compat.el.git

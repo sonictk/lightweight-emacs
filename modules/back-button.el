@@ -208,9 +208,11 @@
 ;;; Code:
 ;;
 
+;;; (sonictk): Modified to not give warnings in Emacs 28.
+
 ;;; requirements
 
-;; for decf, callf, position
+;; for cl-decf, cl-callf, position
 (require 'cl)
 
 (require 'smartrep     nil t)
@@ -535,7 +537,7 @@ The format for key sequences is as defined by `kbd'."
 
 (when (and (stringp back-button-mode-lighter)
            (> (length back-button-mode-lighter) 0))
-  (callf propertize back-button-mode-lighter
+  (cl-callf propertize back-button-mode-lighter
                     back-button-lighter-keymap-property back-button-lighter-map
                     'help-echo (format "Back-button: mouse-%s menu\nmouse-wheel and control-mouse-wheel to navigate" back-button-lighter-menu-mouse-button)))
 
@@ -589,7 +591,7 @@ is pushed onto `global-mark-ring'.
 When CONSECUTIVES is set to 'allow-dupes, it is possible to push
 an exact duplicate of the current topmost mark onto `global-mark-ring'."
   (interactive)
-  (callf or location (point))
+  (cl-callf or location (point))
   (back-button-push-mark location nomsg activate)
   (when (or (eq consecutives 'allow-dupes)
             (not (equal (mark-marker)
@@ -772,7 +774,7 @@ web browser back-button.)"
                 (> counter 0))
       (back-button-pop-local-mark)
       (setq thumb (car (last mark-ring)))
-      (decf counter))
+      (cl-decf counter))
     (when (consp arg)
       (setq mark-ring (nreverse mark-ring)))
     (when (and (not (eq thumb stopper))
@@ -827,7 +829,7 @@ web browser back-button.)"
                          (> counter 0))))
       (pop-global-mark)
       (setq thumb (car (last global-mark-ring)))
-      (decf counter))
+      (cl-decf counter))
     (when (consp arg)
       (setq global-mark-ring (nreverse global-mark-ring)))
     (when (and (not (eq thumb stopper))
@@ -909,7 +911,7 @@ This command is much like the reverse of `pop-global-mark'."
 ;; End:
 ;;
 ;; LocalWords: BackButton smartrep NOMSG CONSECUTIVES fset nomsg
-;; LocalWords: callf imenu utils pcache devel flet
+;; LocalWords: cl-callf imenu utils pcache devel flet
 ;;
 
 ;;; back-button.el ends here

@@ -5,6 +5,7 @@
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/ivy")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/wgrep")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/rg")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/compat.el") ; transient.el requires this dependency
 
 ; Determine the underlying operating system
 (setq lightweight-aquamacs (string-equal system-type "darwin"))
@@ -37,64 +38,12 @@
 ; Set spelling program
 (setq ispell-program-name "aspell")
 
-(require 'highlight-symbol)
-(global-set-key [(control f3)] 'highlight-symbol)
-(global-set-key (kbd "C-c h h") 'highlight-symbol)
-(global-set-key [f3] 'highlight-symbol-next)
-(global-set-key [(shift f3)] 'highlight-symbol-prev)
-(global-set-key [(meta f3)] 'highlight-symbol-query-replace)
-; Define more readable faces for highlighting
-(set-face-attribute 'highlight-symbol-face nil
-                    :weight 'bold
-                    :background "gray10"
-                    :foreground "hot pink"
-                    :underline t)
-(defface highlight-symbol-face2
-  '((t :foreground "SpringGreen3"
-       :background "gray10"
-       :weight bold
-       :underline t
-       ))
-  "Face used by `highlight-symbol-mode'."
-  :group 'highlight-symbol)
-(defface highlight-symbol-face3
-  '((t :foreground "yellow1"
-       :background "gray10"
-       :weight bold
-       :underline t
-       ))
-  "Face used by `highlight-symbol-mode'."
-  :group 'highlight-symbol)
-(defface highlight-symbol-face4
-  '((t :foreground "cyan"
-       :background "gray10"
-       :weight bold
-       :underline t
-       ))
-  "Face used by `highlight-symbol-mode'."
-  :group 'highlight-symbol)
-(defface highlight-symbol-face5
-  '((t :foreground "violet"
-       :background "gray10"
-       :weight bold
-       :underline t
-       ))
-  "Face used by `highlight-symbol-mode'."
-  :group 'highlight-symbol)
-(defface highlight-symbol-face6
-  '((t :foreground "firebrick1"
-       :background "gray10"
-       :weight bold
-       :underline t
-       ))
-  "Face used by `highlight-symbol-mode'."
-  :group 'highlight-symbol)
-(setq highlight-symbol-colors '("highlight-symbol-face" 
-                                "highlight-symbol-face2"
-                                "highlight-symbol-face3"
-                                "highlight-symbol-face4"
-                                "highlight-symbol-face5"
-                                "highlight-symbol-face6"))
+(require 'symbol-overlay)
+(global-set-key [(control f3)] 'symbol-overlay-put)
+(global-set-key (kbd "C-c h h") 'symbol-overlay-put)
+(global-set-key [f3] 'symbol-overlay-switch-forward)
+(global-set-key [(shift f3)] 'symbol-overlay-switch-backward)
+(global-set-key [(meta f3)] 'symbol-overlay-remove-all)
 
 ; Allow for side-by-side diff viewing
 (require 'diffview)
@@ -968,8 +917,8 @@ current buffer's, reload dir-locals."
 ; Bindings for smooth horizontal scrolling
 (global-unset-key (kbd "C-x >"))
 (global-unset-key (kbd "C-x <"))
-(global-set-key (kbd "C-x >") '(lambda ()(interactive)(scroll-left 15)))
-(global-set-key (kbd "C-x <") '(lambda ()(interactive)(scroll-right 15)))
+(global-set-key (kbd "C-x >") #'(lambda ()(interactive)(scroll-left 15)))
+(global-set-key (kbd "C-x <") #'(lambda ()(interactive)(scroll-right 15)))
 
 ; Bindings for commenting
 (defun comment-or-uncomment-region-or-line()
@@ -996,16 +945,16 @@ current buffer's, reload dir-locals."
 (global-set-key (kbd "C-x C-S-f") 'recentf-open-files)
 
 ; Bindings for mousewheel horizontal scrolling
-(global-set-key (kbd "<S-wheel-down>") '(lambda nil (interactive) (scroll-right 15)))
-(global-set-key (kbd "<S-double-wheel-down>") '(lambda nil (interactive) (scroll-right 15)))
-(global-set-key (kbd "<S-triple-wheel-down>") '(lambda nil (interactive) (scroll-right 15)))
-(global-set-key (kbd "<S-mouse-4>") '(lambda nil (interactive) (scroll-right 15)))
-(global-set-key (kbd "<wheel-right>") '(lambda nil (interactive) (scroll-right 15)))
-(global-set-key (kbd "<wheel-left>") '(lambda nil (interactive) (scroll-left 15)))
-(global-set-key (kbd "<S-wheel-up>") '(lambda nil (interactive) (scroll-left 15)))
-(global-set-key (kbd "<S-double-wheel-up>") '(lambda nil (interactive) (scroll-left 15)))
-(global-set-key (kbd "<S-triple-wheel-up>") '(lambda nil (interactive) (scroll-left 15)))
-(global-set-key (kbd "<S-mouse-5>") '(lambda nil (interactive) (scroll-left 15)))
+(global-set-key (kbd "<S-wheel-down>") #'(lambda nil (interactive) (scroll-right 15)))
+(global-set-key (kbd "<S-double-wheel-down>") #'(lambda nil (interactive) (scroll-right 15)))
+(global-set-key (kbd "<S-triple-wheel-down>") #'(lambda nil (interactive) (scroll-right 15)))
+(global-set-key (kbd "<S-mouse-4>") #'(lambda nil (interactive) (scroll-right 15)))
+(global-set-key (kbd "<wheel-right>") #'(lambda nil (interactive) (scroll-right 15)))
+(global-set-key (kbd "<wheel-left>") #'(lambda nil (interactive) (scroll-left 15)))
+(global-set-key (kbd "<S-wheel-up>") #'(lambda nil (interactive) (scroll-left 15)))
+(global-set-key (kbd "<S-double-wheel-up>") #'(lambda nil (interactive) (scroll-left 15)))
+(global-set-key (kbd "<S-triple-wheel-up>") #'(lambda nil (interactive) (scroll-left 15)))
+(global-set-key (kbd "<S-mouse-5>") #'(lambda nil (interactive) (scroll-left 15)))
 
 ; Bindings for text scale adjustment via scrollwheel
 (global-set-key (kbd "<C-wheel-up>") 'text-scale-increase)
@@ -1020,8 +969,8 @@ current buffer's, reload dir-locals."
 ; Set ECB mode to use LMB instead of MMB for selection
 (setq ecb-primary-secondary-mouse-buttons (quote mouse-1--C-mouse-1))
 
-(global-set-key (kbd "<mouse-4>") '(lambda nil (interactive) (scroll-down 6)))
-(global-set-key (kbd "<mouse-5>") '(lambda nil (interactive) (scroll-up 6)))
+(global-set-key (kbd "<mouse-4>") #'(lambda nil (interactive) (scroll-down 6)))
+(global-set-key (kbd "<mouse-5>") #'(lambda nil (interactive) (scroll-up 6)))
 
 ; Additional keybinds for moving lines up/down on the home row
 (require 'move-text)
@@ -1575,11 +1524,11 @@ PWD is not in a git repo (or the git command is not found)."
 (global-set-key (kbd "C-c u") 'string-inflection-all-cycle)
 ;; for ruby
 (add-hook 'ruby-mode-hook
-          '(lambda ()
+          #'(lambda ()
              (local-set-key (kbd "C-c u") 'string-inflection-ruby-style-cycle)))
 ;; for java
 (add-hook 'java-mode-hook
-          '(lambda ()
+          #'(lambda ()
              (local-set-key (kbd "C-c u") 'string-inflection-java-style-cycle)))
 
 ; Colours in eshell
@@ -1612,7 +1561,7 @@ PWD is not in a git repo (or the git command is not found)."
 ; Use smaller speedbar font
 (make-face 'speedbar-face)
 (set-face-font 'speedbar-face "Liberation Mono-10")
-(setq speedbar-mode-hook '(lambda () (buffer-face-set 'speedbar-face)))
+(setq speedbar-mode-hook #'(lambda () (buffer-face-set 'speedbar-face)))
 (setq sr-speedbar-skip-other-window-p t) ; Supposed to fix issues when calling speedbar before sr-speedbar
 
 (defun select-next-window ()

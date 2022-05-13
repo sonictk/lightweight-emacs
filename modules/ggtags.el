@@ -2369,12 +2369,24 @@ Function `ggtags-eldoc-function' disabled for eldoc in current buffer: %S" err))
 
 (defconst ggtags--xref-limit 1000)
 
-(defclass ggtags-xref-location (xref-file-location)
-  ((project-root :type string :initarg :project-root)))
+(cl-defstruct (ggtags-xref-location
+               (:constructor ggtags-make-xref-location (file line column project-root)))
+  file line column project-root)
 
 (cl-defmethod xref-location-group ((l ggtags-xref-location))
-  (with-slots (file project-root) l
-    (file-relative-name file project-root)))
+  (file-relative-name (ggtags-xref-location-file l) (ggtags-xref-location-project-root l)))
+
+(cl-defmethod xref-location-marker ((l ggtags-xref-location))
+  (let ((buffer (find-file-noselect (ggtags-xref-location-file l))))
+    (with-current-buffer buffer
+      (save-excursion
+        (goto-char (point-min))
+        (forward-line (1- (ggtags-xref-location-line l)))
+        (move-to-column (1- (ggtags-xref-location-column l)))
+        (point-marker)))))
+
+(cl-defmethod xref-location-line ((l ggtags-xref-location))
+  (ggtags-xref-location-line l))
 
 (defun ggtags--xref-backend ()
   (and (ggtags-find-project)
@@ -2415,12 +2427,11 @@ properties in the summary text of each xref."
    and when column
    collect (xref-make
             summary
-            (make-instance
-             'ggtags-xref-location
-             :file file
-             :line line
-             :column column
-             :project-root root))))
+            (ggtags-make-xref-location
+             file
+             line
+             column
+             root))))
 
 (defun ggtags--xref-find-tags (tag cmd)
   "Find xrefs of TAG using Global CMD.
@@ -2439,12 +2450,13 @@ Return the list of xrefs for TAG."
                               (ggtags-project-has-color project))))
             (kill-buffer (current-buffer)))))
     (ggtags-with-current-project
-      (ggtags-global-output
-       (get-buffer-create " *ggtags-xref*")
-       (append
-        (split-string (ggtags-global-build-command cmd))
-        (list "--" (shell-quote-argument tag)))
-       collect ggtags--xref-limit 'sync)
+      (let ((default-directory (ggtags-current-project-root)))
+        (ggtags-global-output
+         (get-buffer-create " *ggtags-xref*")
+         (append
+          (split-string (ggtags-global-build-command cmd))
+          (list "--" (shell-quote-argument tag)))
+         collect ggtags--xref-limit 'sync))
       xrefs)))
 
 (cl-defmethod xref-backend-definitions ((_backend (eql ggtags)) tag)
