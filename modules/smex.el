@@ -27,6 +27,8 @@
 
 ;;; Code:
 
+; NOTE: (sonictk) Edited to avoid warnings in Emacs 28.
+
 (require 'ido)
 
 (defgroup smex nil
@@ -227,7 +229,7 @@ Set this to nil to disable fuzzy matching."
   "Update Smex when Emacs has been idle for IDLE-TIME."
   (unless idle-time (setq idle-time 60))
   (run-with-idle-timer idle-time t
-                       '(lambda () (if (smex-detect-new-commands) (smex-update)))))
+                       #'(lambda () (if (smex-detect-new-commands) (smex-update)))))
 
 ;;;###autoload
 (defun smex-initialize ()
