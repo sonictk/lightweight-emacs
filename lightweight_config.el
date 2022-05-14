@@ -147,6 +147,11 @@ If the input is empty, select the previous history element instead."
 
 (setq eglot-autoshutdown 1)
 (setq eglot-autoreconnect nil)
+(setq eglot-connect-timeout 0)
+(setq eglot-sync-connect t)
+(setq eglot-confirm-server-initiated-edits nil)
+(setq eglot-strict-mode nil)
+(setq eglot-extend-to-xref 1)
 
 ; Don't want the eldoc box showing everywhere, have a global bind for it
 (add-hook 'eglot--managed-mode-hook #'eldoc-box-hover-mode t)
