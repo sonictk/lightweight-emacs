@@ -147,7 +147,9 @@ If the input is empty, select the previous history element instead."
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
-(setq eglot-connect-timeout 6)
+(setq eglot-connect-timeout 10)
+(setq eglot-strict-mode nil)
+(setq eglot-extend-to-xref t)
 
 ; Don't want the eldoc box showing everywhere, have a global bind for it
 (add-hook 'eglot--managed-mode-hook #'eldoc-box-hover-mode t)
@@ -1259,7 +1261,7 @@ current buffer's, reload dir-locals."
 (require 'pkg-info)
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/flycheck")
 (require 'flycheck)
-(global-flycheck-mode -1) ; Disable globally by default
+; (global-flycheck-mode -1) ; Disable globally by default
 
 ; Set cc-search-directories as safe in order to allow ff-find-other-file to work
 (require 'find-file)
