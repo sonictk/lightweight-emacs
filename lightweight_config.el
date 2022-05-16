@@ -26,7 +26,7 @@
 (yas-global-mode 1)
 
 ; Improve performance reading from LSP servers
-(setq read-process-output-max 1048576)
+; (setq read-process-output-max 1048576)
 
 ; On OSX, this is required in order to have Emacs have access to the same binaries 
 ; i.e. /usr/loca/bin that the shell normally would have. Yay Apple!
@@ -1253,21 +1253,12 @@ current buffer's, reload dir-locals."
 ; FIX ends here
 
 ;; Windows performance tweaks
-(when (boundp 'w32-pipe-read-delay)
-  (setq w32-pipe-read-delay 0))
+; (when (boundp 'w32-pipe-read-delay)
+;   (setq w32-pipe-read-delay 0))
 
 ; Live syntax checking
 (require 'let-alist)
 (require 'pkg-info)
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/flycheck")
-(require 'flycheck)
-; (global-flycheck-mode -1) ; Disable globally by default
-
-; Set cc-search-directories as safe in order to allow ff-find-other-file to work
-(require 'find-file)
-(put 'cc-search-directories 'safe-local-variable #'listp)
-(put 'cc-other-file-alist 'safe-local-variable #'listp)
-(put 'flycheck-clang-include-path 'safe-local-variable #'listp)
 
 ; Don't clutter the modeline
 (setq eldoc-minor-mode-string nil)
@@ -1609,10 +1600,6 @@ PWD is not in a git repo (or the git command is not found)."
 ;; we replace it with a wrapper that filters out remote buffers.
 (remove-hook 'find-file-hook 'p4-update-status)
 (add-hook 'find-file-hooks 'p4-tramp-workaround-find-file-hook)
-
-; vc-p4 seems to slowdown normal file open operations even after setting the latter variable
-; (require 'vc-p4)
-; (setq vc-p4-require-p4config t) ; Avoid delays when loading non-P4 files
 
 ; Cleanup and theme setup
 (defun post-load-stuff ()
