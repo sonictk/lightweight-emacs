@@ -147,15 +147,17 @@ If the input is empty, select the previous history element instead."
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
-(setq eglot-connect-timeout 10)
+(setq eglot-connect-timeout 20)
 (setq eglot-strict-mode nil)
-(setq eglot-extend-to-xref t)
+(setq eglot-extend-to-xref nil)
 
 ; Don't want the eldoc box showing everywhere, have a global bind for it
-(add-hook 'eglot--managed-mode-hook #'eldoc-box-hover-mode t)
-(setq global-eldoc-mode nil)
-(setq eldoc-idle-delay 1.0)
-(add-to-list 'eglot-ignored-server-capabilites :hoverProvider)
+; (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
+; (setq global-eldoc-mode nil)
+(setq eldoc-idle-delay 0.1)
+(setq eldoc-echo-area-prefer-doc-buffer t)
+(setq eldoc-documentation-strategy 'eldoc-documentation-compose)
+; (add-to-list 'eglot-ignored-server-capabilites :hoverProvider)
 
 (require 'cc-mode)
 ;(define-key c-mode-base-map (kbd "M-RET") 'eglot-rename)
@@ -163,8 +165,9 @@ If the input is empty, select the previous history element instead."
 (global-set-key (kbd "M-,") 'xref-find-definitions-other-window)
 (global-set-key (kbd "M-.") 'xref-find-definitions)
 (global-set-key [C-mouse-1] 'xref-find-defintions-at-mouse)
-(global-set-key [C-mouse-2] 'eldoc-box-eglot-help-at-point)
-(global-set-key (kbd "C-c ?") 'eldoc-box-eglot-help-at-point)
+; (global-set-key [C-mouse-2] 'eldoc-box-eglot-help-at-point)
+; (global-set-key (kbd "C-c ?") 'eldoc-box-eglot-help-at-point)
+(global-set-key (kbd "C-c ?") 'global-eldoc-mode)
 
 ; Allow for peek window definition. This is a modified version of: https://tuhdo.github.io/emacs-frame-peek.html 
 ; that works with xref.
@@ -281,9 +284,6 @@ See also `newline-and-indent'."
 (add-hook 'font-lock-mode-hook 'my-doxymacs-font-lock-hook)
 ; Auto reload-buffers when files are changed on disk
 (global-auto-revert-mode t)
-
-; Enable Emacs Development Environment mode
-(global-ede-mode t)
 
 ; Enable remote .dir-locals.el files to be found
 (setq enable-remote-dir-locals t)
@@ -417,7 +417,12 @@ current buffer's, reload dir-locals."
 (require 'compile)
 
 ; Set the default compilation command to use CMake
-(setq compile-command "cmake --build . --config Debug --target INSTALL")
+(when lightweight-linux or lightweight-aquamacs
+  (setq compile-command "build.sh")
+)
+(when lightweight-win32
+  (setq compile-command "build.bat")
+)
 
 (defun lightweight-ediff-setup-windows (buffer-A buffer-B buffer-C control-buffer)
   (ediff-setup-windows-plain buffer-A buffer-B buffer-C control-buffer)
@@ -739,26 +744,26 @@ current buffer's, reload dir-locals."
 (setq auto-mode-alist
      (cons '("SConscript" . python-mode) auto-mode-alist))
 
-(require 'eldoc-box)
-(setq x-gtk-resize-child-frames 'resize-mode)
-(setq eldoc-box-max-pixel-width 1900)
-(setq eldoc-box-max-pixel-height 1000)
-
-; Eldoc copy-to-buffer version
-(defun eldoc-box-eglot-copy-help-to-clipboard()
-  "Copy documentation of the symbol at point to the yank ring."
-  (interactive)
-  (when eglot--managed-mode
-    (let ((eldoc-box-position-function #'eldoc-box--default-at-point-position-function))
-      (kill-new
-       (eglot--dbind ((Hover) contents range)
-                     (jsonrpc-request (eglot--current-server-or-lose) :textDocument/hover
-                                      (eglot--TextDocumentPositionParams))
-                     (when (seq-empty-p contents) (eglot--error "No hover info here"))
-                     (eglot--hover-info contents range)))
-    )
-  )
-)
+; (require 'eldoc-box)
+; (setq x-gtk-resize-child-frames 'resize-mode)
+; (setq eldoc-box-max-pixel-width 1900)
+; (setq eldoc-box-max-pixel-height 1000)
+; 
+; ; Eldoc copy-to-buffer version
+; (defun eldoc-box-eglot-copy-help-to-clipboard()
+;   "Copy documentation of the symbol at point to the yank ring."
+;   (interactive)
+;   (when eglot--managed-mode
+;     (let ((eldoc-box-position-function #'eldoc-box--default-at-point-position-function))
+;       (kill-new
+;        (eglot--dbind ((Hover) contents range)
+;                      (jsonrpc-request (eglot--current-server-or-lose) :textDocument/hover
+;                                       (eglot--TextDocumentPositionParams))
+;                      (when (seq-empty-p contents) (eglot--error "No hover info here"))
+;                      (eglot--hover-info contents range)))
+;     )
+;   )
+; )
 
 
 ; CC++ mode handling
