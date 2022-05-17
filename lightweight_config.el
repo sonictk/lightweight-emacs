@@ -145,16 +145,15 @@ If the input is empty, select the previous history element instead."
 (add-hook 'swift-mode 'eglot-ensure)
 ; Python already works OOTB
 
-(setq eglot-autoshutdown t)
+; (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
-(setq eglot-connect-timeout 20)
-(setq eglot-strict-mode nil)
-(setq eglot-extend-to-xref nil)
+; (setq eglot-strict-mode nil)
+; (setq eglot-extend-to-xref nil)
 
 ; Don't want the eldoc box showing everywhere, have a global bind for it
 ; (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
-; (setq global-eldoc-mode nil)
-(setq eldoc-idle-delay 0.1)
+(setq global-eldoc-mode nil)
+(setq eldoc-idle-delay 0.5)
 (setq eldoc-echo-area-prefer-doc-buffer t)
 (setq eldoc-documentation-strategy 'eldoc-documentation-compose)
 ; (add-to-list 'eglot-ignored-server-capabilites :hoverProvider)
@@ -269,7 +268,7 @@ See also `newline-and-indent'."
 
 ; Allow for loading recent files
 (recentf-mode 1)
-(setq recentf-max-menu-items 25)
+(setq recentf-max-menu-items 35)
 (global-set-key "\C-x\ \C-r" 'recentf-open-files)
 (setq recentf-save-file (expand-file-name "recentf" "~/Git/lightweight-emacs/"))
 
@@ -361,7 +360,6 @@ current buffer's, reload dir-locals."
 (global-hl-line-mode 1)
 
 ; For long lines, Emacs slows down with hl-line-mode.
-(require 'so-long)
 (global-so-long-mode 1)
 
 ; Start maximized
@@ -415,8 +413,6 @@ current buffer's, reload dir-locals."
 
 (load-library "view")
 (require 'compile)
-
-; Set the default compilation command to use CMake
 (when lightweight-linux or lightweight-aquamacs
   (setq compile-command "build.sh")
 )
@@ -1475,7 +1471,7 @@ PWD is not in a git repo (or the git command is not found)."
       desktop-base-lock-name      "lock"
       desktop-path                (list desktop-dirname)
       desktop-save                t
-      desktop-restore-eager       10 ; Number of buffers to restore immediately; rest are lazily loaded when emacs is idle
+      desktop-restore-eager       8 ; Number of buffers to restore immediately; rest are lazily loaded when emacs is idle
       desktop-lazy-verbose        nil
       desktop-files-not-to-save   "^$" ;reload tramp paths
       desktop-load-locked-desktop nil
