@@ -141,14 +141,16 @@ If the input is empty, select the previous history element instead."
 (add-hook 'c-mode-hook 'eglot-ensure)
 (add-hook 'c++-mode-hook 'eglot-ensure)
 (add-hook 'objc-mode-hook 'eglot-ensure)
-(add-hook 'csharp-mode-hook 'eglot-ensure)
+; (add-hook 'csharp-mode-hook 'eglot-ensure)
 (add-hook 'swift-mode 'eglot-ensure)
 ; Python already works OOTB
 
-; (setq eglot-autoshutdown t)
+(setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
-; (setq eglot-strict-mode nil)
-; (setq eglot-extend-to-xref nil)
+(setq eglot-connect-timeout 10)
+(setq eglot-strict-mode nil)
+(setq eglot-extend-to-xref t)
+(setq eglot-events-buffer-size 5000000)
 
 ; Don't want the eldoc box showing everywhere, have a global bind for it
 ; (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
@@ -992,6 +994,9 @@ current buffer's, reload dir-locals."
 (setq projectile-mode-line '(:eval (format "" )))
 
 (setq projectile-completion-system 'ivy)
+(setq projectile-enable-caching t)
+(setq projectile-cache-file '"~/Git/lightweight-emacs/projectile.cache")
+(setq projectile-auto-update-cache nil)
 
 ; As of latest projectile 1.1.0, ``projectile-keymap-prefix`` is deprecated and need 
 ; to use this instead to set keybindings.
@@ -1472,9 +1477,9 @@ PWD is not in a git repo (or the git command is not found)."
       desktop-path                (list desktop-dirname)
       desktop-save                t
       desktop-restore-eager       8 ; Number of buffers to restore immediately; rest are lazily loaded when emacs is idle
-      desktop-lazy-verbose        nil
+      desktop-lazy-verbose        t
       desktop-files-not-to-save   "^$" ;reload tramp paths
-      desktop-load-locked-desktop nil
+      desktop-load-locked-desktop t
       desktop-auto-save-timeout   30)
 (desktop-save-mode 1)
 (setq desktop-minor-mode-table '((auto-fill-function auto-fill-mode)
