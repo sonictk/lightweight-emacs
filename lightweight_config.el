@@ -147,7 +147,7 @@ If the input is empty, select the previous history element instead."
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
-(setq eglot-connect-timeout 10)
+(setq eglot-connect-timeout 20)
 (setq eglot-strict-mode nil)
 (setq eglot-extend-to-xref t)
 (setq eglot-events-buffer-size 5000000)
