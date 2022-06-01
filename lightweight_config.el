@@ -1478,6 +1478,7 @@ PWD is not in a git repo (or the git command is not found)."
       desktop-save                t
       desktop-restore-eager       8 ; Number of buffers to restore immediately; rest are lazily loaded when emacs is idle
       desktop-lazy-verbose        t
+      desktop-lazy-idle-delay     11 
       desktop-files-not-to-save   "^$" ;reload tramp paths
       desktop-load-locked-desktop t
       desktop-auto-save-timeout   30)
