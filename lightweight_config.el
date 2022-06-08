@@ -154,7 +154,7 @@ If the input is empty, select the previous history element instead."
 
 ; Don't want the eldoc box showing everywhere, have a global bind for it
 ; (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
-(setq global-eldoc-mode nil)
+(setq global-eldoc-mode t)
 (setq eldoc-idle-delay 0.5)
 (setq eldoc-echo-area-prefer-doc-buffer t)
 (setq eldoc-documentation-strategy 'eldoc-documentation-compose)
