@@ -26,7 +26,7 @@
 (yas-global-mode 1)
 
 ; Improve performance reading from LSP servers
-; (setq read-process-output-max 1048576)
+(setq read-process-output-max 1048576)
 
 ; On OSX, this is required in order to have Emacs have access to the same binaries 
 ; i.e. /usr/loca/bin that the shell normally would have. Yay Apple!
@@ -148,9 +148,7 @@ If the input is empty, select the previous history element instead."
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
 (setq eglot-connect-timeout 20)
-(setq eglot-strict-mode nil)
 (setq eglot-extend-to-xref t)
-(setq eglot-events-buffer-size 5000000)
 
 ; Don't want the eldoc box showing everywhere, have a global bind for it
 ; (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
@@ -341,6 +339,8 @@ current buffer's, reload dir-locals."
 (setq auto-save-default nil)
 (setq auto-save-interval 0)
 (setq auto-save-timeout 0)
+(setq auto-save-list-file-prefix nil)
+(setq delete-auto-save-files nil)
 
 ; Disable word wrapping by default
 (set-default 'truncate-lines t)
@@ -763,7 +763,6 @@ current buffer's, reload dir-locals."
 ;   )
 ; )
 
-
 ; CC++ mode handling
 (defun lightweight-c-hook ()
   ; 4-space tabs
@@ -1093,28 +1092,17 @@ current buffer's, reload dir-locals."
 ; (add-hook 'prog-mode-hook
 ;     (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace)))
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(auto-save-default nil)
- '(auto-save-interval 0)
- '(auto-save-list-file-prefix nil)
- '(auto-save-timeout 0)
- '(auto-show-mode t t)
- '(delete-auto-save-files nil)
- '(delete-old-versions (quote other))
- '(imenu-auto-rescan t)
- '(imenu-auto-rescan-maxout 500000)
- '(kept-new-versions 5)
- '(kept-old-versions 5)
- '(make-backup-file-name-function (quote ignore))
- '(make-backup-files nil)
- '(mouse-wheel-follow-mouse nil)
- '(mouse-wheel-progressive-speed nil)
- '(mouse-wheel-scroll-amount (quote (15)))
- '(version-control nil))
+(setq delete-old-versions :other)
+(setq imenu-auto-rescan t)
+(setq imenu-auto-rescan-maxout 500000)
+(setq kept-new-versions 5)
+(setq kept-old-versions 5)
+(setq make-backup-file-name-function :ignore)
+(setq make-backup-files nil)
+(setq mouse-wheel-follow-mouse nil)
+(setq mouse-wheel-progressive-speed nil)
+(setq mouse-wheel-scroll-amount 15)
+(setq version-control nil)
 
 (defun lightweight-never-split-a-window nil)
 (setq split-window-preferred-function 'lightweight-never-split-a-window)
@@ -1196,10 +1184,6 @@ current buffer's, reload dir-locals."
                           ("\\boverride\\b" . 'font-lock-keyword-face) 
                           ("\\bfinal\\b" . 'font-lock-keyword-face)))
 
-; Use whitespace cleaning only for programming modes
-(add-hook 'prog-mode-hook
-    (lambda () (add-to-list 'write-file-functions 'delete-trailing-whitespace)))
-
 (require 'whitespace)
 ; Show whitespace
 (global-whitespace-mode t)
@@ -1219,9 +1203,6 @@ current buffer's, reload dir-locals."
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/company-mode/")
 (require 'company)
 (setq company-backends (delete 'company-semantic company-backends))
-;(define-key c-mode-map  [(ctrl tab)] 'company-complete)
-;(define-key c++-mode-map  [(ctrl tab)] 'company-complete)
-;(define-key python-mode-map  [(ctrl tab)] 'company-complete)
 (global-set-key [(ctrl tab)] 'company-complete)
 
 ; Disable idle completion, idle is the devil's work
@@ -1253,14 +1234,6 @@ current buffer's, reload dir-locals."
 (add-hook 'company-completion-finished-hook 'company-maybe-turn-on-fci)
 (add-hook 'company-completion-cancelled-hook 'company-maybe-turn-on-fci)
 ; FIX ends here
-
-;; Windows performance tweaks
-; (when (boundp 'w32-pipe-read-delay)
-;   (setq w32-pipe-read-delay 0))
-
-; Live syntax checking
-(require 'let-alist)
-(require 'pkg-info)
 
 ; Don't clutter the modeline
 (setq eldoc-minor-mode-string nil)
@@ -1472,9 +1445,9 @@ PWD is not in a git repo (or the git command is not found)."
       desktop-base-lock-name      "lock"
       desktop-path                (list desktop-dirname)
       desktop-save                t
-      desktop-restore-eager       8 ; Number of buffers to restore immediately; rest are lazily loaded when emacs is idle
-      desktop-lazy-verbose        t
-      desktop-lazy-idle-delay     11 
+      desktop-restore-eager       6 ; Number of buffers to restore immediately; rest are lazily loaded when emacs is idle
+      desktop-lazy-verbose        nil
+      desktop-lazy-idle-delay     5 
       desktop-files-not-to-save   "^$" ;reload tramp paths
       desktop-load-locked-desktop t
       desktop-auto-save-timeout   30)
