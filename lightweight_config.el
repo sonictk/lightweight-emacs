@@ -832,6 +832,9 @@ current buffer's, reload dir-locals."
   ; 4-space tabs
   (setq tab-width 4
         indent-tabs-mode nil)
+  "Set margins in current buffer."
+  (setq left-margin-width 4)
+  (setq right-margin-width 4)
 )
 
 (add-hook 'text-mode-hook 'lightweight-text-hook)
@@ -957,6 +960,7 @@ current buffer's, reload dir-locals."
 (global-set-key (kbd "C-x C-S-f") 'recentf-open-files)
 
 ; Bindings for mousewheel horizontal scrolling
+(setq mouse-wheel-tilt-scroll t)
 (global-set-key (kbd "<S-wheel-down>") #'(lambda nil (interactive) (scroll-right 15)))
 (global-set-key (kbd "<S-double-wheel-down>") #'(lambda nil (interactive) (scroll-right 15)))
 (global-set-key (kbd "<S-triple-wheel-down>") #'(lambda nil (interactive) (scroll-right 15)))
@@ -967,6 +971,7 @@ current buffer's, reload dir-locals."
 (global-set-key (kbd "<S-double-wheel-up>") #'(lambda nil (interactive) (scroll-left 15)))
 (global-set-key (kbd "<S-triple-wheel-up>") #'(lambda nil (interactive) (scroll-left 15)))
 (global-set-key (kbd "<S-mouse-5>") #'(lambda nil (interactive) (scroll-left 15)))
+
 
 ; Bindings for text scale adjustment via scrollwheel
 (global-set-key (kbd "<C-wheel-up>") 'text-scale-increase)
@@ -980,9 +985,6 @@ current buffer's, reload dir-locals."
 
 ; Set ECB mode to use LMB instead of MMB for selection
 (setq ecb-primary-secondary-mouse-buttons (quote mouse-1--C-mouse-1))
-
-(global-set-key (kbd "<mouse-4>") #'(lambda nil (interactive) (scroll-down 6)))
-(global-set-key (kbd "<mouse-5>") #'(lambda nil (interactive) (scroll-up 6)))
 
 ; Additional keybinds for moving lines up/down on the home row
 (require 'move-text)
@@ -1058,14 +1060,6 @@ current buffer's, reload dir-locals."
 ; Smooth scroll
 (setq scroll-step 3)
 
-; Set display margins
-(defun my-set-margins ()
-  "Set margins in current buffer."
-  (setq left-margin-width 4)
-  (setq right-margin-width 4)
-)
-(add-hook 'text-mode-hook 'my-set-margins)
-
 ; Markdown support
 (require 'markdown-mode)
 (autoload 'markdown-mode "markdown-mode"
@@ -1107,9 +1101,6 @@ current buffer's, reload dir-locals."
 (setq kept-old-versions 5)
 (setq make-backup-file-name-function :ignore)
 (setq make-backup-files nil)
-(setq mouse-wheel-follow-mouse nil)
-(setq mouse-wheel-progressive-speed nil)
-(setq mouse-wheel-scroll-amount 15)
 (setq version-control nil)
 
 (defun lightweight-never-split-a-window nil)
