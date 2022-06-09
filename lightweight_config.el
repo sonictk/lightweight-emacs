@@ -59,6 +59,14 @@
 (require 'fd-dired)
 (require 'counsel-fd)
 
+(require 'smex)
+(setq smex-save-file '"~/Git/lightweight-emacs/smex-items")
+
+(require 'transient)
+(setq transient-levels-file '"~/Git/lightweight-emacs/transient/levels.el")
+(setq transient-values-file '"~/Git/lightweight-emacs/transient/values.el")
+(setq transient-history-file '"~/Git/lightweight-emacs/transient/history.el")
+
 ; Binding for line wrapping
 (global-set-key (kbd "C-M-S-w") 'visual-line-mode)
 
@@ -158,7 +166,6 @@ If the input is empty, select the previous history element instead."
 (setq eldoc-documentation-strategy 'eldoc-documentation-compose)
 ; (add-to-list 'eglot-ignored-server-capabilites :hoverProvider)
 
-(require 'cc-mode)
 ;(define-key c-mode-base-map (kbd "M-RET") 'eglot-rename)
 (global-set-key (kbd "M-RET") 'eglot-rename)
 (global-set-key (kbd "M-,") 'xref-find-definitions-other-window)
@@ -556,7 +563,7 @@ current buffer's, reload dir-locals."
 (setq tab-stop-list '(4 8 12 16 20 24 28 32 36 40 44 48 52 56 60
                           64 68 72 76 80 84 88 92 96 100 104 108 112
                           116 120 124 128 132 136 140 144 148 152 156
-                          160))
+                          160 164 168 172 176 180 184 188 192 196 200))
 
 ; Set flag so that will not be prompted to kill running process on closing Emacs every single time
 (add-hook 'comint-exec-hook
@@ -983,6 +990,7 @@ current buffer's, reload dir-locals."
 (global-set-key (kbd "C-S-n") 'move-text-down)
 
 ; Project management using Projectile
+(setq projectile-known-projects-file '"~/Git/lightweight-emacs/projectile-bookmarks.eld")
 (require 'projectile)
 (projectile-global-mode t)
 ; Force Projectile to use faster indexing in Windows
@@ -1177,12 +1185,6 @@ current buffer's, reload dir-locals."
          nil '(("\\<\\(NOTE\\|note\\)" 1 note-font-lock-face t)))
 )
 (add-hook 'prog-mode-hook 'font-lock-comment-annotations)
-
-; Add C++11 keywords highlighting 
-(font-lock-add-keywords 'c++-mode
-                        '(("\\bconstexpr\\b" . 'font-lock-keyword-face) 
-                          ("\\boverride\\b" . 'font-lock-keyword-face) 
-                          ("\\bfinal\\b" . 'font-lock-keyword-face)))
 
 (require 'whitespace)
 ; Show whitespace

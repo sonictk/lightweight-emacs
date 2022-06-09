@@ -21,3 +21,5 @@ lock
 
 # Caches
 projectile.cache
+projectile-bookmarks.eld
+transient/
