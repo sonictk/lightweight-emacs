@@ -154,7 +154,7 @@ If the input is empty, select the previous history element instead."
 ; Python already works OOTB
 
 (setq eglot-autoshutdown t)
-(setq eglot-autoreconnect t)
+(setq eglot-autoreconnect 20)
 (setq eglot-connect-timeout 20)
 (setq eglot-extend-to-xref t)
 
