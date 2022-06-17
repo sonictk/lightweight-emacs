@@ -158,6 +158,8 @@ If the input is empty, select the previous history element instead."
 (setq eglot-connect-timeout 20)
 (setq eglot-extend-to-xref t)
 
+(setq flymake-no-changes-timeout 1.0)
+
 ; Don't want the eldoc box showing everywhere, have a global bind for it
 ; (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
 (setq global-eldoc-mode t)
