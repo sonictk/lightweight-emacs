@@ -6,6 +6,8 @@
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/wgrep")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/rg")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/compat.el") ; transient.el requires this dependency
+(add-to-list 'custom-theme-load-path
+             (file-name-as-directory "~/Git/lightweight-emacs/themes"))
 
 ; Determine the underlying operating system
 (setq lightweight-aquamacs (string-equal system-type "darwin"))
@@ -16,7 +18,7 @@
 (setq blink-cursor-blinks -1)
 
 ; Increase line number limit for really large files
-(setq line-number-display-limit-width 9999999)
+; (setq line-number-display-limit-width 9999999)
 
 ; Set the default directory for find-file
 (setq default-directory "~/")
@@ -155,8 +157,11 @@ If the input is empty, select the previous history element instead."
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect 20)
-(setq eglot-connect-timeout 20)
+(setq eglot-connect-timeout 9)
+(setq eglot-sync-connect 5)
 (setq eglot-extend-to-xref t)
+(setq eglot-events-buffer-size 6000000)
+(setq eglot-send-changes-idle-time 0.75)
 
 (setq flymake-no-changes-timeout 1.0)
 
@@ -382,7 +387,6 @@ current buffer's, reload dir-locals."
 (scroll-bar-mode -1)
 (setq shift-select-mode nil)
 (setq enable-local-variables nil)
-(setq lightweight-font "outline-DejaVu Sans Mono")
 
 ; Only display the line numbers when goto line is activated
 (global-set-key [remap goto-line] 'goto-line-with-feedback)
@@ -396,10 +400,6 @@ current buffer's, reload dir-locals."
 
 ; Allow for displaying column no. in mode line
 (setq column-number-mode t)
-
-(when lightweight-win32
-  (setq lightweight-font "outline-Liberation Mono")
-)
 
 ; ; (when lightweight-aquamacs
 ; ;   (cua-mode 0)
@@ -1103,32 +1103,17 @@ current buffer's, reload dir-locals."
 (setq kept-old-versions 5)
 (setq make-backup-file-name-function :ignore)
 (setq make-backup-files nil)
-(setq version-control nil)
-
-(defun lightweight-never-split-a-window nil)
-(setq split-window-preferred-function 'lightweight-never-split-a-window)
+(setq vc-handled-backends nil)
 
 ; Check if running on Macbook based off hostname and set the font size accordingly
-(if (string-equal system-name "sonictk-mbp.local")
-    (progn 
-        (add-to-list 'default-frame-alist '(font . "Liberation Mono-14"))
-        (set-face-attribute 'default nil :font "Liberation Mono-14"))
-    (progn
-        (add-to-list 'default-frame-alist '(font . "Liberation Mono-11.5"))
-        (set-face-attribute 'default t :font "Liberation Mono-11.5"))
-)
-
-(if (string-equal system-name "sonictk-mbp-aapl.local")
-    (progn 
-        (add-to-list 'default-frame-alist '(font . "Liberation Mono-16"))
-        (set-face-attribute 'default nil :font "Liberation Mono-16"))
-    (progn
-        (add-to-list 'default-frame-alist '(font . "Liberation Mono-13"))
-        (set-face-attribute 'default t :font "Liberation Mono-13"))
-)
-
-(add-to-list 'custom-theme-load-path
-             (file-name-as-directory "~/Git/lightweight-emacs/themes"))
+; (if (string-equal system-name "sonictk-mbp.local")
+;     (progn 
+;         (add-to-list 'default-frame-alist '(font . "Liberation Mono-14"))
+;         (set-face-attribute 'default nil :font "Liberation Mono-14"))
+;     (progn
+;         (add-to-list 'default-frame-alist '(font . "Liberation Mono-11.5"))
+;         (set-face-attribute 'default t :font "Liberation Mono-11.5"))
+; )
 
 ; Highlight TODOs and other interesting code tags along with whitespace/tabs
 (defface note-face
@@ -1579,6 +1564,7 @@ PWD is not in a git repo (or the git command is not found)."
   (load-theme 'zenburn t)
   (set-cursor-color "#40FF40")
   (set-face-background 'hl-line "#1a3a3a")
+  (set-face-attribute 'default nil :family "Liberation Mono" :height 130 :weight 'normal :width 'normal)
   (if (eq system-type 'windows-nt)
     (w32-send-sys-command 61488) ; Maximize window
   )
