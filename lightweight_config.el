@@ -172,6 +172,7 @@ If the input is empty, select the previous history element instead."
 (setq eldoc-echo-area-prefer-doc-buffer t)
 (setq eldoc-documentation-strategy 'eldoc-documentation-compose)
 ; (add-to-list 'eglot-ignored-server-capabilites :hoverProvider)
+(setq eldoc-echo-area-use-multiline-p nil)
 
 ;(define-key c-mode-base-map (kbd "M-RET") 'eglot-rename)
 (global-set-key (kbd "M-RET") 'eglot-rename)
@@ -1442,10 +1443,6 @@ PWD is not in a git repo (or the git command is not found)."
                                  (global-whitespace-mode nil)
                                  (global-smartparens-mode nil))) ; Prevent desktop read from being slow
 
-; Allow for switching between visible windows with Shift + arrow keys
-(when (fboundp 'windmove-default-keybindings)
-  (windmove-default-keybindings))
-
 ; Back button functionality and buffer mark navigation improved
 (require 'back-button)
 ; Override the default keybindings for buffer mark navigation
@@ -1556,6 +1553,22 @@ PWD is not in a git repo (or the git command is not found)."
 ;; we replace it with a wrapper that filters out remote buffers.
 (remove-hook 'find-file-hook 'p4-update-status)
 (add-hook 'find-file-hooks 'p4-tramp-workaround-find-file-hook)
+
+(defun toggle-window-dedicated ()
+  "Control whether or not Emacs is allowed to display another buffer in current window."
+  (interactive)
+  (message
+   (if (let (window (get-buffer-window (current-buffer)))
+         (set-window-dedicated-p window (not (window-dedicated-p window))))
+       "%s: Window is currently dedicated to its buffer."
+     "%s Window is currently not dedicated.")
+   (current-buffer)))
+
+(global-set-key (kbd "C-c d") 'toggle-window-dedicated)
+
+; Allow for switching between visible windows with Shift + arrow keys
+(when (fboundp 'windmove-default-keybindings)
+  (windmove-default-keybindings))
 
 ; Cleanup and theme setup
 (defun post-load-stuff ()
