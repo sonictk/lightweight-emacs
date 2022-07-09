@@ -1,10 +1,10 @@
 ;;; zenburn-theme.el --- A low contrast color theme for Emacs.
 
-;; Copyright (C) 2011-2018 Bozhidar Batsov
+;; Copyright (C) 2011-2020 Bozhidar Batsov
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: http://github.com/bbatsov/zenburn-emacs
-;; Version: 2.7-snapshot
+;; Version: 2.8.0-snapshot
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -199,6 +199,8 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(compilation-mode-line-run ((t (:foreground ,zenburn-yellow :weight bold))))
 ;;;;; completions
    `(completions-annotations ((t (:foreground ,zenburn-fg-1))))
+   `(completions-common-part ((t (:foreground ,zenburn-blue))))
+   `(completions-first-difference ((t (:foreground ,zenburn-fg+1))))
 ;;;;; customize
    `(custom-variable-tag ((t (:foreground ,zenburn-blue :weight bold))))
    `(custom-group-tag ((t (:foreground ,zenburn-blue :weight bold :height 1.2))))
@@ -265,7 +267,7 @@ Also bind `class' to ((class color) (min-colors 89))."
 
    `(c-annotation-face ((t (:inherit font-lock-constant-face))))
 ;;;;; line numbers (Emacs 26.1 and above)
-   `(line-number ((t (:foreground ,zenburn-bg+3 :background ,zenburn-bg-05))))
+   `(line-number ((t (:inherit default :foreground ,zenburn-bg+3 :background ,zenburn-bg-05))))
    `(line-number-current-line ((t (:inherit line-number :foreground ,zenburn-yellow-2))))
 ;;;;; man
    '(Man-overstrike ((t (:inherit font-lock-keyword-face))))
@@ -645,6 +647,21 @@ Also bind `class' to ((class color) (min-colors 89))."
        (:underline (:style wave :color ,zenburn-green)
                    :inherit unspecified :foreground unspecified :background unspecified))
       (t (:foreground ,zenburn-green-2 :weight bold :underline t))))
+   `(flymake-error
+     ((((supports :underline (:style wave)))
+       (:underline (:style wave :color ,zenburn-red)
+                   :inherit unspecified :foreground unspecified :background unspecified))
+      (t (:foreground ,zenburn-red-1 :weight bold :underline t))))
+   `(flymake-warning
+     ((((supports :underline (:style wave)))
+       (:underline (:style wave :color ,zenburn-orange)
+                   :inherit unspecified :foreground unspecified :background unspecified))
+      (t (:foreground ,zenburn-orange :weight bold :underline t))))
+   `(flymake-note
+     ((((supports :underline (:style wave)))
+       (:underline (:style wave :color ,zenburn-green)
+                   :inherit unspecified :foreground unspecified :background unspecified))
+      (t (:foreground ,zenburn-green-2 :weight bold :underline t))))
 ;;;;; flyspell
    `(flyspell-duplicate
      ((((supports :underline (:style wave)))
@@ -789,6 +806,7 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(helm-buffer-size ((t (:foreground ,zenburn-fg-1 :background ,zenburn-bg))))
    `(helm-ff-directory ((t (:foreground ,zenburn-cyan :background ,zenburn-bg :weight bold))))
    `(helm-ff-file ((t (:foreground ,zenburn-fg :background ,zenburn-bg :weight normal))))
+   `(helm-ff-file-extension ((t (:foreground ,zenburn-fg :background ,zenburn-bg :weight normal))))
    `(helm-ff-executable ((t (:foreground ,zenburn-green+2 :background ,zenburn-bg :weight normal))))
    `(helm-ff-invalid-symlink ((t (:foreground ,zenburn-red :background ,zenburn-bg :weight bold))))
    `(helm-ff-symlink ((t (:foreground ,zenburn-yellow :background ,zenburn-bg :weight bold))))
@@ -1171,6 +1189,29 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(neo-vc-conflict-face ((t (:foreground ,zenburn-red+1))))
    `(neo-vc-missing-face ((t (:foreground ,zenburn-red+1))))
    `(neo-vc-ignored-face ((t (:foreground ,zenburn-fg-1))))
+;;;;; notmuch
+   `(notmuch-crypto-decryption ((t (:foreground ,zenburn-bg :background ,zenburn-magenta))))
+   `(notmuch-crypto-part-header ((t (:foreground ,zenburn-blue+1))))
+   `(notmuch-crypto-signature-bad ((t (:foreground ,zenburn-bg :background ,zenburn-red))))
+   `(notmuch-crypto-signature-good ((t (:foreground ,zenburn-bg :background ,zenburn-green+1))))
+   `(notmuch-crypto-signature-good-key ((t (:foreground ,zenburn-bg :background ,zenburn-orange))))
+   `(notmuch-crypto-signature-unknown ((t (:foreground ,zenburn-bg :background ,zenburn-red))))
+   `(notmuch-hello-logo-background ((t (:background ,zenburn-bg+2))))
+   `(notmuch-message-summary-face ((t (:background ,zenburn-bg-08))))
+   `(notmuch-search-flagged-face ((t (:foreground ,zenburn-blue+1))))
+   `(notmuch-search-non-matching-authors ((t (:foreground ,zenburn-fg-1))))
+   `(notmuch-tag-added ((t (:underline ,zenburn-green+1))))
+   `(notmuch-tag-deleted ((t (:strike-through ,zenburn-red))))
+   `(notmuch-tag-face ((t (:foreground ,zenburn-green+1))))
+   `(notmuch-tag-flagged ((t (:foreground ,zenburn-blue+1))))
+   `(notmuch-tag-unread ((t (:foreground ,zenburn-red))))
+   `(notmuch-tree-match-author-face ((t (:foreground ,zenburn-green+1))))
+   `(notmuch-tree-match-tag-face ((t (:foreground ,zenburn-green+1))))
+;;;;; orderless
+   `(orderless-match-face-0 ((t (:foreground ,zenburn-green))))
+   `(orderless-match-face-1 ((t (:foreground ,zenburn-magenta))))
+   `(orderless-match-face-2 ((t (:foreground ,zenburn-blue))))
+   `(orderless-match-face-3 ((t (:foreground ,zenburn-orange))))
 ;;;;; org-mode
    `(org-agenda-date-today
      ((t (:foreground ,zenburn-fg+1 :slant italic :weight bold))) t)
@@ -1200,8 +1241,8 @@ Also bind `class' to ((class color) (min-colors 89))."
                                    (list :height zenburn-height-plus-1))))))
    `(org-level-5 ((t (:inherit ,z-variable-pitch :foreground ,zenburn-cyan))))
    `(org-level-6 ((t (:inherit ,z-variable-pitch :foreground ,zenburn-green+2))))
-   `(org-level-7 ((t (:inherit ,z-variable-pitch :foreground ,zenburn-red-4))))
-   `(org-level-8 ((t (:inherit ,z-variable-pitch :foreground ,zenburn-blue-4))))
+   `(org-level-7 ((t (:inherit ,z-variable-pitch :foreground ,zenburn-red+2))))
+   `(org-level-8 ((t (:inherit ,z-variable-pitch :foreground ,zenburn-magenta))))
    `(org-link ((t (:foreground ,zenburn-yellow-2 :underline t))))
    `(org-quote ((t (:background ,zenburn-bg+05 :extend t))))
    `(org-scheduled ((t (:foreground ,zenburn-green+4))))
@@ -1269,7 +1310,7 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(p4-diff-ins-face ((t :inherit diff-added)))
 ;;;;; c/perl
    `(cperl-nonoverridable-face ((t (:foreground ,zenburn-magenta))))
-   `(cperl-array-face ((t (:foreground ,zenburn-yellow, :backgorund ,zenburn-bg))))
+   `(cperl-array-face ((t (:foreground ,zenburn-yellow, :background ,zenburn-bg))))
    `(cperl-hash-face ((t (:foreground ,zenburn-yellow-1, :background ,zenburn-bg))))
 ;;;;; paren-face
    `(parenthesis ((t (:foreground ,zenburn-fg-1))))
@@ -1346,6 +1387,9 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(realgud-backtrace-number ((t (:foreground ,zenburn-yellow, :weight bold))))
 ;;;;; regex-tool
    `(regex-tool-matched-face ((t (:background ,zenburn-blue-4 :weight bold))))
+;;;;; rmail
+   `(rmail-highlight ((t (:foreground ,zenburn-yellow :weight bold))))
+   `(rmail-header-name ((t (:foreground ,zenburn-blue))))
 ;;;;; rpm-mode
    `(rpm-spec-dir-face ((t (:foreground ,zenburn-green))))
    `(rpm-spec-doc-face ((t (:foreground ,zenburn-green))))
@@ -1459,6 +1503,15 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(tabbar-unselected ((t (:foreground ,zenburn-fg
                                         :background ,zenburn-bg+1
                                         :box (:line-width -1 :style released-button)))))
+;;;;; tab-bar
+   `(tab-bar ((t (:background ,zenburn-bg+1))))
+   `(tab-bar-tab ((t (:foreground ,zenburn-fg
+                                  :background ,zenburn-bg
+                                  :weight bold
+                                  :box (:line-width -1 :style released-button)))))
+   `(tab-bar-tab-inactive ((t (:foreground ,zenburn-fg
+                                           :background ,zenburn-bg+1
+                                           :box (:line-width -1 :style released-button)))))
 ;;;;; term
    `(term-color-black ((t (:foreground ,zenburn-bg
                                        :background ,zenburn-bg-1))))
@@ -1484,6 +1537,8 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(undo-tree-visualizer-default-face ((t (:foreground ,zenburn-fg))))
    `(undo-tree-visualizer-register-face ((t (:foreground ,zenburn-yellow))))
    `(undo-tree-visualizer-unmodified-face ((t (:foreground ,zenburn-cyan))))
+;;;;; vertico
+   `(vertico-current ((t (:foreground ,zenburn-yellow :weight bold :underline t))))
 ;;;;; visual-regexp
    `(vr/group-0 ((t (:foreground ,zenburn-bg :background ,zenburn-green :weight bold))))
    `(vr/group-1 ((t (:foreground ,zenburn-bg :background ,zenburn-orange :weight bold))))
