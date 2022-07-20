@@ -363,6 +363,8 @@ current buffer's, reload dir-locals."
 ; Undo functionality improved
 (require 'undo-tree)
 (global-undo-tree-mode)
+; Remove the text from the modeline
+(setq undo-tree-mode-lighter "")
 
 ; Allow for swapping buffers between windows
 (require 'buffer-move)
@@ -996,19 +998,19 @@ current buffer's, reload dir-locals."
 
 ; Project management using Projectile
 (setq projectile-known-projects-file '"~/Git/lightweight-emacs/projectile-bookmarks.eld")
-(require 'projectile)
-(projectile-global-mode t)
+(setq projectile--mode-line '(:eval (format "" )))
+(setq projectile-mode-line-prefix "")
 ; Force Projectile to use faster indexing in Windows
 ; NOTE: If this causes problems, comment it out
 (setq projectile-indexing-method 'alien)
 ; Remove redundant project name from the mode line
 ; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name)))) 
-(setq projectile-mode-line '(:eval (format "" )))
-
 (setq projectile-completion-system 'ivy)
 (setq projectile-enable-caching t)
 (setq projectile-cache-file '"~/Git/lightweight-emacs/projectile.cache")
 (setq projectile-auto-update-cache nil)
+(require 'projectile)
+(projectile-global-mode t)
 
 ; As of latest projectile 1.1.0, ``projectile-keymap-prefix`` is deprecated and need 
 ; to use this instead to set keybindings.
@@ -1198,7 +1200,7 @@ current buffer's, reload dir-locals."
 (setq company-tooltip-limit 15)
 (setq company-selection-wrap-around t)
 (setq company-require-match nil)
-
+(setq company-lighter-base "")
 
 ; FIX for fci-mode distorting the popup for company completions
 (defvar-local company-fci-mode-on-p nil)
