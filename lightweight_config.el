@@ -1,3 +1,6 @@
+; Because `view-hello-file` is slow, we unbind the keybind that could accidentally trigger it
+(define-key global-map (kbd "C-h h") nil)
+
 ; Add custom module path so that nothing is saved to the global emacs config
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
