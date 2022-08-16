@@ -91,7 +91,8 @@
 (setq ivy-use-virtual-buffers t)
 (setq enable-recursive-minibuffers t)
 (setq ivy-re-builders-alist
-      '((t . ivy--regex-ignore-order)))
+      '((read-file-name-internal . ivy--regex-fuzzy)
+        (t . ivy--regex-ignore-order)))
 ;; enable this if you want `swiper' to use it
 (setq search-default-mode #'char-fold-to-regexp)
 (global-set-key "\C-s" 'swiper)
