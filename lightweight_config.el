@@ -137,6 +137,7 @@ If the input is empty, select the previous history element instead."
 ;; as well
 (setq xref-show-xrefs-function #'ivy-xref-show-xrefs)
 (require 'eglot)
+(with-eval-after-load 'eglot (require 'eglot-x))
 (add-to-list 'eglot-server-programs '((c++-mode c-mode objc-mode cuda-mode) "clangd"))
 (add-to-list 'eglot-server-programs
              `(python-mode . ("pyls" "-v" "--tcp" "--host"
