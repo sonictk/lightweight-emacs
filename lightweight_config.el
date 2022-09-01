@@ -77,8 +77,13 @@
 
 (setq imenu-max-item-length 255)
 
-(add-to-list 'completion-styles 'substring)
+; Completion ranking mechanism, works with ivy-mode as well
+(require 'flx)
+;; disable ido faces to see flx highlights.
+(setq ido-enable-flex-matching t)
+(setq ido-use-faces nil)
 
+(add-to-list 'completion-styles 'substring)
 (require 'ivy)
 (require 'counsel)
 (require 'swiper)
