@@ -293,7 +293,7 @@ See also `newline-and-indent'."
 
 ; Allow for loading recent files
 (recentf-mode 1)
-(setq recentf-max-menu-items 64)
+(setq recentf-max-menu-items 128)
 (global-set-key "\C-x\ \C-r" 'recentf-open-files)
 (setq recentf-save-file (expand-file-name "recentf" "~/Git/lightweight-emacs/"))
 
