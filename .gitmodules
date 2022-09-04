@@ -25,3 +25,6 @@
 [submodule "modules/compat.el"]
 	path = modules/compat.el
 	url = git@github.com:phikal/compat.el.git
+[submodule "modules/haskell-mode"]
+	path = modules/haskell-mode
+	url = git@github.com:haskell/haskell-mode.git

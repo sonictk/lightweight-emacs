@@ -12,6 +12,11 @@
 (add-to-list 'custom-theme-load-path
              (file-name-as-directory "~/Git/lightweight-emacs/themes"))
 
+; Haskell support
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/haskell-mode")
+(require 'haskell-mode-autoloads)
+(add-to-list 'Info-default-directory-list "~/Git/lightweight-emacs/modules/haskell-mode")
+
 ; Determine the underlying operating system
 (setq lightweight-aquamacs (string-equal system-type "darwin"))
 (setq lightweight-linux (featurep 'x))
@@ -163,6 +168,7 @@ If the input is empty, select the previous history element instead."
 (add-hook 'objc-mode-hook 'eglot-ensure)
 ; (add-hook 'csharp-mode-hook 'eglot-ensure)
 (add-hook 'swift-mode 'eglot-ensure)
+(add-hook 'haskell-mode 'eglot-ensure)
 ; Python already works OOTB
 
 (setq eglot-autoshutdown t)
