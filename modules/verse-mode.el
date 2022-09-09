@@ -20,59 +20,64 @@
   '( ; data classes
     "class" 
     "enum"
+    "interface"
     "module" 
     "optional"
-    "typedef"
     "subtype"
-    "interface"
     "trait"
-    "enum"
+    "typedef"
     ; flow control
-    "if"
-    "then"
+    "branch"
+    "break"
+    "case"
+    "continue"
+    "defer"
+    "do"
     "else"
     "for"
+    "if"
     "in"
     "loop" 
-    "continue"
-    "until"
-    "break"
-    "return"
-    "case"
-    "where"
-    "do"
-    "defer"
-    "while"
-    "branch"
-    "sync"
+    "of"
     "race"
+    "return"
     "rush"
     "spawn"
+    "sync"
+    "then"
+    "until"
     "upon"
+    "where"
+    "while"
     "yield"
-    "of"
     ; attributes
-    "public"
+    "abstract"
+    "async"
+    "computes"
+    "decides"
+    "final"
+    "impure"
     "internal"
-    "protected"
-    "private"
     "native"
     "native_callable"
-    "async"
-    "abstract"
-    "final"
-    "decides"
-    "transacts"
-    "pure"
-    "impure"
+    "no_rollback"
     "override"
+    "private"
+    "protected"
+    "public"
+    "pure"
+    "reads"
+    "suspends"
+    "transacts"
+    "varies"
+    "writes"
     ; identifiers
     "self"
     "self_class"
     "super"
     ; declarations
-    "using"
     "import"
+    "using"
   )
 )
 
@@ -205,9 +210,10 @@
   (when verse-tab-width
     (setq tab-width verse-tab-width))
 
-  ;(setq indent-line-function #'verse-indent-line)
   ; Idiomatic Verse code uses spaces instead of tabs, including for indentation.
   (setq indent-tabs-mode nil)
+  (setq tab-always-indent t)
+  ;(setq indent-line-function #'verse-indent-line)
 
   (setq comment-start "#")
   (setq comment-end "")
