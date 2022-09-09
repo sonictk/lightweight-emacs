@@ -68,6 +68,8 @@ You will need the following dependencies, regardless of your platform:
 * [ripgrep](https://github.com/BurntSushi/ripgrep) This will eventually replace the need for `ag`.
 * [fd](https://github.com/sharkdp/fd/releases) as a replacement for `find`. This is not required on macOS/Linux, 
   but is faster anyway. On Windows this is **required** for projectile to invoke the right `find` command.
+* [GHCup](https://www.haskell.org/ghcup/) For Haskell support.
+* `make` for [MSYS2](https://www.msys2.org/) needs to be installed and available on the `PATH`. 
 
 ### Installation
 
@@ -85,6 +87,16 @@ git submodule update --recursive
 
 You will also need to ensure that the ``HOME`` environment variable is set to
 your ``%USERPROFILE%`` folder as well.
+
+Because `haskell-mode` requires a bit of generation, you need to navigate to 
+the `/modules/haskell-mode` directory, and then run: 
+
+```
+make EMACS=/path/to/your/emacs
+```
+
+On Windows, run that in a normal command prompt (not Cygwin or MinGW), and make sure 
+that you run it in the `haskell-mode` subdirectory that is _not_ part of a symbolic link.
 
 Anyway, once everything is cloned and set up, you can run this side-by-side
 with your current Emacs installation if you just want to check it out using
