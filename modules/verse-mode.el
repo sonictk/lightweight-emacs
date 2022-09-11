@@ -1,4 +1,5 @@
 ;;; verse-mode.el --- major mode for Verse -*- lexical-binding: t; -*-
+(require 'compile) ; for `compilation-error-regexp-alist
 (defun add-verse-error-regexp ()
   (setq-default compilation-error-regexp-alist
    (append
@@ -22,11 +23,17 @@
     "enum"
     "interface"
     "module" 
-    "optional"
+    "option"
+    "struct" 
     "subtype"
     "trait"
     "typedef"
+    ; mutability
+    "at"
+    "set"
+    "var"
     ; flow control
+    "and"
     "branch"
     "break"
     "case"
@@ -38,7 +45,9 @@
     "if"
     "in"
     "loop" 
+    "not"
     "of"
+    "or"
     "race"
     "return"
     "rush"
@@ -55,6 +64,7 @@
     "async"
     "computes"
     "decides"
+    "epic_internal"
     "final"
     "impure"
     "internal"
@@ -90,6 +100,7 @@
     "Concat"
     "Contains"
     "type"
+    "operator"
    )
 )
 
@@ -125,12 +136,12 @@
      ( ,(regexp-opt verse-builtin-types 'words) . font-lock-type-face)
      ( ,(regexp-opt verse-builtin-procs 'words) . font-lock-builtin-face)
      ; Single-line comment syntax highlighting
-     ; ("#.+" . font-lock-comment-face)
+     ("#.+" . font-lock-comment-face)
      ; Actual regex for indcmt
      ; <#>\n([ \t].+\n)+
      ; Block comment regex TODO: This won't work well in all cases. Should look at: http://xahlee.info/emacs/emacs_manual/elisp/Multiline-Font-Lock.html#Multiline-Font-Lock
      ; <#([^#]*)#>
-     ("<#>\n\\([ \t].+\n\\)+\\|#.+\\|<#\\([^#]*\\)#>" 0 font-lock-comment-face t)
+     ; ("<#>\n\\([ \t].+\n\\)+\\|#.+\\|<#\\([^#]*\\)#>" 0 font-lock-comment-face t)
      ))
 )
 
@@ -192,13 +203,27 @@
   )
 )
 
-; (defvar verse-mode-abbrev-table nil
-;   "Abbreviation table used in `verse-mode' buffers.")
-; (define-abbrev-table 'verse-mode-abbrev-table
-;   '(
-;     ("imp" "import {}")
-;     ("use" "using {}")
-;     ))
+; (defun verse-indent-line-calculate-indent ()
+;   (+ verse-tab-width (current-column)))
+
+(defun verse-indent-line ()
+  "Indent current line."
+  ; (save-excursion
+  ;   (beginning-of-line)
+  ;   (indent-line-to (verse-indent-line-calculate-indent))))
+  (insert-tab))
+
+(defun verse-indent-region ()
+  "Indent current region."
+  (insert-tab))
+
+
+(defvar verse-mode-abbrev-table nil
+  "Abbreviation table used in `verse-mode' buffers.")
+(define-abbrev-table 'verse-mode-abbrev-table
+  '(
+    ("define" "stub{}:stub{} = stub{}")
+    ("stub" "stub{}")))
 
 ;;;###autoload
 (define-derived-mode verse-mode fundamental-mode "Verse"
@@ -206,22 +231,24 @@
   :syntax-table verse-mode-syntax-table
   ;:abbrev-table verse-mode-abbrev-table
 
-  (setq font-lock-defaults verse-font-lock-defaults)
+  (setq-local font-lock-defaults verse-font-lock-defaults)
   (when verse-tab-width
-    (setq tab-width verse-tab-width))
+    (setq-local tab-width verse-tab-width))
 
   ; Idiomatic Verse code uses spaces instead of tabs, including for indentation.
-  (setq indent-tabs-mode nil)
-  (setq tab-always-indent t)
-  ;(setq indent-line-function #'verse-indent-line)
+  (setq-local indent-tabs-mode nil)
+  (setq-local tab-always-indent t)
+  (setq-local indent-line-function #'verse-indent-line)
+  ; (setq-local indent-region-function #'verse-indent-region)
+  (setq-local electric-indent-inhibit t)
 
-  (setq comment-start "#")
-  (setq comment-end "")
+  (setq-local comment-start "#")
+  (setq-local comment-end "")
 
   ;; Note that there's no need to manually call `verse-mode-hook'; `define-derived-mode'
   ;; will define `verse-mode' to call it properly right before it exits
   ; (font-lock-fontify-buffer)
-  ;(abbrev-mode)
+  ; (abbrev-mode)
 
   (add-verse-error-regexp)
 )
