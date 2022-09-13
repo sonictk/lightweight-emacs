@@ -141,6 +141,11 @@
      ; Block comment regex TODO: This won't work well in all cases. Should look at: http://xahlee.info/emacs/emacs_manual/elisp/Multiline-Font-Lock.html#Multiline-Font-Lock
      ; <#([^#]*)#>
      ("<#>\n\\([ \t].+\n\\)+\\|<#\\([^#]*\\)#>" 0 font-lock-comment-face t)
+     ; function name/params list/colon/return type
+     ; (\w+)(\([\s\w,:;]*\))(:)(\w+) is the original regex with 4 groups using JavaScript syntax
+     ; TODO if a failable invocation calls a normal function, the normal function regex overrides the other and vice versa. i.e. `foo[bar()]`
+     ("\\([_[:alnum:]]+\\)\\([\(\[][[:alnum:]:, \t?=.]*[\]\)]\\)" (1 font-lock-function-name-face) )
+     ("\\([_[:alnum:]]+\\)\\(\([[:alnum:]:, \t?=.]*\)\\)\\(.*\\)\\(:\\)\\([_[:alnum:]]+\\)" (5 font-lock-type-face) )
      ))
 )
 
@@ -229,12 +234,12 @@
   (insert-tab))
 
 
-(defvar verse-mode-abbrev-table nil
-  "Abbreviation table used in `verse-mode' buffers.")
-(define-abbrev-table 'verse-mode-abbrev-table
-  '(
-    ("define" "stub{}:stub{} = stub{}")
-    ("stub" "stub{}")))
+; (defvar verse-mode-abbrev-table nil
+;   "Abbreviation table used in `verse-mode' buffers.")
+; (define-abbrev-table 'verse-mode-abbrev-table
+;   '(
+;     ("define" "stub{}:stub{} = stub{}")
+;     ("stub" "stub{}")))
 
 ;;;###autoload
 (define-derived-mode verse-mode fundamental-mode "Verse"
