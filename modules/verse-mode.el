@@ -63,6 +63,7 @@
     "abstract"
     "async"
     "computes"
+    "converges"
     "decides"
     "epic_internal"
     "final"
@@ -141,6 +142,7 @@
      ; Block comment regex TODO: This won't work well in all cases. Should look at: http://xahlee.info/emacs/emacs_manual/elisp/Multiline-Font-Lock.html#Multiline-Font-Lock
      ; <#([^#]*)#>
      ("<#>\n\\([ \t].+\n\\)+\\|<#\\([^#]*\\)#>" 0 font-lock-comment-face t)
+     ("'[[:alnum:]]*'" . font-lock-string-face)
      ; function name/params list/colon/return type
      ; (\w+)(\([\s\w,:;]*\))(:)(\w+) is the original regex with 4 groups using JavaScript syntax
      ; TODO if a failable invocation calls a normal function, the normal function regex overrides the other and vice versa. i.e. `foo[bar()]`
@@ -170,7 +172,8 @@
 
     ;; String/char delimiters
     ;; ' is a char delimiter; however because we can't put comments in the syntax table we can't put this in either.
-    (modify-syntax-entry ?\' "\"" st)
+    ;; It also interferes with normal grammar usage such as "jane's, peter's", etc.
+    ; (modify-syntax-entry ?\' "\"" st)
     ;; " is a string delimiter too
     (modify-syntax-entry ?\" "\"" st)
 
@@ -219,6 +222,13 @@
   )
 )
 
+; TODO
+; Imenu support 
+(defvar verse-imenu-generic-expressions
+  `(())
+)
+
+; TODO
 ; (defun verse-indent-line-calculate-indent ()
 ;   (+ verse-tab-width (current-column)))
 
