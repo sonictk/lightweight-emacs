@@ -58,7 +58,6 @@
 
 ;;; Code:
 
-(require 'json)
 (require 'imenu)
 (require 'cl-lib)
 (require 'project)
@@ -151,7 +150,7 @@ chosen (interactively or automatically)."
                                 (vimrc-mode . ("vim-language-server" "--stdio"))
                                 (python-mode
                                  . ,(eglot-alternatives
-                                     '("pylsp" "pyls" ("pyright-langserver" "--stdio"))))
+                                     '("pylsp" "pyls" ("pyright-langserver" "--stdio") "jedi-language-server")))
                                 ((js-mode typescript-mode)
                                  . ("typescript-language-server" "--stdio"))
                                 (sh-mode . ("bash-language-server" "start"))
@@ -197,7 +196,8 @@ language-server/bin/php-language-server.php"))
                                 (clojure-mode . ("clojure-lsp"))
                                 (csharp-mode . ("omnisharp" "-lsp"))
                                 (purescript-mode . ("purescript-language-server" "--stdio"))
-                                (perl-mode . ("perl" "-MPerl::LanguageServer" "-e" "Perl::LanguageServer::run")))
+                                (perl-mode . ("perl" "-MPerl::LanguageServer" "-e" "Perl::LanguageServer::run"))
+                                (markdown-mode . ("marksman" "server")))
   "How the command `eglot' guesses the server to start.
 An association list of (MAJOR-MODE . CONTACT) pairs.  MAJOR-MODE
 identifies the buffers that are to be managed by a specific
@@ -796,6 +796,9 @@ treated as in `eglot-dbind'."
   :documentation
   "Represents a server. Wraps a process for LSP communication.")
 
+(cl-defmethod initialize-instance :before ((_server eglot-lsp-server) &optional args)
+  (cl-remf args :initializationOptions))
+
 
 ;;; Process management
 (defvar eglot--servers-by-project (make-hash-table :test #'equal)
@@ -929,10 +932,10 @@ be guessed."
          (base-prompt
           (and interactive
                "Enter program to execute (or <host>:<port>): "))
-         (program-guess
+         (full-program-invocation
           (and program
-               (combine-and-quote-strings (cl-subst ":autoport:"
-                                                    :autoport guess))))
+               (cl-every #'stringp guess)
+               (combine-and-quote-strings guess)))
          (prompt
           (and base-prompt
                (cond (current-prefix-arg base-prompt)
@@ -942,25 +945,23 @@ be guessed."
                      ((and program
                            (not (file-name-absolute-p program))
                            (not (eglot--executable-find program t)))
-                      (concat (format "[eglot] I guess you want to run `%s'"
-                                      program-guess)
-                              (format ", but I can't find `%s' in PATH!" program)
-                              "\n" base-prompt)))))
+                      (if full-program-invocation
+                          (concat (format "[eglot] I guess you want to run `%s'"
+                                          full-program-invocation)
+                                  (format ", but I can't find `%s' in PATH!"
+                                          program)
+                                  "\n" base-prompt)
+                        (eglot--error
+                         (concat "`%s' not found in PATH, but can't form"
+                                 " an interactive prompt for to fix %s!")
+                         program guess))))))
          (contact
           (or (and prompt
-                   (let ((s (read-shell-command
-                             prompt
-                             program-guess
-                             'eglot-command-history)))
-                     (if (string-match "^\\([^\s\t]+\\):\\([[:digit:]]+\\)$"
-                                       (string-trim s))
-                         (list (match-string 1 s)
-                               (string-to-number (match-string 2 s)))
-                       (cl-subst
-                        :autoport ":autoport:" (split-string-and-unquote s)
-                        :test #'equal))))
-              guess
-              (eglot--error "Couldn't guess for `%s'!" managed-mode))))
+                   (read-shell-command
+                    prompt
+                    full-program-invocation
+                    'eglot-command-history))
+              guess)))
     (list managed-mode (eglot--current-project) class contact language-id)))
 
 (defvar eglot-lsp-context)
@@ -2197,22 +2198,66 @@ Records BEG, END and PRE-CHANGE-LENGTH locally."
             '((name . eglot--signal-textDocument/didChange)))
 
 (defvar-local eglot-workspace-configuration ()
-  "Alist of (SECTION . VALUE) entries configuring the LSP server.
-SECTION should be a keyword or a string.  VALUE is a
-plist or a primitive type converted to JSON.
+  "Configure LSP servers specifically for a given project.
+
+This variable's value should be a plist (SECTION VALUE ...).
+SECTION is a keyword naming a parameter section relevant to a
+particular server.  VALUE is a plist or a primitive type
+converted to JSON also understood by that server.
+
+Instead of a plist, an alist ((SECTION . VALUE) ...) can be used
+instead, but this variant is less reliable and not recommended.
+
+This variable should be set as a directory-local variable.  See
+See info node `(emacs)Directory Variables' for various ways to to
+that.
+
+Here's an example value that establishes two sections relevant to
+the Pylsp and Gopls LSP servers:
+
+  (:pylsp (:plugins (:jedi_completion (:include_params t
+                                       :fuzzy t)
+                     :pylint (:enabled :json-false)))
+   :gopls (:usePlaceholders t))
 
 The value of this variable can also be a unary function of a
-`eglot-lsp-server' instance, the server connection requesting the
-configuration.  It should return an alist of the format described
-above.")
+single argument, which will be a connected `eglot-lsp-server'
+instance.  The function runs with `default-directory' set to the
+root of the current project.  It should return an object of the
+format described above.")
 
 ;;;###autoload
 (put 'eglot-workspace-configuration 'safe-local-variable 'listp)
+
+(defun eglot-show-workspace-configuration (&optional server)
+  "Dump `eglot-workspace-configuration' as JSON for debugging."
+  (interactive (list (and (eglot-current-server)
+                          (eglot--read-server "Server configuration"
+                                              (eglot-current-server)))))
+  (let ((conf (eglot--workspace-configuration-plist server)))
+    (with-current-buffer (get-buffer-create "*EGLOT workspace configuration*")
+      (erase-buffer)
+      (insert (jsonrpc--json-encode conf))
+      (with-no-warnings
+        (require 'json)
+        (when (require 'json-mode nil t) (json-mode))
+        (json-pretty-print-buffer))
+      (pop-to-buffer (current-buffer)))))
 
 (defun eglot--workspace-configuration (server)
   (if (functionp eglot-workspace-configuration)
       (funcall eglot-workspace-configuration server)
     eglot-workspace-configuration))
+
+(defun eglot--workspace-configuration-plist (server)
+  "Returns `eglot-workspace-configuration' suitable for serialization."
+  (let ((val (eglot--workspace-configuration server)))
+    (or (and (consp (car val))
+             (cl-loop for (section . v) in val
+                      collect (if (keywordp section) section
+                                (intern (format ":%s" section)))
+                      collect v))
+        val)))
 
 (defun eglot-signal-didChangeConfiguration (server)
   "Send a `:workspace/didChangeConfiguration' signal to SERVER.
@@ -2222,11 +2267,7 @@ When called interactively, use the currently active server"
    server :workspace/didChangeConfiguration
    (list
     :settings
-    (or (cl-loop for (section . v) in (eglot--workspace-configuration server)
-                 collect (if (keywordp section)
-                             section
-                           (intern (format ":%s" section)))
-                 collect v)
+    (or (eglot--workspace-configuration-plist server)
         eglot--{}))))
 
 (cl-defmethod eglot-handle-request
@@ -2244,14 +2285,15 @@ When called interactively, use the currently active server"
                          (project-root (eglot--project server)))))
                 (setq-local major-mode (eglot--major-mode server))
                 (hack-dir-local-variables-non-file-buffer)
-                (alist-get section (eglot--workspace-configuration server)
-                           nil nil
-                           (lambda (wsection section)
-                             (string=
-                              (if (keywordp wsection)
-                                  (substring (symbol-name wsection) 1)
-                                wsection)
-                              section))))))
+                (cl-loop for (wsection o)
+                         on (eglot--workspace-configuration-plist server)
+                         by #'cddr
+                         when (string=
+                               (if (keywordp wsection)
+                                   (substring (symbol-name wsection) 1)
+                                 wsection)
+                               section)
+                         return o))))
           items)))
 
 (defun eglot--signal-textDocument/didChange ()
@@ -2915,39 +2957,37 @@ for which LSP on-type-formatting should be requested."
       nil)))
 
 (defun eglot-imenu ()
-  "EGLOT's `imenu-create-index-function'."
+  "EGLOT's `imenu-create-index-function'.
+Returns a list as described in docstring of `imenu--index-alist'."
   (cl-labels
-      ((visit (_name one-obj-array)
-              (imenu-default-goto-function
-               nil (car (eglot--range-region
-                         (eglot--dcase (aref one-obj-array 0)
-                           (((SymbolInformation) location)
-                            (plist-get location :range))
-                           (((DocumentSymbol) selectionRange)
-                            selectionRange))))))
-       (unfurl (obj)
-               (eglot--dcase obj
-                 (((SymbolInformation)) (list obj))
-                 (((DocumentSymbol) name children)
-                  (cons obj
-                        (mapcar
-                         (lambda (c)
-                           (plist-put
-                            c :containerName
-                            (let ((existing (plist-get c :containerName)))
-                              (if existing (format "%s::%s" name existing)
-                                name))))
-                         (mapcan #'unfurl children)))))))
+      ((unfurl (obj)
+         (eglot--dcase obj
+           (((SymbolInformation)) (list obj))
+           (((DocumentSymbol) name children)
+            (cons obj
+                  (mapcar
+                   (lambda (c)
+                     (plist-put
+                      c :containerName
+                      (let ((existing (plist-get c :containerName)))
+                        (if existing (format "%s::%s" name existing)
+                          name))))
+                   (mapcan #'unfurl children)))))))
     (mapcar
      (pcase-lambda (`(,kind . ,objs))
        (cons
         (alist-get kind eglot--symbol-kind-names "Unknown")
         (mapcan (pcase-lambda (`(,container . ,objs))
-                  (let ((elems (mapcar (lambda (obj)
-                                         (list (plist-get obj :name)
-                                               `[,obj] ;; trick
-                                               #'visit))
-                                       objs)))
+                  (let ((elems (mapcar
+                                (lambda (obj)
+                                  (cons (plist-get obj :name)
+                                        (car (eglot--range-region
+                                              (eglot--dcase obj
+                                                (((SymbolInformation) location)
+                                                 (plist-get location :range))
+                                                (((DocumentSymbol) selectionRange)
+                                                 selectionRange))))))
+                                objs)))
                     (if container (list (cons container elems)) elems)))
                 (seq-group-by
                  (lambda (e) (plist-get e :containerName)) objs))))
@@ -3017,8 +3057,12 @@ for which LSP on-type-formatting should be requested."
                          textDocument
                        (list (eglot--uri-to-path uri) edits version)))
                    documentChanges)))
-      (cl-loop for (uri edits) on changes by #'cddr
-               do (push (list (eglot--uri-to-path uri) edits) prepared))
+      (unless (and changes documentChanges)
+        ;; We don't want double edits, and some servers send both
+        ;; changes and documentChanges.  This unless ensures that we
+        ;; prefer documentChanges over changes.
+        (cl-loop for (uri edits) on changes by #'cddr
+                 do (push (list (eglot--uri-to-path uri) edits) prepared)))
       (if (or confirm
               (cl-notevery #'find-buffer-visiting
                            (mapcar #'car prepared)))
@@ -3238,8 +3282,7 @@ If NOERROR, return predicate, else erroring function."
 (defun eglot--glob-emit-{} (arg self next)
   (let ((alternatives (split-string (substring arg 1 (1- (length arg))) ",")))
     `(,self ()
-            (or ,@(cl-loop for alt in alternatives
-                           collect `(re-search-forward ,(concat "\\=" alt) nil t))
+            (or (re-search-forward ,(concat "\\=" (regexp-opt alternatives)) nil t)
                 (error "Failed matching any of %s" ',alternatives))
             (,next))))
 
