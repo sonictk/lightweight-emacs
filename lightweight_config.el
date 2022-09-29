@@ -1560,6 +1560,7 @@ PWD is not in a git repo (or the git command is not found)."
 
 ; Perforce support
 (require 'p4)
+(require 'p4-extensions)
 (setq p4-do-find-file nil) ; prevents p4 from taking ownership of a P4 file when it is loaded
 (setq p4-auto-refresh nil)
 (setq p4-check-empty-diffs t)
