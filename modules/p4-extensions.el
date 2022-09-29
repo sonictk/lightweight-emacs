@@ -17,7 +17,7 @@
   (interactive
    (if current-prefix-arg
        (p4-read-args "p4 shelve" "" 'shelved)
-     (append (list "-p" "-f" "-r" "-c" (p4-completing-read 'shelved "Changelist: ")))))
+     (append (list "-p" "-r" "-c" (p4-completing-read 'shelved "Changelist: ")))))
   (p4-call-command "shelve" args :mode 'p4-basic-list-mode))
 
 (provide 'p4-extensions)
