@@ -4,7 +4,7 @@
   (setq-default compilation-error-regexp-alist
    (append
     '(
-      ; ("\\(D:.+\\.\\(verse\\|versetest\\)\\)\(\\([0-9]+\\),\\([0-9]+\\), \\([0-9]+\\),\\([0-9]+\\)\)" 1 3 4 2)
+      ; ("\\(D:.+\\.\\(verse\\|versetest\\|vson\\)\\)\(\\([0-9]+\\),\\([0-9]+\\), \\([0-9]+\\),\\([0-9]+\\)\)" 1 3 4 2)
       )
     compilation-error-regexp-alist
     )
@@ -285,7 +285,8 @@
 )
 
 ;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.verse" . verse-mode))
-(add-to-list 'auto-mode-alist '("\\.versetest" . verse-mode))
+(add-to-list 'auto-mode-alist '("\\.verse$" . verse-mode))
+(add-to-list 'auto-mode-alist '("\\.versetest$" . verse-mode))
+(add-to-list 'auto-mode-alist '("\\.vson$" . verse-mode))
 
 (provide 'verse-mode)

@@ -601,8 +601,6 @@ current buffer's, reload dir-locals."
          ("\\.mm$" . objc-mode)
          ("\\.cu$" . cuda-mode)
          ("\\.swift$" . swift-mode)
-         ("\\.verse$" . verse-mode)
-         ("\\.versetest$" . verse-mode)
          ) auto-mode-alist))
 
 ; C++ indentation style
