@@ -1094,6 +1094,8 @@ current buffer's, reload dir-locals."
    "Major mode for editing GitHub Flavored Markdown files" t)
 (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
 
+(setq markdown-fontify-code-blocks-natively t)
+
 ;; Scroll one line at a time (less "jumpy" than defaults)
 (setq mouse-wheel-scroll-amount '(3 ((shift) . 3))) ;; scroll 3 lines at a time when using mwheel
 (setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
@@ -1172,6 +1174,8 @@ current buffer's, reload dir-locals."
   '(whitespace-space-before-tab ((t (:foreground "gray37" :background "gray24"))))
   '(whitespace-tab ((t (:foreground "gray37" :background "gray24"))))
   '(whitespace-trailing ((t (:foreground "gray37" :background "gray24"))))
+
+  '(markdown-code-face ((t nil)))
 )
 (defun font-lock-comment-annotations ()
     "Highlight a bunch of well known comment annotations.
@@ -1593,6 +1597,9 @@ PWD is not in a git repo (or the git command is not found)."
 (when (fboundp 'windmove-default-keybindings)
   (windmove-default-keybindings))
 
+; Set the default font for everything
+(add-to-list 'default-frame-alist '(font . "Liberation Mono-13"))
+
 ; Cleanup and theme setup
 (defun post-load-stuff ()
   (interactive)
@@ -1600,7 +1607,7 @@ PWD is not in a git repo (or the git command is not found)."
   (load-theme 'zenburn t)
   (set-cursor-color "#40FF40")
   (set-face-background 'hl-line "#1a3a3a")
-  (set-face-attribute 'default nil :family "Liberation Mono" :height 130 :weight 'normal :width 'normal)
+  ;(set-face-attribute 'default nil :family "Liberation Mono" :height 130 :weight 'normal :width 'normal)
   (if (eq system-type 'windows-nt)
     (w32-send-sys-command 61488) ; Maximize window
   )
