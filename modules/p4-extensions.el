@@ -44,7 +44,16 @@
   (interactive
    (if current-prefix-arg
        (p4-read-args "p4 revert" "" 'shelved)
-     (append (list "-c" (p4-completing-read 'shelved "Changelist: ")))))
+     (append (list "-c" (p4-completing-read 'shelved "Changelist: ") "//..."))))
+  (p4-call-command "revert" args :mode 'p4-basic-list-mode))
+
+(defp4cmd p4-revert-changelist-and-wipe (&rest args)
+  "revert"
+  "Reverts only those files in the specified changelist. Also deletes files marked for add."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 revert" "" 'shelved)
+     (append (list "-w" "-c" (p4-completing-read 'shelved "Changelist: ") "//..."))))
   (p4-call-command "revert" args :mode 'p4-basic-list-mode))
 
 (provide 'p4-extensions)
