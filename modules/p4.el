@@ -2278,7 +2278,7 @@ return a buffer listing those files. Otherwise, return NIL."
   (interactive
    (if current-prefix-arg
        (p4-read-args "p4 unshelve: " "" 'shelved)
-     (append (list "-s" (p4-completing-read 'shelved "Unshelve from: "))
+     (append (list "-f" "-s" (p4-completing-read 'shelved "Unshelve from: "))
              (when p4-open-in-changelist
                (list "-c" (p4-completing-read 'pending "Open in change: "))))))
   (p4-call-command "unshelve" args :mode 'p4-basic-list-mode))
