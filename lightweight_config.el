@@ -95,6 +95,14 @@
 (ivy-mode 1)
 (counsel-mode 1)
 
+; Add convenience function for killing all non-visible buffers. Very useful
+; to avoid eglot starting too many servers that are no longer required.
+(defun kill-all-nonvisible-buffers ()
+  "Kill all buffers not currently shown in a window somewhere."
+  (interactive)
+  (dolist (buf  (buffer-list))
+    (unless (get-buffer-window buf 'visible) (kill-buffer buf))))
+
 ;; better performance on everything (especially windows), ivy-0.10.0 required
 ;; @see https://github.com/abo-abo/swiper/issues/1218
 (setq ivy-dynamic-exhibit-delay-ms 250)
