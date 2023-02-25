@@ -95,6 +95,10 @@
 (ivy-mode 1)
 (counsel-mode 1)
 
+(require 'popwin)
+(popwin-mode 1)
+(push "*eldoc*" popwin:special-display-config)
+
 ; Add convenience function for killing all non-visible buffers. Very useful
 ; to avoid eglot starting too many servers that are no longer required.
 (defun kill-all-nonvisible-buffers ()
