@@ -209,7 +209,7 @@ If the input is empty, select the previous history element instead."
 (global-set-key [C-mouse-1] 'xref-find-defintions-at-mouse)
 ; (global-set-key [C-mouse-2] 'eldoc-box-eglot-help-at-point)
 ; (global-set-key (kbd "C-c ?") 'eldoc-box-eglot-help-at-point)
-(global-set-key (kbd "C-c ?") 'global-eldoc-mode)
+(global-set-key (kbd "C-c ?") 'eldoc-print-current-symbol-info)
 
 ; Allow for peek window definition. This is a modified version of: https://tuhdo.github.io/emacs-frame-peek.html 
 ; that works with xref.
