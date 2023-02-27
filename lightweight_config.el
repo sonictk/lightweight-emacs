@@ -95,9 +95,20 @@
 (ivy-mode 1)
 (counsel-mode 1)
 
-(require 'popwin)
-(popwin-mode 1)
-(push "*eldoc*" popwin:special-display-config)
+(require 'popper)
+(popper-mode +1)
+(setq popper-reference-buffers
+      '("\\*Messages\\*"
+        "Output\\*$"
+        "\\*Async Shell Command\\*"
+        "\\*eldoc\\*"
+        help-mode
+        compilation-mode))
+(global-set-key (kbd "C-`") 'popper-toggle-latest)  
+(global-set-key (kbd "M-`") 'popper-cycle)
+(global-set-key (kbd "C-M-`") 'popper-toggle-type)
+(require 'popper-echo)
+(popper-echo-mode +1)
 
 ; Add convenience function for killing all non-visible buffers. Very useful
 ; to avoid eglot starting too many servers that are no longer required.
