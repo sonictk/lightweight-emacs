@@ -101,6 +101,8 @@
       '("\\*Messages\\*"
         "Output\\*$"
         "\\*Async Shell Command\\*"
+        "\\*P4 shelve.+"
+        "\\*P4 revert.+"
         "\\*eldoc\\*"
         help-mode
         compilation-mode))
