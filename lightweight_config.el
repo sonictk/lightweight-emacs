@@ -766,9 +766,6 @@ current buffer's, reload dir-locals."
   ad-do-it
   (set-window-configuration global-config-editing))
 
-; Support LLDB debugger
-(require 'gud-lldb)
-
 ; Function for displaying the file name in the minibuffer
 (defun show-file-name ()
   "Show the full path file name in the minibuffer."
