@@ -1545,24 +1545,8 @@ PWD is not in a git repo (or the git command is not found)."
 ; Make GC not happen too much for unicode buffers 
 (setq inhibit-compacting-font-caches t)
 
-; Use speedbar in same frame
-(require 'sr-speedbar)
-(setq speedbar-use-images nil)
-(global-set-key (kbd "C-S-s") 'sr-speedbar-toggle)
-
-; Use smaller speedbar font
-(make-face 'speedbar-face)
-(set-face-font 'speedbar-face "Liberation Mono-10")
-(setq speedbar-mode-hook #'(lambda () (buffer-face-set 'speedbar-face)))
-(setq sr-speedbar-skip-other-window-p t) ; Supposed to fix issues when calling speedbar before sr-speedbar
-
 (defun select-next-window ()
   (other-window 1))
-(defun my-sr-speedbar-open-hook ()
-  (add-hook 'speedbar-before-visiting-file-hook 'select-next-window t)
-  (add-hook 'speedbar-before-visiting-tag-hook 'select-next-window t)
-  )
-(advice-add 'sr-speedbar-open :after #'my-sr-speedbar-open-hook)
 
 ; Allow for completions when using interactive search
 (eval-after-load "isearch"
