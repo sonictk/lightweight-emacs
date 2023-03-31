@@ -169,6 +169,9 @@ If the input is empty, select the previous history element instead."
              `(python-mode . ("pyls" "-v" "--tcp" "--host"
                               "localhost" "--port" :autoport)))
 
+(add-to-list 'eglot-server-programs
+             `(verse-mode . ("S:/source/repos/epic/dev_valkyrie/Engine/Restricted/NotForLicensees/Binaries/Win64/uLangServer-Win64-Debug.exe")))
+
 (when lightweight-aquamacs
 (add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/XcodeBeta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
 (add-to-list 'eglot-server-programs '(csharp-mode . ("/usr/local/bin/omnisharp" "-lsp"))))
@@ -509,6 +512,9 @@ current buffer's, reload dir-locals."
 
 ; Add support for Apple Swift language 
 (require 'swift-mode)
+
+; Add support for Verse language
+(require 'verse-mode)
 
 ; Highlight escape character sequences correctly
 (custom-set-variables
