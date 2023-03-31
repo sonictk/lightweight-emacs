@@ -1,3 +1,11 @@
+; Limit number of async compilation processes to prevent errors on Windows.
+(defconst dd/using-native-comp (and (fboundp 'native-comp-available-p)
+                                    (native-comp-available-p)))
+(setq native-comp-deferred-compilation t)
+(setq native-comp-async-query-on-exit t)
+(setq native-comp-async-jobs-number 4)
+(setq native-comp-async-report-warnings-errors nil)
+
 ; Because `view-hello-file` is slow, we unbind the keybind that could accidentally trigger it
 (define-key global-map (kbd "C-h h") nil)
 
@@ -94,23 +102,6 @@
 (require 'swiper)
 (ivy-mode 1)
 (counsel-mode 1)
-
-(require 'popper)
-(popper-mode +1)
-(setq popper-reference-buffers
-      '("\\*Messages\\*"
-        "Output\\*$"
-        "\\*Async Shell Command\\*"
-        "\\*P4 shelve.+"
-        "\\*P4 revert.+"
-        "\\*eldoc\\*"
-        help-mode
-        compilation-mode))
-(global-set-key (kbd "C-`") 'popper-toggle-latest)  
-(global-set-key (kbd "M-`") 'popper-cycle)
-(global-set-key (kbd "C-M-`") 'popper-toggle-type)
-(require 'popper-echo)
-(popper-echo-mode +1)
 
 ; Add convenience function for killing all non-visible buffers. Very useful
 ; to avoid eglot starting too many servers that are no longer required.
@@ -1604,6 +1595,22 @@ PWD is not in a git repo (or the git command is not found)."
 (when (fboundp 'windmove-default-keybindings)
   (windmove-default-keybindings))
 
+; Popper for nicer UX of "floating" windows
+(require 'popper)
+(setq popper-reference-buffers
+      '("\\*Messages\\*"
+        "Output\\*$"
+        "\\*Async Shell Command\\*"
+        "\\*P4 shelve.+"
+        "\\*P4 revert.+"
+        "^\\*eldoc\\*$" eldoc-mode ;eldoc-mode as a popup
+        help-mode
+        compilation-mode))
+(global-set-key (kbd "C-`") 'popper-toggle-latest)  
+(global-set-key (kbd "M-`") 'popper-cycle)
+(global-set-key (kbd "C-M-`") 'popper-toggle-type)
+(require 'popper-echo)
+
 ; Set the default font for everything
 (add-to-list 'default-frame-alist '(font . "Liberation Mono-13"))
 
@@ -1621,5 +1628,7 @@ PWD is not in a git repo (or the git command is not found)."
   (recentf-load-list)
   (global-company-mode t)
   (setq fill-column 81)
+  (popper-mode +1)
+  (popper-echo-mode +1)
 )
 (add-hook 'window-setup-hook 'post-load-stuff t)
