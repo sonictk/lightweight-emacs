@@ -1609,6 +1609,7 @@ PWD is not in a git repo (or the git command is not found)."
         "\\*Async Shell Command\\*"
         "\\*P4 shelve.+"
         "\\*P4 revert.+"
+        "\\*P4 opened.+"
         "^\\*eldoc\\*$" eldoc-mode ;eldoc-mode as a popup
         help-mode
         compilation-mode))
