@@ -1611,6 +1611,7 @@ PWD is not in a git repo (or the git command is not found)."
         "\\*P4 revert.+"
         "\\*P4 opened.+"
         "\\*P4 add.+"
+        "\\*P4 unshelve.+"
         "^\\*eldoc\\*$" eldoc-mode ;eldoc-mode as a popup
         help-mode
         compilation-mode))
