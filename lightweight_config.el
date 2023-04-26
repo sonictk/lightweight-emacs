@@ -1053,8 +1053,8 @@ current buffer's, reload dir-locals."
 (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 
 ; Additional keybindngs for finding header files
-(global-set-key (kbd "C-,") 'projectile-find-other-file)
-(global-set-key (kbd "C-.") 'projectile-find-other-file-other-window)
+(global-set-key (kbd "C-,") 'ff-find-other-file)
+(global-set-key (kbd "C-.") 'ff-find-other-file-other-window)
 
 ; Additional keybinding for finding symbol globally within project
 (global-set-key (kbd "C-M-S-s") 'projectile-find-tag)
