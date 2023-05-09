@@ -9,7 +9,33 @@
      (append (list "-p" "-f" "-s" (p4-completing-read 'shelved "Copy from: "))
              (when p4-open-in-changelist
                (list "-c" (p4-completing-read 'pending "New/existing shelf: "))))))
-  (p4-call-command "reshelve" args :mode 'p4-basic-list-mode))
+  (p4-call-command "reshelve" args :mode 'p4-basic-list-mode
+                   :callback (p4-refresh-callback)))
+
+(defp4cmd p4-opened-files-in-changelist (&rest args)
+  "opened-list"
+  "Just lists the files in a given changelist, without any other information."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 opened:" "" 'shelved)
+     (append (list "%depotFile%" "opened" "-c" (p4-completing-read 'shelved "Changelist: ")))))
+  (p4-call-command "-F" args :mode 'p4-basic-list-mode))
+
+; Command is `p4 -F %depotFile% opened -c 1234 | p4 -x - reopen -c 5678`
+; to move files from 1234 to 5678
+; TODO this executes, but doesn't actually work and doesn't move the files for some reason. The command after the pipe
+; is somehow not getting executed for some reason.
+(defp4cmd p4-move-files-from-changelist (&rest args)
+  "move-files-from-changelist"
+  "Moves files between changelists."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 move-files-from-changelist:" "" 'shelved)
+     (append (list "%depotFile%" "opened" "-c" (p4-completing-read 'shelved "Move files from: ") "|" "p4" "-x" "-" "reopen" "-c")
+             (when p4-open-in-changelist
+               (list (p4-completing-read 'pending "New/existing shelf: "))))))
+  (p4-call-command "-F" args :mode 'p4-basic-list-mode
+                   :callback (p4-refresh-callback)))
 
 (defp4cmd p4-shelve-force (&rest args)
   "shelve"
@@ -45,7 +71,8 @@
    (if current-prefix-arg
        (p4-read-args "p4 revert" "" 'shelved)
      (append (list "-c" (p4-completing-read 'shelved "Changelist: ")) '("//...") )))
-  (p4-call-command "revert" args :mode 'p4-basic-list-mode))
+  (p4-call-command "revert" args :mode 'p4-basic-list-mode
+                   :callback (p4-refresh-callback)))
 
 (defp4cmd p4-revert-changelist-and-wipe (&rest args)
   "revert"
@@ -54,7 +81,8 @@
    (if current-prefix-arg
        (p4-read-args "p4 revert" "" 'shelved)
      (append (list "-w" "-c" (p4-completing-read 'shelved "Changelist: ")) '("//...") )))
-  (p4-call-command "revert" args :mode 'p4-basic-list-mode))
+  (p4-call-command "revert" args :mode 'p4-basic-list-mode
+                   :callback (p4-refresh-callback)))
 
 (defp4cmd* changes-own-for-current-workspace
   "Shows your shelved changes (up to 200) for the current client workspace."

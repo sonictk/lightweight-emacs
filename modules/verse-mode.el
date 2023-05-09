@@ -83,7 +83,7 @@
     "varies"
     "writes"
     ; identifiers
-    "self"
+    "Self"
     "self_class"
     "super"
     ; declarations
