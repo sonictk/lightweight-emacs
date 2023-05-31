@@ -17,6 +17,9 @@
 (add-to-list 'custom-theme-load-path
              (file-name-as-directory "~/Git/lightweight-emacs/themes"))
 
+(setq savehist-additional-variables '(command-history))
+(savehist-mode 1)
+
 ; Set up auto-complete for code
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/company-mode/")
 (require 'company)
@@ -111,7 +114,7 @@
 (global-set-key (kbd "M-g e") 'consult-compile-error)
 (global-set-key (kbd "M-g f") 'consult-flymake)
 (global-set-key (kbd "M-g g") 'consult-goto-line)
-(global-set-key (kbd "M-g M-g") 'consult-goto-line)
+; (global-set-key (kbd "M-g M-g") 'consult-goto-line)
 (global-set-key (kbd "M-g o") 'consult-outline)
 (global-set-key (kbd "M-g m") 'consult-mark)
 (global-set-key (kbd "M-g k") 'consult-global-mark)
@@ -120,7 +123,7 @@
 
 (global-set-key (kbd "M-s d") 'consult-find)
 (global-set-key (kbd "M-s D") 'consult-locate)
-(global-set-key (kbd "M-s g") 'consult-grep)
+; (global-set-key (kbd "M-s g") 'consult-grep)
 (global-set-key (kbd "M-s G") 'consult-git-grep)
 (global-set-key (kbd "M-s r") 'consult-ripgrep)
 (global-set-key (kbd "M-s l") 'consult-line)
@@ -321,9 +324,6 @@
 
 (require 'fd-dired)
 
-(require 'smex)
-(setq smex-save-file '"~/Git/lightweight-emacs/smex-items")
-
 (require 'transient)
 (setq transient-levels-file '"~/Git/lightweight-emacs/transient/levels.el")
 (setq transient-values-file '"~/Git/lightweight-emacs/transient/values.el")
@@ -467,9 +467,10 @@
 (setq semanticdb-default-save-directory "~/Git/lightweight-emacs/semantic-cache")
 
 ; Configure scrolling to only scroll half a page at a time
-(require 'view)
 (global-set-key "\C-v"   'View-scroll-half-page-forward)
 (global-set-key "\M-v"   'View-scroll-half-page-backward)
+(define-key vertico-map (kbd "C-v") #'vertico-scroll-up)
+(define-key vertico-map (kbd "M-v") #'vertico-scroll-down)
 
 ;; insert an empty line after the current line and position the cursor on its beginning
 (defun insert-empty-line ()
@@ -1630,7 +1631,7 @@ PWD is not in a git repo (or the git command is not found)."
                                  (vc-mode nil)
                                  (vc-dired-mode nil)
                                  (erc-track-minor-mode nil)
-                                 (savehist-mode nil)
+                                 ; (savehist-mode nil)
                                  (global-whitespace-mode nil)
                                  (global-smartparens-mode nil))) ; Prevent desktop read from being slow
 
