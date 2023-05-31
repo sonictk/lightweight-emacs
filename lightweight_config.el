@@ -1,3 +1,58 @@
+; Lightweight Emacs configuration file
+
+; Add custom module path so that nothing is saved to the global emacs config
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/swift-mode")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/wgrep")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/rg")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/compat.el") ; transient.el requires this dependency
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult") 
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult-company") 
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult-eglot") 
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/vertico") 
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/embark") 
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/marginalia") 
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/orderless") 
+(add-to-list 'custom-theme-load-path
+             (file-name-as-directory "~/Git/lightweight-emacs/themes"))
+
+; Set up auto-complete for code
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/company-mode/")
+(require 'company)
+(setq company-backends (delete 'company-semantic company-backends))
+(global-set-key [(ctrl tab)] 'company-complete)
+
+; Disable idle completion, idle is the devil's work
+(setq company-idle-delay nil)
+
+; Increase completion time for larger C++ projects
+(setq company-async-timeout 10)
+
+; Company GUI settings
+(setq company-show-numbers t)
+(setq company-tooltip-maximum-width 100)
+(setq company-tooltip-limit 15)
+(setq company-selection-wrap-around t)
+(setq company-require-match nil)
+(setq company-lighter-base "")
+
+; FIX for fci-mode distorting the popup for company completions
+(defvar-local company-fci-mode-on-p nil)
+
+(defun company-turn-off-fci (&rest ignore)
+  (when (boundp 'fci-mode)
+    (setq company-fci-mode-on-p fci-mode)
+    (when fci-mode (fci-mode -1))))
+
+(defun company-maybe-turn-on-fci (&rest ignore)
+  (when company-fci-mode-on-p (fci-mode 1)))
+
+(add-hook 'company-completion-started-hook 'company-turn-off-fci)
+(add-hook 'company-completion-finished-hook 'company-maybe-turn-on-fci)
+(add-hook 'company-completion-cancelled-hook 'company-maybe-turn-on-fci)
+; FIX ends here
+
 ; Limit number of async compilation processes to prevent errors on Windows.
 (defconst dd/using-native-comp (and (fboundp 'native-comp-available-p)
                                     (native-comp-available-p)))
@@ -9,16 +64,206 @@
 ; Because `view-hello-file` is slow, we unbind the keybind that could accidentally trigger it
 (define-key global-map (kbd "C-h h") nil)
 
-; Add custom module path so that nothing is saved to the global emacs config
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/swift-mode")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/ivy")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/wgrep")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/rg")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/compat.el") ; transient.el requires this dependency
-(add-to-list 'custom-theme-load-path
-             (file-name-as-directory "~/Git/lightweight-emacs/themes"))
+(require 'consult)
+(require 'consult-compile)
+(require 'consult-flymake)
+(require 'consult-imenu)
+(require 'consult-info)
+(require 'consult-kmacro)
+; (require 'consult-org) TODO: Need to fix problems with Emacs built from source since org-mode is broken there
+(require 'consult-register)
+(require 'consult-xref)
+(require 'consult-imenu)
+(require 'vertico)
+(require 'embark)
+(require 'embark-consult)
+(require 'marginalia)
+(require 'orderless)
+(require 'consult-company)
+(setq completion-styles '(orderless basic)
+      completion-category-overrides '((file (styles basic partial-completion))))
+
+(define-key company-mode-map [remap completion-at-point] #'consult-company)
+
+; (add-to-list 'completion-styles 'substring)
+
+;; Bindings for Consult
+(global-set-key (kbd "C-c M-x") 'consult-mode-command)
+(global-set-key (kbd "C-c H") 'consult-history)
+(global-set-key (kbd "C-c k") 'consult-kmacro)
+(global-set-key (kbd "C-c m") 'consult-man)
+(global-set-key (kbd "C-c i") 'consult-info)
+(global-set-key [remap Info-search] 'consult-info)
+
+(global-set-key (kbd "C-x M-:") 'consult-complex-command)
+(global-set-key (kbd "C-x b") 'consult-buffer)
+(global-set-key (kbd "C-x 4 b") 'consult-buffer-other-window)
+(global-set-key (kbd "C-x 5 b") 'consult-buffer-other-frame)
+(global-set-key (kbd "C-x r b") 'consult-bookmark)
+(global-set-key (kbd "C-x p b") 'consult-project-buffer)
+
+(global-set-key (kbd "M-#") 'consult-register-load)
+(global-set-key (kbd "M-'") 'consult-register-store)
+(global-set-key (kbd "C-M-#") 'consult-register)
+
+(global-set-key (kbd "M-y") 'consult-yank-pop)
+
+(global-set-key (kbd "M-g e") 'consult-compile-error)
+(global-set-key (kbd "M-g f") 'consult-flymake)
+(global-set-key (kbd "M-g g") 'consult-goto-line)
+(global-set-key (kbd "M-g M-g") 'consult-goto-line)
+(global-set-key (kbd "M-g o") 'consult-outline)
+(global-set-key (kbd "M-g m") 'consult-mark)
+(global-set-key (kbd "M-g k") 'consult-global-mark)
+(global-set-key (kbd "M-g i") 'consult-imenu)
+(global-set-key (kbd "M-g I") 'consult-imenu-multi)
+
+(global-set-key (kbd "M-s d") 'consult-find)
+(global-set-key (kbd "M-s D") 'consult-locate)
+(global-set-key (kbd "M-s g") 'consult-grep)
+(global-set-key (kbd "M-s G") 'consult-git-grep)
+(global-set-key (kbd "M-s r") 'consult-ripgrep)
+(global-set-key (kbd "M-s l") 'consult-line)
+(global-set-key (kbd "M-s L") 'consult-line-multi)
+(global-set-key (kbd "M-s k") 'consult-keep-lines)
+(global-set-key (kbd "M-s u") 'consult-focus-lines)
+
+(define-key isearch-mode-map (kbd "M-e") 'consult-isearch-history)
+(define-key isearch-mode-map (kbd "M-s e") 'consult-isearch-history)
+(define-key isearch-mode-map (kbd "M-s l") 'consult-line)
+(define-key isearch-mode-map (kbd "M-s L") 'consult-line-multi)
+
+(define-key minibuffer-local-map (kbd "M-s") 'consult-history)
+(define-key minibuffer-local-map (kbd "M-r") 'consult-history)
+
+;; Enable automatic preview at point in the *Completions* buffer
+(add-hook 'completion-list-mode-hook 'consult-preview-at-point-mode)
+
+;; Configure register formatting
+(setq register-preview-delay 0.5
+      register-preview-function #'consult-register-format)
+
+;; Tweak the register preview window
+(advice-add #'register-preview :override #'consult-register-window)
+
+;; Use Consult to select xref locations with preview
+(setq xref-show-xrefs-function #'consult-xref
+      xref-show-definitions-function #'consult-xref)
+
+;; Optionally configure preview
+(consult-customize
+ consult-theme :preview-key '(:debounce 0.2 any)
+ consult-ripgrep consult-git-grep consult-grep
+ consult-bookmark consult-recent-file consult-xref
+ consult--source-bookmark consult--source-file-register
+ consult--source-recent-file consult--source-project-recent-file
+ :preview-key '(:debounce 0.4 any))
+
+;; Configure the narrowing key
+(setq consult-narrow-key "<")
+
+;; By default `consult-project-function` uses `project-root` from project.el
+;; You can optionally configure a different project root function here
+
+;; (setq consult-project-function #'consult--default-project--function)
+;; (setq consult-project-function (lambda (_) (vc-root-dir)))
+;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
+;; (autoload 'projectile-project-root "projectile")
+;; (setq consult-project-function (lambda (_) (projectile-project-root)))
+;; (setq consult-project-function nil)
+(add-hook 'completion-list-mode #'consult-preview-at-point-mode)
+
+;; Optionally configure the register formatting. This improves the register
+;; preview for `consult-register', `consult-register-load',
+;; `consult-register-store' and the Emacs built-ins.
+(setq register-preview-delay 0.5
+      register-preview-function #'consult-register-format)
+
+;; Optionally tweak the register preview window.
+;; This adds thin lines, sorting and hides the mode line of the window.
+(advice-add #'register-preview :override #'consult-register-window)
+
+;; Use Consult to select xref locations with preview
+(setq xref-show-xrefs-function #'consult-xref 
+      xref-show-definitions-function #'consult-xref)
+
+;; Optionally configure preview. The default value
+  ;; is 'any, such that any key triggers the preview.
+  ;; (setq consult-preview-key 'any)
+  ;; (setq consult-preview-key "M-.")
+  ;; (setq consult-preview-key '("S-<down>" "S-<up>"))
+  ;; For some commands and buffer sources it is useful to configure the
+  ;; :preview-key on a per-command basis using the `consult-customize' macro.
+  (consult-customize
+   consult-theme :preview-key '(:debounce 0.2 any)
+   consult-ripgrep consult-git-grep consult-grep
+   consult-bookmark consult-recent-file consult-xref
+   consult--source-bookmark consult--source-file-register
+   consult--source-recent-file consult--source-project-recent-file
+   ;; :preview-key "M-."
+   :preview-key '(:debounce 0.4 any))
+
+  ;; Optionally configure the narrowing key.
+  ;; Both < and C-+ work reasonably well.
+  (setq consult-narrow-key "<") ;; "C-+"
+
+  ;; Optionally make narrowing help available in the minibuffer.
+  ;; You may want to use `embark-prefix-help-command' or which-key instead.
+  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+
+  ;; By default `consult-project-function' uses `project-root' from project.el.
+  ;; Optionally configure a different project root function.
+  ;;;; 1. project.el (the default)
+  ;; (setq consult-project-function #'consult--default-project--function)
+  ;;;; 2. vc.el (vc-root-dir)
+  ;; (setq consult-project-function (lambda (_) (vc-root-dir)))
+  ;;;; 3. locate-dominating-file
+  ;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
+  ;;;; 4. projectile.el (projectile-project-root)
+  ;; (autoload 'projectile-project-root "projectile")
+  ;; (setq consult-project-function (lambda (_) (projectile-project-root)))
+  ;;;; 5. No project support
+  ;; (setq consult-project-function nil)
+
+; fd support in consult
+(defvar consult--fd-command nil)
+(defun consult--fd-builder (input)
+  (unless consult--fd-command
+    (setq consult--fd-command
+          (if (eq 0 (call-process-shell-command "fdfind"))
+              "fdfind"
+            "fd")))
+  (pcase-let* ((`(,arg . ,opts) (consult--command-split input))
+               (`(,re . ,hl) (funcall consult--regexp-compiler
+                                      arg 'extended t)))
+    (when re
+      (cons (append
+             (list consult--fd-command
+                   "--color=never" "--full-path"
+                   (consult--join-regexps re 'extended))
+             opts)
+            hl))))
+
+(defun consult-fd (&optional dir initial)
+  (interactive "P")
+  (pcase-let* ((`(,prompt ,paths ,dir) (consult--directory-prompt "Fd" dir))
+               (default-directory dir))
+    (find-file (consult--find prompt #'consult--fd-builder initial))))
+
+(vertico-mode 1)
+(marginalia-mode 1)
+
+;; Show the Embark target at point via Eldoc.  You may adjust the Eldoc
+;; strategy, if you want to see the documentation from multiple providers.
+(add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
+
+(add-hook 'embark-collect-mode #'consult-preview-at-point-mode)
+
+;; Hide the mode line of the Embark live/completions buffers
+(add-to-list 'display-buffer-alist
+             '("\\`\\*Embark Collect \\(Live\\|Completions\\)\\*"
+               nil
+               (window-parameters (mode-line-format . none))))
 
 ; Haskell support
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/haskell-mode")
@@ -75,7 +320,6 @@
 (add-hook 'rg-mode-hook 'wgrep-rg-setup)
 
 (require 'fd-dired)
-(require 'counsel-fd)
 
 (require 'smex)
 (setq smex-save-file '"~/Git/lightweight-emacs/smex-items")
@@ -90,19 +334,6 @@
 
 (setq imenu-max-item-length 255)
 
-; Completion ranking mechanism, works with ivy-mode as well
-(require 'flx)
-;; disable ido faces to see flx highlights.
-(setq ido-enable-flex-matching t)
-(setq ido-use-faces nil)
-
-(add-to-list 'completion-styles 'substring)
-(require 'ivy)
-(require 'counsel)
-(require 'swiper)
-(ivy-mode 1)
-(counsel-mode 1)
-
 ; Add convenience function for killing all non-visible buffers. Very useful
 ; to avoid eglot starting too many servers that are no longer required.
 (defun kill-all-nonvisible-buffers ()
@@ -111,57 +342,7 @@
   (dolist (buf  (buffer-list))
     (unless (get-buffer-window buf 'visible) (kill-buffer buf))))
 
-;; better performance on everything (especially windows), ivy-0.10.0 required
-;; @see https://github.com/abo-abo/swiper/issues/1218
-(setq ivy-dynamic-exhibit-delay-ms 250)
-(setq ivy-use-virtual-buffers t)
 (setq enable-recursive-minibuffers t)
-(setq ivy-re-builders-alist
-      '((read-file-name-internal . ivy--regex-fuzzy)
-        (t . ivy--regex-ignore-order)))
-;; enable this if you want `swiper' to use it
-(setq search-default-mode #'char-fold-to-regexp)
-(global-set-key "\C-s" 'swiper)
-(global-set-key (kbd "C-c C-r") 'ivy-resume)
-(global-set-key (kbd "<f6>") 'ivy-resume)
-(global-set-key (kbd "M-x") 'counsel-M-x)
-(global-set-key (kbd "C-x C-f") 'counsel-find-file)
-(global-set-key (kbd "<f1> f") 'counsel-describe-function)
-(global-set-key (kbd "<f1> v") 'counsel-describe-variable)
-(global-set-key (kbd "<f1> o") 'counsel-describe-symbol)
-(global-set-key (kbd "<f1> l") 'counsel-find-library)
-(global-set-key (kbd "<f2> i") 'counsel-info-lookup-symbol)
-(global-set-key (kbd "<f2> u") 'counsel-unicode-char)
-(global-set-key (kbd "C-c g") 'counsel-git)
-(global-set-key (kbd "C-c j") 'counsel-git-grep)
-(global-set-key (kbd "C-c k") 'counsel-rg)
-(global-set-key (kbd "C-x l") 'counsel-locate)
-(global-set-key (kbd "C-S-o") 'counsel-rhythmbox)
-(global-set-key (kbd "C-c h i") 'counsel-imenu)
-(define-key minibuffer-local-map (kbd "C-r") 'counsel-minibuffer-history)
-
-; This is to allow for reverse isearch to be integrated with swiper
-(defun swiper-C-r (&optional arg)
-  "Move cursor vertically down ARG candidates.
-If the input is empty, select the previous history element instead."
-  (interactive "p")
-  (if (string= ivy-text "")
-      (ivy-next-history-element 1)
-    (ivy-previous-line arg)))
- (define-key ivy-minibuffer-map (kbd "C-r") 'swiper-C-r)
-
-; Makes C-s C-w work like normal isearch when using ivy
-(define-key ivy-minibuffer-map (kbd "C-w") 'ivy-yank-word)
-
-(require 'ivy-xref)
-;; xref initialization is different in Emacs 27 - there are two different
-;; variables which can be set rather than just one
-(when (>= emacs-major-version 27)
-  (setq xref-show-definitions-function #'ivy-xref-show-defs))
-;; Necessary in Emacs <27. In Emacs 27 it will affect all xref-based
-;; commands other than xref-find-definitions (e.g. project-find-regexp)
-;; as well
-(setq xref-show-xrefs-function #'ivy-xref-show-xrefs)
 (require 'eglot)
 ; (with-eval-after-load 'eglot (require 'eglot-x))
 (add-to-list 'eglot-server-programs '((c++-mode c-mode objc-mode cuda-mode) "clangd"))
@@ -197,6 +378,8 @@ If the input is empty, select the previous history element instead."
 (setq eglot-extend-to-xref t)
 (setq eglot-events-buffer-size 6000000)
 (setq eglot-send-changes-idle-time 0.75)
+
+(require 'consult-eglot)
 
 (setq flymake-no-changes-timeout 1.0)
 
@@ -275,7 +458,7 @@ If the input is empty, select the previous history element instead."
 
 (require 'bison-mode)
 
-; Allow for manual-rescanning of buffers
+; Allow for manual-rescanning of buffers1
  (defun rescan-symbols-in-buffer()
    (interactive)
    (imenu--menubar-select imenu--rescan-item))
@@ -1041,7 +1224,6 @@ current buffer's, reload dir-locals."
 (setq projectile-indexing-method 'alien)
 ; Remove redundant project name from the mode line
 ; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name)))) 
-(setq projectile-completion-system 'ivy)
 (setq projectile-enable-caching t)
 (setq projectile-cache-file '"~/Git/lightweight-emacs/projectile.cache")
 (setq projectile-auto-update-cache nil)
@@ -1221,42 +1403,6 @@ current buffer's, reload dir-locals."
     (tab-mark 9 [187 9] [92 9]) ; 9 TAB, 9655 WHITE RIGHT-POINTING TRIANGLE 「▷」
    )
 )
-
-; Set up auto-complete for code
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/company-mode/")
-(require 'company)
-(setq company-backends (delete 'company-semantic company-backends))
-(global-set-key [(ctrl tab)] 'company-complete)
-
-; Disable idle completion, idle is the devil's work
-(setq company-idle-delay nil)
-
-; Increase completion time for larger C++ projects
-(setq company-async-timeout 10)
-
-; Company GUI settings
-(setq company-show-numbers t)
-(setq company-tooltip-maximum-width 100)
-(setq company-tooltip-limit 15)
-(setq company-selection-wrap-around t)
-(setq company-require-match nil)
-(setq company-lighter-base "")
-
-; FIX for fci-mode distorting the popup for company completions
-(defvar-local company-fci-mode-on-p nil)
-
-(defun company-turn-off-fci (&rest ignore)
-  (when (boundp 'fci-mode)
-    (setq company-fci-mode-on-p fci-mode)
-    (when fci-mode (fci-mode -1))))
-
-(defun company-maybe-turn-on-fci (&rest ignore)
-  (when company-fci-mode-on-p (fci-mode 1)))
-
-(add-hook 'company-completion-started-hook 'company-turn-off-fci)
-(add-hook 'company-completion-finished-hook 'company-maybe-turn-on-fci)
-(add-hook 'company-completion-cancelled-hook 'company-maybe-turn-on-fci)
-; FIX ends here
 
 ; Don't clutter the modeline
 (setq eldoc-minor-mode-string nil)

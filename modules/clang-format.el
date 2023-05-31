@@ -57,6 +57,18 @@ of the buffer."
   :safe #'stringp)
 (make-variable-buffer-local 'clang-format-style)
 
+(defcustom clang-format-fallback-style "none"
+  "Fallback style to pass to clang-format.
+
+This style will be used if clang-format-style is set to \"file\"
+and no .clang-format is found in the directory of the buffer or
+one of parent directories. Set to \"none\" to disable formatting
+in such buffers."
+  :group 'clang-format
+  :type 'string
+  :safe #'stringp)
+(make-variable-buffer-local 'clang-format-fallback-style)
+
 (defun clang-format--extract (xml-node)
   "Extract replacements and cursor information from XML-NODE."
   (unless (and (listp xml-node) (eq (xml-node-name xml-node) 'replacements))
@@ -70,7 +82,7 @@ of the buffer."
         (let* ((children (xml-node-children node))
                (text (car children)))
           (cl-case (xml-node-name node)
-            ('replacement
+            (replacement
              (let* ((offset (xml-get-attribute-or-nil node 'offset))
                     (length (xml-get-attribute-or-nil node 'length)))
                (when (or (null offset) (null length))
@@ -81,7 +93,7 @@ of the buffer."
                (setq offset (string-to-number offset))
                (setq length (string-to-number length))
                (push (list offset length text) replacements)))
-            ('cursor
+            (cursor
              (setq cursor (string-to-number text)))))))
 
     ;; Sort by decreasing offset, length.
@@ -135,7 +147,7 @@ uses the function `buffer-file-name'."
     (setq style clang-format-style))
 
   (unless assume-file-name
-    (setq assume-file-name buffer-file-name))
+    (setq assume-file-name (buffer-file-name (buffer-base-buffer))))
 
   (let ((file-start (clang-format--bufferpos-to-filepos start 'approximate
                                                         'utf-8-unix))
@@ -162,6 +174,7 @@ uses the function `buffer-file-name'."
                                ,@(and assume-file-name
                                       (list "-assume-filename" assume-file-name))
                                ,@(and style (list "-style" style))
+                               "-fallback-style" ,clang-format-fallback-style
                                "-offset" ,(number-to-string file-start)
                                "-length" ,(number-to-string (- file-end file-start))
                                "-cursor" ,(number-to-string cursor))))
