@@ -28,3 +28,24 @@
 [submodule "modules/haskell-mode"]
 	path = modules/haskell-mode
 	url = git@github.com:haskell/haskell-mode.git
+[submodule "modules/consult"]
+	path = modules/consult
+	url = git@github.com:minad/consult.git
+[submodule "modules/vertico"]
+	path = modules/vertico
+	url = git@github.com:minad/vertico.git
+[submodule "modules/marginalia"]
+	path = modules/marginalia
+	url = git@github.com:minad/marginalia.git
+[submodule "modules/embark"]
+	path = modules/embark
+	url = git@github.com:oantolin/embark.git
+[submodule "modules/orderless"]
+	path = modules/orderless
+	url = git@github.com:oantolin/orderless.git
+[submodule "modules/consult-company"]
+	path = modules/consult-company
+	url = git@github.com:mohkale/consult-company.git
+[submodule "modules/consult-eglot"]
+	path = modules/consult-eglot
+	url = git@github.com:mohkale/consult-eglot.git
