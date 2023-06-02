@@ -258,7 +258,7 @@
 
 ;; Show the Embark target at point via Eldoc.  You may adjust the Eldoc
 ;; strategy, if you want to see the documentation from multiple providers.
-(add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
+; (add-hook 'eldoc-documentation-functions #'embark-eldoc-first-target)
 
 (add-hook 'embark-collect-mode #'consult-preview-at-point-mode)
 
@@ -392,14 +392,12 @@
 ; (add-to-list 'eglot-ignored-server-capabilites :hoverProvider)
 (setq eldoc-echo-area-use-multiline-p nil)
 
-;(define-key c-mode-base-map (kbd "M-RET") 'eglot-rename)
 (global-set-key (kbd "M-RET") 'eglot-rename)
 (global-set-key (kbd "M-,") 'xref-find-definitions-other-window)
 (global-set-key (kbd "M-.") 'xref-find-definitions)
 (global-set-key [C-mouse-1] 'xref-find-defintions-at-mouse)
-; (global-set-key [C-mouse-2] 'eldoc-box-eglot-help-at-point)
-; (global-set-key (kbd "C-c ?") 'eldoc-box-eglot-help-at-point)
 (global-set-key (kbd "C-c ?") 'eldoc-print-current-symbol-info)
+(global-set-key (kbd "C-M-.") 'consult-eglot-symbols)
 
 ; Allow for peek window definition. This is a modified version of: https://tuhdo.github.io/emacs-frame-peek.html 
 ; that works with xref.
