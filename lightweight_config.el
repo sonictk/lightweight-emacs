@@ -131,6 +131,9 @@
 (global-set-key (kbd "M-s k") 'consult-keep-lines)
 (global-set-key (kbd "M-s u") 'consult-focus-lines)
 
+; Custom keybinding for consult-fd
+(global-set-key (kbd "M-s f") 'consult-fd)
+
 (define-key isearch-mode-map (kbd "M-e") 'consult-isearch-history)
 (define-key isearch-mode-map (kbd "M-s e") 'consult-isearch-history)
 (define-key isearch-mode-map (kbd "M-s l") 'consult-line)
