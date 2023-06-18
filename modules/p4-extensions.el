@@ -21,21 +21,64 @@
      (append (list "%depotFile%" "opened" "-c" (p4-completing-read 'shelved "Changelist: ")))))
   (p4-call-command "-F" args :mode 'p4-basic-list-mode))
 
+; TODO This isn't yet working properly.
+(defun p4-call-process-shell-command (&optional infile destination display &rest args)
+    ""
+    (apply #'call-process-shell-command (concat (p4-executable) " " (funcall p4-modify-args-function args)) infile destination display))
+
+(defun p4-start-process-shell-command (name buffer &rest program-args)
+  "Similar to `p4-start-process`, except that the command is passed to a shell instead of 
+  executing it directly. This allows piping in commands to be used, since otherwise it's 
+  not really a single command that can be run."
+  (apply #'start-process-shell-command name buffer (concat (p4-executable) " " (funcall p4-modify-args-function args))))
+
+(defun p4-process-shell-restart()
+  ""
+  (interactive)
+  (unless p4-process-args
+    (error "Can't restart Perforce process in this buffer."))
+  (let ((inhibit-read-only t))
+    (erase-buffer)
+    (if p4-process-synchronous
+        (p4-with-coding-system
+          (let ((status (apply #'p4-call-process-shell-command nil t nil
+                               p4-process-args)))
+            (p4-process-finished (current-buffer) "P4"
+                                 (if (zerop status) "finished\n"
+                                   (format "exited with status %d\n" status)))))
+      (let ((process (apply #'p4-start-process-shell-command "P4" (current-buffer)
+                            p4-process-args)))
+        (set-process-query-on-exit-flag process nil)
+        (set-process-sentinel process 'p4-process-sentinel)
+        (p4-set-process-coding-system process)
+        (message "Running p4 %s..." (p4-join-list p4-process-args))))))
+
+(defun* p4-call-shell-command (cmd &optional args &key mode callback after-show
+                             (auto-login t) synchronous pop-up-output)
+  ""
+  (with-current-buffer
+      (p4-make-output-buffer (p4-process-buffer-name (cons cmd args)) mode)
+    (set (make-local-variable 'revert-buffer-function) 'p4-revert-buffer)
+    (setq p4-process-args (cons cmd args)
+          p4-process-after-show after-show
+          p4-process-auto-login auto-login
+          p4-process-callback callback
+          p4-process-pop-up-output pop-up-output
+          p4-process-synchronous
+          (or synchronous (memq (intern cmd) p4-synchronous-commands)))
+    (p4-process-shell-restart)))
+
 ; Command is `p4 -F %depotFile% opened -c 1234 | p4 -x - reopen -c 5678`
 ; to move files from 1234 to 5678
-; TODO this executes, but doesn't actually work and doesn't move the files for some reason. The command after the pipe
-; is somehow not getting executed for some reason.
 (defp4cmd p4-move-files-from-changelist (&rest args)
   "move-files-from-changelist"
   "Moves files between changelists."
   (interactive
    (if current-prefix-arg
        (p4-read-args "p4 move-files-from-changelist:" "" 'shelved)
-     (append (list "%depotFile%" "opened" "-c" (p4-completing-read 'shelved "Move files from: ") "|" "p4" "-x" "-" "reopen" "-c")
-             (when p4-open-in-changelist
-               (list (p4-completing-read 'pending "New/existing shelf: "))))))
-  (p4-call-command "-F" args :mode 'p4-basic-list-mode
-                   :callback (p4-refresh-callback)))
+     (append (list "-F" "%depotFile%" "opened" "-c" (p4-completing-read 'shelved "Move files from: ") "|"
+                   "p4" "-x" "-" "reopen" "-c" (p4-completing-read 'pending "Move files to: ")))))
+    (p4-call-shell-command args))
 
 (defp4cmd p4-shelve-force (&rest args)
   "shelve"

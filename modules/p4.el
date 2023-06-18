@@ -60,8 +60,10 @@
 ; https://github.com/gareth-rees/p4.el/pull/214
 ; https://github.com/gareth-rees/p4.el/pull/240
 ; https://github.com/gareth-rees/p4.el/pull/225
-; Also manually fixed code to work without warnings in Emacs 28.
-
+; Other changes:
+; - Manually fixed code to work without warnings in Emacs 28.
+; - Made changes to print annotations with longer changelist descriptions instead of the default.
+; - Added a new `d` key mapping in `p4-opened` mode which allows for plaintext diff-ing when in that mode.
 
 ;;; Code:
 
@@ -2819,11 +2821,12 @@ to the matches for ANNOTATION."
 (defun p4-fetch-change-completions (completion string status)
   "Fetch change completions (with status STATUS) for STRING from
 the depot."
+  (interactive)
   (let ((client (p4-current-client)))
     (when client
       (cons "default"
-            (p4-output-annotations `("changes" "-s" ,status "-c" ,client)
-                                   "^Change \\([1-9][0-9]*\\) .*'\\(.*\\)'"
+            (p4-output-annotations `("changes" "-s" ,status "-c" ,client, "-l")
+                                   "^Change \\([0-9]+\\) .*\n+\\(.*\\)\n"
                                    1 2)))))
 
 (defun p4-fetch-pending-completions (completion string)
@@ -3324,11 +3327,41 @@ is NIL, otherwise return NIL."
 ;; This is for the output of p4 opened, where each line starts with
 ;; the depot filename for an opened file.
 
+(defp4cmd* plaintext-diff
+  "This is a specific diff command for `p4 opened`, and is mostly copied from `p4 revert` since the default `p4 diff` uses `P4DIFF`."
+  (p4-context-filenames-list)
+  (let ((prompt t))
+    (unless args-orig
+      (let* ((diff-args (append (cons "diff" (p4-make-list-from-string p4-default-diff-options)) args))
+             (inhibit-read-only t)
+             ;; We need 'p4 diff' to return a text response in order to populate
+             ;; the diff buffer.  If P4DIFF or DIFF refer to a graphical diff
+             ;; tool, then things may not behave as expected. This line removes
+             ;; the P4DIFF and DIFF variables from the environment, which should
+             ;; force 'p4 diff' to return a textual response.
+             (process-environment (cl-list* "P4DIFF" "DIFF" process-environment)))
+        (with-current-buffer
+            (p4-make-output-buffer (p4-process-buffer-name diff-args)
+                                   'p4-diff-mode)
+          (p4-run diff-args)
+          (cond ((looking-at ".* - file(s) not opened on this client")
+                 (p4-process-show-error))
+                ((looking-at ".* - file(s) not opened for edit")
+                 (kill-buffer (current-buffer)))
+                ((looking-at p4-empty-diff-regexp)
+                 (kill-buffer (current-buffer))
+                 (setq prompt nil))
+                (t
+                 (p4-activate-diff-buffer)
+                 (display-buffer (current-buffer)))))))))
+
 (defvar p4-opened-list-mode-map
   (let ((map (p4-make-derived-map p4-basic-list-mode-map)))
     (define-key map "r" 'p4-revert)
     (define-key map "t" 'p4-opened-list-type)
     (define-key map "c" 'p4-opened-list-change)
+    (define-key map "d" 'p4-plaintext-diff)
+    ; TODO Make a version that works with ediff
     map)
   "The key map to use in P4 Status List Mode.")
 
@@ -3353,7 +3386,6 @@ is NIL, otherwise return NIL."
     (beginning-of-line)
     (when (looking-at p4-basic-list-filename-regexp)
       (p4-reopen (list "-c" change (match-string 2))))))
-
 
 ;;; Status List Mode:
 
@@ -3399,6 +3431,7 @@ is NIL, otherwise return NIL."
   "Major mode for P4 forms."
   (setq fill-column 80
         indent-tabs-mode t
+        whitespace-mode t
         font-lock-defaults '(p4-form-font-lock-keywords t)))
 
 

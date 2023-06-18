@@ -1022,10 +1022,10 @@ current buffer's, reload dir-locals."
   (abbrev-mode 1)
 
   ; devenv.com error parsing
-  (add-to-list 'compilation-error-regexp-alist 'lightweight-devenv)
-  (add-to-list 'compilation-error-regexp-alist-alist '(lightweight-devenv
-   "*\\([0-9]+>\\)?\\(\\(?:[a-zA-Z]:\\)?[^:(\t\n]+\\)(\\([0-9]+\\)) : \\(?:see declaration\\|\\(?:warnin\\(g\\)\\|[a-z ]+\\) C[0-9]+:\\)"
-    2 3 nil (4)))
+  ; (add-to-list 'compilation-error-regexp-alist 'lightweight-devenv)
+  ; (add-to-list 'compilation-error-regexp-alist-alist '(lightweight-devenv
+  ;  "*\\([0-9]+>\\)?\\(\\(?:[a-zA-Z]:\\)?[^:(\t\n]+\\)(\\([0-9]+\\)) : \\(?:see declaration\\|\\(?:warnin\\(g\\)\\|[a-z ]+\\) C[0-9]+:\\)"
+  ;   2 3 nil (4)))
 
   ; Unbind c bug report submission
   (define-key c++-mode-map (kbd "C-c C-b") nil)
@@ -1259,10 +1259,10 @@ current buffer's, reload dir-locals."
 (define-key global-map (kbd "C-%") 'lightweight-replace-in-region)
 
 ; Compilation
-(setq compilation-context-lines 0)
-(setq compilation-error-regexp-alist
-    (cons '("^\\([0-9]+>\\)?\\(\\(?:[a-zA-Z]:\\)?[^:(\t\n]+\\)(\\([0-9]+\\)) : \\(?:fatal error\\|warnin\\(g\\)\\) C[0-9]+:" 2 3 nil (4))
-     compilation-error-regexp-alist))
+; (setq compilation-context-lines 0)
+; (setq compilation-error-regexp-alist
+;     (cons '("^\\([0-9]+>\\)?\\(\\(?:[a-zA-Z]:\\)?[^:(\t\n]+\\)(\\([0-9]+\\)) : \\(?:fatal error\\|warnin\\(g\\)\\) C[0-9]+:" 2 3 nil (4))
+;      compilation-error-regexp-alist))
 
 (defun lock-compilation-directory ()
   "The compilation process should NOT hunt for a makefile"
