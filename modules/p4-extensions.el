@@ -129,7 +129,7 @@
 
 (defp4cmd* changes-own-for-current-workspace
   "Shows your shelved changes (up to 200) for the current client workspace."
-  (list "-m" "200" "--me" "-L" "-s" "shelved" "-c" (p4-current-client))
+  (list "-t" "-m" "200" "--me" "-L" "-s" "shelved" "-c" (p4-current-client))
   (p4-file-change-log "changes" args))
 
 (provide 'p4-extensions)
