@@ -67,6 +67,10 @@
 ; Because `view-hello-file` is slow, we unbind the keybind that could accidentally trigger it
 (define-key global-map (kbd "C-h h") nil)
 
+; Unbind Emacs news hotkeys
+(define-key global-map (kbd "C-h n") nil)
+(define-key global-map (kbd "C-h C-n") nil)
+
 (require 'consult)
 (require 'consult-compile)
 (require 'consult-flymake)
@@ -142,41 +146,8 @@
 (define-key minibuffer-local-map (kbd "M-s") 'consult-history)
 (define-key minibuffer-local-map (kbd "M-r") 'consult-history)
 
-;; Enable automatic preview at point in the *Completions* buffer
-(add-hook 'completion-list-mode-hook 'consult-preview-at-point-mode)
-
-;; Configure register formatting
-(setq register-preview-delay 0.5
-      register-preview-function #'consult-register-format)
-
-;; Tweak the register preview window
-(advice-add #'register-preview :override #'consult-register-window)
-
-;; Use Consult to select xref locations with preview
-(setq xref-show-xrefs-function #'consult-xref
-      xref-show-definitions-function #'consult-xref)
-
-;; Optionally configure preview
-(consult-customize
- consult-theme :preview-key '(:debounce 0.2 any)
- consult-ripgrep consult-git-grep consult-grep
- consult-bookmark consult-recent-file consult-xref
- consult--source-bookmark consult--source-file-register
- consult--source-recent-file consult--source-project-recent-file
- :preview-key '(:debounce 0.4 any))
-
-;; Configure the narrowing key
-(setq consult-narrow-key "<")
-
-;; By default `consult-project-function` uses `project-root` from project.el
-;; You can optionally configure a different project root function here
-
-;; (setq consult-project-function #'consult--default-project--function)
-;; (setq consult-project-function (lambda (_) (vc-root-dir)))
-;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
-;; (autoload 'projectile-project-root "projectile")
-;; (setq consult-project-function (lambda (_) (projectile-project-root)))
-;; (setq consult-project-function nil)
+;; Enable automatic preview at point in the *Completions* buffer. This is
+;; relevant when you use the default completion UI.
 (add-hook 'completion-list-mode #'consult-preview-at-point-mode)
 
 ;; Optionally configure the register formatting. This improves the register
@@ -1022,10 +993,10 @@ current buffer's, reload dir-locals."
   (abbrev-mode 1)
 
   ; devenv.com error parsing
-  ; (add-to-list 'compilation-error-regexp-alist 'lightweight-devenv)
-  ; (add-to-list 'compilation-error-regexp-alist-alist '(lightweight-devenv
-  ;  "*\\([0-9]+>\\)?\\(\\(?:[a-zA-Z]:\\)?[^:(\t\n]+\\)(\\([0-9]+\\)) : \\(?:see declaration\\|\\(?:warnin\\(g\\)\\|[a-z ]+\\) C[0-9]+:\\)"
-  ;   2 3 nil (4)))
+  (add-to-list 'compilation-error-regexp-alist 'lightweight-devenv)
+  (add-to-list 'compilation-error-regexp-alist-alist '(lightweight-devenv
+   "*\\([0-9]+>\\)?\\(\\(?:[a-zA-Z]:\\)?[^:(\t\n]+\\)(\\([0-9]+\\)) : \\(?:see declaration\\|\\(?:warnin\\(g\\)\\|[a-z ]+\\) C[0-9]+:\\)"
+    2 3 nil (4)))
 
   ; Unbind c bug report submission
   (define-key c++-mode-map (kbd "C-c C-b") nil)
