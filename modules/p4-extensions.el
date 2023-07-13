@@ -21,7 +21,6 @@
      (append (list "%depotFile%" "opened" "-c" (p4-completing-read 'shelved "Changelist: ")))))
   (p4-call-command "-F" args :mode 'p4-basic-list-mode))
 
-; TODO This isn't yet working properly.
 (defun p4-call-process-shell-command (&optional infile destination display &rest args)
     ""
     (apply #'call-process-shell-command (concat (p4-executable) " " (funcall p4-modify-args-function args)) infile destination display))
@@ -30,7 +29,8 @@
   "Similar to `p4-start-process`, except that the command is passed to a shell instead of 
   executing it directly. This allows piping in commands to be used, since otherwise it's 
   not really a single command that can be run."
-  (apply #'start-process-shell-command name buffer (concat (p4-executable) " " (funcall p4-modify-args-function args))))
+  (message "start cmd: %s" (concat "\"" (p4-executable) "\"" " " (mapconcat 'identity (funcall p4-modify-args-function (car program-args)) " ")))
+  (start-process-shell-command name buffer (concat "\"" (p4-executable) "\"" " " (mapconcat 'identity (funcall p4-modify-args-function (car program-args)) " "))))
 
 (defun p4-process-shell-restart()
   ""
@@ -51,21 +51,20 @@
         (set-process-query-on-exit-flag process nil)
         (set-process-sentinel process 'p4-process-sentinel)
         (p4-set-process-coding-system process)
-        (message "Running p4 %s..." (p4-join-list p4-process-args))))))
+        (message "Run: p4 %s" (p4-join-list (car p4-process-args)))))))
 
 (defun* p4-call-shell-command (cmd &optional args &key mode callback after-show
                              (auto-login t) synchronous pop-up-output)
   ""
   (with-current-buffer
-      (p4-make-output-buffer (p4-process-buffer-name (cons cmd args)) mode)
+      (p4-make-output-buffer (format "*P4 %s*" (mapconcat 'identity cmd)) mode)
     (set (make-local-variable 'revert-buffer-function) 'p4-revert-buffer)
     (setq p4-process-args (cons cmd args)
           p4-process-after-show after-show
           p4-process-auto-login auto-login
           p4-process-callback callback
           p4-process-pop-up-output pop-up-output
-          p4-process-synchronous
-          (or synchronous (memq (intern cmd) p4-synchronous-commands)))
+          p4-process-synchronous nil)
     (p4-process-shell-restart)))
 
 ; Command is `p4 -F %depotFile% opened -c 1234 | p4 -x - reopen -c 5678`
@@ -76,8 +75,8 @@
   (interactive
    (if current-prefix-arg
        (p4-read-args "p4 move-files-from-changelist:" "" 'shelved)
-     (append (list "-F" "%depotFile%" "opened" "-c" (p4-completing-read 'shelved "Move files from: ") "|"
-                   "p4" "-x" "-" "reopen" "-c" (p4-completing-read 'pending "Move files to: ")))))
+     (list "-F" "%depotFile%" "opened" "-c" (p4-completing-read 'shelved "Move files from: ") "|"
+                   "p4" "-x" "-" "reopen" "-c" (p4-completing-read 'pending "Move files to: "))))
     (p4-call-shell-command args))
 
 (defp4cmd p4-shelve-force (&rest args)
