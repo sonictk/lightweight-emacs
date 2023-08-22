@@ -3,6 +3,7 @@
 ; Add custom module path so that nothing is saved to the global emacs config
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet/snippets")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/swift-mode")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/wgrep")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/rg")
@@ -19,6 +20,10 @@
 
 (setq savehist-additional-variables '(command-history))
 (savehist-mode 1)
+
+; Template system for Emacs - allows macros to do text insertion
+(require 'yasnippet)
+(setq yas-snippet-dirs '("~/Git/lightweight-emacs/modules/yasnippet/snippets"))
 
 ; Set up auto-complete for code
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/company-mode/")
@@ -263,10 +268,6 @@
 
 ; Set the default directory for find-file
 (setq default-directory "~/")
-
-; Template system for Emacs - allows macros to do text insertion
-(require 'yasnippet)
-(yas-global-mode 1)
 
 ; Improve performance reading from LSP servers
 (setq read-process-output-max 1048576)
@@ -1766,5 +1767,6 @@ PWD is not in a git repo (or the git command is not found)."
   (setq fill-column 81)
   (popper-mode +1)
   (popper-echo-mode +1)
+  (yas-global-mode 1)
 )
 (add-hook 'window-setup-hook 'post-load-stuff t)
