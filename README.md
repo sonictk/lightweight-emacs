@@ -70,6 +70,7 @@ You will need the following dependencies, regardless of your platform:
   but is faster anyway. On Windows this is **required** for projectile to invoke the right `find` command.
 * [GHCup](https://www.haskell.org/ghcup/) For Haskell support.
 * `make` for [MSYS2](https://www.msys2.org/) needs to be installed and available on the `PATH`. 
+* Support for `black` in Python using `pip install --user black black-macchiato`
 
 ### Installation
 
