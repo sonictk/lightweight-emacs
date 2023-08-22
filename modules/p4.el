@@ -404,7 +404,8 @@ commit command.")
     (define-key map "R" 'p4-refresh)
     (define-key map "\C-r" 'p4-resolve)
     (define-key map "s" 'p4-status)
-    (define-key map "S" 'p4-submit)
+    ; Makes no sense to want to submit just one file from the changelist!
+    ; (define-key map "S" 'p4-submit) 
     (define-key map "t" 'p4-toggle-vc-mode)
     (define-key map "u" 'p4-user)
     (define-key map "U" 'p4-users)
@@ -3362,6 +3363,7 @@ is NIL, otherwise return NIL."
     (define-key map "c" 'p4-opened-list-change)
     (define-key map "d" 'p4-plaintext-diff)
     ; TODO Make a version that works with ediff
+    (define-key map "s" 'p4-refresh)
     map)
   "The key map to use in P4 Status List Mode.")
 

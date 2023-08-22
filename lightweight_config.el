@@ -156,6 +156,9 @@
 (setq register-preview-delay 0.5
       register-preview-function #'consult-register-format)
 
+; Prevent `consult-line` from slowing down in slightly larger buffers due to inefficient syntax highlighting
+(setq consult-fontify-max-size 1024)
+
 ;; Optionally tweak the register preview window.
 ;; This adds thin lines, sorting and hides the mode line of the window.
 (advice-add #'register-preview :override #'consult-register-window)
@@ -320,9 +323,10 @@
 (require 'eglot)
 ; (with-eval-after-load 'eglot (require 'eglot-x))
 (add-to-list 'eglot-server-programs '((c++-mode c-mode objc-mode cuda-mode) "clangd"))
-(add-to-list 'eglot-server-programs
-             `(python-mode . ("pyls" "-v" "--tcp" "--host"
-                              "localhost" "--port" :autoport)))
+(add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio")))
+; (add-to-list 'eglot-server-programs
+;              `(python-mode . ("pyls" "-v" "--tcp" "--host"
+;                               "localhost" "--port" :autoport)))
 
 (add-to-list 'eglot-server-programs
              `(verse-mode . ("S:/source/repos/epic/dev_valkyrie/Engine/Restricted/NotForLicensees/Binaries/Win64/uLangServer-Win64-Debug.exe")))
@@ -343,7 +347,7 @@
 ; (add-hook 'csharp-mode-hook 'eglot-ensure)
 (add-hook 'swift-mode 'eglot-ensure)
 (add-hook 'haskell-mode 'eglot-ensure)
-; Python already works OOTB
+(add-hook 'python-mode-hook 'eglot-ensure)
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
@@ -1274,6 +1278,7 @@ current buffer's, reload dir-locals."
 (setq mouse-wheel-scroll-amount '(3 ((shift) . 3))) ;; scroll 3 lines at a time when using mwheel
 (setq mouse-wheel-progressive-speed nil) ;; don't accelerate scrolling
 (setq mouse-wheel-follow-mouse 't) ;; scroll window under mouse
+(pixel-scroll-precision-mode 1) ; Smooth scrolling with mouse/trackpad
 
 ; Scroll just one line when hitting bottom of window
 (setq scroll-conservatively 10000)
@@ -1467,6 +1472,8 @@ current buffer's, reload dir-locals."
         (sphinx-doc-mode t)
     )
 )
+
+(require 'python-black)
 
 ; Use js-mode to highlight JSON files
 (autoload 'js-mode "js-mode" nil t)

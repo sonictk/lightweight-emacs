@@ -126,9 +126,47 @@
   (p4-call-command "revert" args :mode 'p4-basic-list-mode
                    :callback (p4-refresh-callback)))
 
-(defp4cmd* changes-own-for-current-workspace
+(defp4cmd p4-revert-changelist-if-unchanged-and-wipe (&rest args)
+  "revert"
+  "Reverts only those files in the specified changelist if they haven't changed. Also deletes files marked for add."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 revert" "" 'shelved)
+     (append (list  "-a" "-w" "-c" (p4-completing-read 'shelved "Changelist: ")) '("//...") )))
+  (p4-call-command "revert" args :mode 'p4-basic-list-mode
+                   :callback (p4-refresh-callback)))
+
+(defp4cmd p4-revert-changelist-if-unchanged (&rest args)
+  "revert"
+  "Reverts only those files in the specified changelist if they haven't changed. This leaves all other added files unchanged."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 revert" "" 'shelved)
+     (append (list  "-a" "-c" (p4-completing-read 'shelved "Changelist: ")) '("//...") )))
+  (p4-call-command "revert" args :mode 'p4-basic-list-mode
+                   :callback (p4-refresh-callback)))
+
+(defp4cmd* show-shelved-changes-for-current-workspace
   "Shows your shelved changes (up to 200) for the current client workspace."
   (list "-t" "-m" "200" "--me" "-L" "-s" "shelved" "-c" (p4-current-client))
   (p4-file-change-log "changes" args))
+
+(defp4cmd* show-submitted-changes-for-current-workspace
+  "Shows your submitted changes (up to 200) for the current client workspace."
+  (list "-t" "-m" "200" "--me" "-L" "-s" "submitted" "-c" (p4-current-client))
+  (p4-file-change-log "changes" args))
+
+(defp4cmd p4-show-opened-for-changelist (&rest args)
+  "opened"
+  "List open files and display file status for a specific changelist."
+  (interactive
+    (if current-prefix-arg
+       (p4-read-args "p4 opened" "" 'shelved)
+       (append (list "-c" (p4-completing-read 'shelved "Changelist: ")))))
+   (p4-call-command "opened" args :mode 'p4-opened-list-mode
+     :callback (lambda ()
+                 (p4-regexp-create-links "\\<change \\([1-9][0-9]*\\) ([a-z]+)"
+                                       'pending "Edit change"))
+     :pop-up-output (lambda () t)))
 
 (provide 'p4-extensions)
