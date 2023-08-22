@@ -49,3 +49,6 @@
 [submodule "modules/consult-eglot"]
 	path = modules/consult-eglot
 	url = git@github.com:mohkale/consult-eglot.git
+[submodule "modules/yasnippet-snippets"]
+	path = modules/yasnippet-snippets
+	url = git@github.com:sonictk/yasnippet-snippets.git

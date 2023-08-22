@@ -3,7 +3,7 @@
 ; Add custom module path so that nothing is saved to the global emacs config
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet/snippets")
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet-snippets")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/swift-mode")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/wgrep")
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/rg")
@@ -23,7 +23,7 @@
 
 ; Template system for Emacs - allows macros to do text insertion
 (require 'yasnippet)
-(setq yas-snippet-dirs '("~/Git/lightweight-emacs/modules/yasnippet/snippets"))
+(setq yas-snippet-dirs '("~/Git/lightweight-emacs/modules/yasnippet-snippets/snippets"))
 
 ; Set up auto-complete for code
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/company-mode/")
