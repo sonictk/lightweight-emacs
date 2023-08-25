@@ -1712,6 +1712,13 @@ PWD is not in a git repo (or the git command is not found)."
 (remove-hook 'find-file-hook 'p4-update-status)
 (add-hook 'find-file-hooks 'p4-tramp-workaround-find-file-hook)
 
+(defun my-p4-change-form-mode-hook ()
+  "Custom hook to enable whitespace-mode and visual-line-mode in p4-change-form-mode."
+  (whitespace-mode 1)
+  (visual-line-mode 1))
+
+(add-hook 'p4-change-form-mode-hook 'my-p4-change-form-mode-hook)
+
 (defun toggle-window-dedicated ()
   "Control whether or not Emacs is allowed to display another buffer in current window."
   (interactive)
