@@ -1700,6 +1700,7 @@ PWD is not in a git repo (or the git command is not found)."
 (setq p4-check-empty-diffs t)
 (setq p4-follow-symlinks t)
 (setq p4-open-in-changelist t)
+(setq p4-cleanup-time 5)
 (defun p4-tramp-workaround-find-file-hook ()
     "do not let p4.el process remote TRAMP buffers"
     (when
