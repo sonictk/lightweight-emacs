@@ -1,5 +1,29 @@
 (require 'p4)
 
+(defp4cmd p4-sync-changelist-files (&rest args)
+  "sync"
+  "Force syncs only the file(s) in the specified changelist."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 sync -f" "" 'shelved)
+     (append (list "-p" "-f" "-s" (p4-completing-read 'shelved "Copy from: "))
+             (when p4-open-in-changelist
+               (list "-c" (p4-completing-read 'pending "New/existing shelf: "))))))
+  (p4-call-command "reshelve" args :mode 'p4-basic-list-mode
+                   :callback (p4-refresh-callback)))
+
+; TODO Implement this. Basically needs to get a list of files to sync from `p4 opened` and then 
+; call `p4 sync -f` on each of them.
+; (defp4cmd p4-sync-changelist-files (&rest args)
+;   "sync"
+;   "Force syncs only the file(s) in the specified changelist."
+;   (interactive
+;    (if current-prefix-arg
+;        (p4-read-args "p4 sync" "" 'shelved)
+;      (append (list "-f" "-c" (p4-completing-read 'shelved "Changelist: ")))))
+;   (p4-call-command "sync" args :mode 'p4-basic-list-mode))
+
+
 (defp4cmd p4-reshelve (&rest args)
   "reshelve"
   "Copies shelved files from an existing shelf into either a new shelf or one that has already been created."

@@ -99,6 +99,34 @@
 
 ; (add-to-list 'completion-styles 'substring)
 
+; Allow consult-line to work better with the current symbol under the cursor.
+(defun consult-line-symbol-at-point ()
+  (interactive)
+  (consult-line (thing-at-point 'symbol)))
+
+; Start consult-ripgrep search with the active region.
+(defun wrapper/consult-ripgrep (&optional dir given-initial)
+  "Pass the region to consult-ripgrep if available.
+
+DIR and GIVEN-INITIAL match the method signature of `consult-wrapper'."
+  (interactive "P")
+  (let ((initial
+         (or given-initial
+             (when (use-region-p)
+               (buffer-substring-no-properties (region-beginning) (region-end))))))
+    (consult-ripgrep dir initial)))
+
+(defun wrapper/consult-line (&optional given-initial)
+  "Pass the region to consult-line if available.
+
+GIVEN-INITIAL match the method signature of `consult-wrapper'."
+  (interactive "P")
+  (let ((initial
+         (or given-initial
+             (when (use-region-p)
+               (buffer-substring-no-properties (region-beginning) (region-end))))))
+    (consult-line initial)))
+
 ;; Bindings for Consult
 (global-set-key (kbd "C-c M-x") 'consult-mode-command)
 (global-set-key (kbd "C-c H") 'consult-history)
@@ -134,8 +162,9 @@
 (global-set-key (kbd "M-s D") 'consult-locate)
 ; (global-set-key (kbd "M-s g") 'consult-grep)
 (global-set-key (kbd "M-s G") 'consult-git-grep)
-(global-set-key (kbd "M-s r") 'consult-ripgrep)
-(global-set-key (kbd "M-s l") 'consult-line)
+(global-set-key (kbd "M-s r") 'wrapper/consult-ripgrep)
+; (global-set-key (kbd "M-s l") 'consult-line-symbol-at-point)
+(global-set-key (kbd "M-s l") 'wrapper/consult-line)
 (global-set-key (kbd "M-s L") 'consult-line-multi)
 (global-set-key (kbd "M-s k") 'consult-keep-lines)
 (global-set-key (kbd "M-s u") 'consult-focus-lines)
@@ -324,7 +353,7 @@
 (require 'eglot)
 ; (with-eval-after-load 'eglot (require 'eglot-x))
 (add-to-list 'eglot-server-programs '((c++-mode c-mode objc-mode cuda-mode) "clangd"))
-(add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio")))
+(add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
 ; (add-to-list 'eglot-server-programs
 ;              `(python-mode . ("pyls" "-v" "--tcp" "--host"
 ;                               "localhost" "--port" :autoport)))
@@ -479,8 +508,8 @@ See also `newline-and-indent'."
 
 ; Allow for loading recent files
 (recentf-mode 1)
-(setq recentf-max-menu-items 128)
-(setq recentf-max-saved-items 128)
+(setq recentf-max-menu-items 300)
+(setq recentf-max-saved-items 300)
 (global-set-key "\C-x\ \C-r" 'recentf-open-files)
 (setq recentf-save-file (expand-file-name "recentf" "~/Git/lightweight-emacs/"))
 
