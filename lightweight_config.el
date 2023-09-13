@@ -23,6 +23,7 @@
 
 ; Template system for Emacs - allows macros to do text insertion
 (require 'yasnippet)
+(require 'yasnippet-snippets)
 (setq yas-snippet-dirs '("~/Git/lightweight-emacs/modules/yasnippet-snippets/snippets"))
 
 ; Set up auto-complete for code

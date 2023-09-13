@@ -1,3 +1,6 @@
+; TODO Implement unshelving between branches by allowing to choose a branch mapping to use.
+; Can retrieve the list of branch mappings fairly easily so this should allow for auto-complete as well.
+
 (require 'p4)
 
 (defp4cmd p4-sync-changelist-files (&rest args)
@@ -13,7 +16,7 @@
                    :callback (p4-refresh-callback)))
 
 ; TODO Implement this. Basically needs to get a list of files to sync from `p4 opened` and then 
-; call `p4 sync -f` on each of them.
+; call `p4 sync -f` on each of them. Which is essentially `p4-refresh` already.
 ; (defp4cmd p4-sync-changelist-files (&rest args)
 ;   "sync"
 ;   "Force syncs only the file(s) in the specified changelist."
@@ -192,5 +195,7 @@
                  (p4-regexp-create-links "\\<change \\([1-9][0-9]*\\) ([a-z]+)"
                                        'pending "Edit change"))
      :pop-up-output (lambda () t)))
+
+(defalias 'p4-sync-file 'p4-refresh)
 
 (provide 'p4-extensions)
