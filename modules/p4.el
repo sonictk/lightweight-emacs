@@ -404,7 +404,7 @@ commit command.")
     (define-key map "R" 'p4-refresh)
     (define-key map "\C-r" 'p4-resolve)
     (define-key map "s" 'p4-status)
-    ; Makes no sense to want to submit just one file from the changelist!
+    ; NOTE: (sonictk) Makes no sense to want to submit just one file from the changelist! Also definitely don't want to trigger this by accident.
     ; (define-key map "S" 'p4-submit) 
     (define-key map "t" 'p4-toggle-vc-mode)
     (define-key map "u" 'p4-user)

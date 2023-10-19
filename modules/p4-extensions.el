@@ -196,6 +196,19 @@
                                        'pending "Edit change"))
      :pop-up-output (lambda () t)))
 
+(defp4cmd p4-show-files-for-changelist (&rest args)
+  "files"
+  "List files and display their status for a specific changelist."
+  (interactive
+    (if current-prefix-arg
+       (p4-read-args "p4 files" "" 'pending)
+       (append (list (concat "@=" (p4-completing-read 'pending "Changelist: "))))))
+   (p4-call-command "opened" args :mode 'p4-opened-list-mode
+     :callback (lambda ()
+                 (p4-regexp-create-links "\\<change \\([1-9][0-9]*\\) ([a-z]+)"
+                                       'pending "Edit change"))
+     :pop-up-output (lambda () t)))
+
 (defp4cmd p4-unshelve-using-branch-spec (&rest args)
   "unshelve"
   "Restore shelved files from a pending change into a workspace using a specified branch spec/mapping."
@@ -205,17 +218,26 @@
      (append (list "-f" "-s" (p4-completing-read 'shelved "Unshelve from: "))
              (when p4-open-in-changelist
                (list "-c" (p4-completing-read 'pending "Open in change: ") "-b" (p4-completing-read 'branch "Unshelve using branch spec: ") )))))
-  (p4-call-command "unshelve" args :mode 'p4-basic-list-mode))
+  (p4-call-command "unshelve" args :mode 'p4-basic-list-mode :callback (p4-refresh-callback)))
 
-(defun p4-switch-to-client (client-name)
-  "Switch the P4CLIENT environment variable to a different client workspace."
+(defp4cmd p4-submit-shelved-changelist (&rest args)
+  "submit"
+  "Submits a previously-shelved changelist to the server."
   (interactive
-   (list (if current-prefix-arg
-             (p4-read-args "Set P4CLIENT: " "" 'client)
-           (p4-completing-read 'client "Client workspace: "))))
-  (setenv "P4CLIENT" client-name)
-  (message "Switched to client workspace: %s" client-name))
+   (if current-prefix-arg
+       (p4-read-args "p4 submit: " "" 'shelved)
+     (append (list "-e" (p4-completing-read 'shelved "Shelved changelist: ")))))
+  (p4-call-command "submit" args :mode 'p4-basic-list-mode :callback (p4-refresh-callback)))
 
+; already exists; p4-set-client-name
+;; (defun p4-switch-to-client (client-name)
+;;   "Switch the P4CLIENT environment variable to a different client workspace."
+;;   (interactive
+;;    (list (if current-prefix-arg
+;;              (p4-read-args "Set P4CLIENT: " "" 'client)
+;;            (p4-completing-read 'client "Client workspace: "))))
+;;   (setenv "P4CLIENT" client-name)
+;;   (message "Switched to client workspace: %s" client-name))
 
 ;; (defp4cmd p4-list-changes-between-changelists (&rest args)
 ;;   "changes-between"
