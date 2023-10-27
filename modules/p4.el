@@ -64,6 +64,7 @@
 ; - Manually fixed code to work without warnings in Emacs 28.
 ; - Made changes to print annotations with longer changelist descriptions instead of the default.
 ; - Added a new `d` key mapping in `p4-opened` mode which allows for plaintext diff-ing when in that mode.
+; - Added submitted changes history as well.
 
 ;;; Code:
 
@@ -2826,7 +2827,7 @@ the depot."
   (let ((client (p4-current-client)))
     (when client
       (cons "default"
-            (p4-output-annotations `("changes" "-s" ,status "-c" ,client, "-l")
+            (p4-output-annotations `("changes" "-m" "250" "-s" ,status "-c" ,client, "-l")
                                    "^Change \\([0-9]+\\) .*\n+\\(.*\\)\n"
                                    1 2)))))
 
@@ -2837,6 +2838,11 @@ the depot."
 (defun p4-fetch-shelved-completions (completion string)
   "Fetch shelved change completions for STRING from the depot."
   (p4-fetch-change-completions completion string "shelved"))
+
+; NOTE: Added submitted version as well.
+(defun p4-fetch-submitted-completions (completion string)
+  "Fetch submitted change completions for STRING from the depot."
+  (p4-fetch-change-completions completion string "submitted"))
 
 (defun p4-fetch-filespec-completions (completion string)
   "Fetch file and directory completions for STRING from the depot."
@@ -2949,6 +2955,7 @@ and update the cache accordingly."
 (defvar p4-label-history nil "P4 label history.")
 (defvar p4-pending-history nil "P4 pending change history.")
 (defvar p4-shelved-history nil "P4 shelved change history.")
+(defvar p4-submitted-history nil "P4 submitted change history.")
 (defvar p4-user-history nil "P4 user history.")
 
 (defvar p4-all-completions
@@ -2987,6 +2994,9 @@ and update the cache accordingly."
    (cons 'shelved  (p4-make-completion
                     :fetch-completions-fn 'p4-fetch-shelved-completions
                     :history 'p4-shelved-history))
+   (cons 'submitted  (p4-make-completion
+                    :fetch-completions-fn 'p4-fetch-submitted-completions
+                    :history 'p4-submitted-history))
    (cons 'user     (p4-make-completion
                     :query-cmd "users" :query-prefix ""
                     :regexp "^\\([^ \n]+\\)"
@@ -3188,7 +3198,7 @@ is NIL, otherwise return NIL."
           (group (p4-group group))
           (client (p4-client client))
           (label (p4-label (list label)))
-          (branch (p4-branch (list branch)))
+          (branch (p4-branch branch))
           (job (p4-job job))
           (help (p4-help help))
           ((and (not active) (eq major-mode 'p4-diff-mode))

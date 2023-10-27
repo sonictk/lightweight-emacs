@@ -1,31 +1,37 @@
-; TODO Implement unshelving between branches by allowing to choose a branch mapping to use.
-; Can retrieve the list of branch mappings fairly easily so this should allow for auto-complete as well.
-
 (require 'p4)
 
-;; (defp4cmd p4-sync-changelist-files (&rest args)
-;;   "sync"
-;;   "Force syncs only the file(s) in the specified changelist."
-;;   (interactive
-;;    (if current-prefix-arg
-;;        (p4-read-args "p4 sync -f" "" 'shelved)
-;;      (append (list "-p" "-f" "-s" (p4-completing-read 'shelved "Copy from: "))
-;;              (when p4-open-in-changelist
-;;                (list "-c" (p4-completing-read 'pending "New/existing shelf: "))))))
-;;   (p4-call-command "reshelve" args :mode 'p4-basic-list-mode
-;;                    :callback (p4-refresh-callback)))
+; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - sync -f`
+(defp4cmd p4-force-sync-files-in-changelist (&rest args)
+  "force-sync-files-in-changelist"
+  "Forces sync of the files in a given changelist."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 force-sync-files-in-changelist:" "" 'shelved)
+     (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'shelved "Changelist: "))  "|"
+                   "p4" "-x" "-" "sync" "-f" )))
+    (p4-call-shell-command args))
 
-; TODO Implement this. Basically needs to get a list of files to sync from `p4 opened` and then 
-; call `p4 sync -f` on each of them. Which is essentially `p4-refresh` already.
-; (defp4cmd p4-sync-changelist-files (&rest args)
-;   "sync"
-;   "Force syncs only the file(s) in the specified changelist."
-;   (interactive
-;    (if current-prefix-arg
-;        (p4-read-args "p4 sync" "" 'shelved)
-;      (append (list "-f" "-c" (p4-completing-read 'shelved "Changelist: ")))))
-;   (p4-call-command "sync" args :mode 'p4-basic-list-mode))
+; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - sync -r`
+(defp4cmd p4-force-sync-files-in-changelist (&rest args)
+  "reopen-files-in-changelist"
+  "Reopens the files that are mapped to new locations in the depot in a given changelist."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 reopen-files-in-changelist:" "" 'shelved)
+     (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'shelved "Changelist: "))  "|"
+                   "p4" "-x" "-" "sync" "-r" )))
+    (p4-call-shell-command args))
 
+; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - flush`
+(defp4cmd p4-flush-files-in-changelist (&rest args)
+  "flush-files-in-changelist"
+  "Updates the server metadata for files in a given changelist without actually syncing the files."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 flush-files-in-changelist:" "" 'shelved)
+     (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'shelved "Changelist: "))  "|"
+                   "p4" "-x" "-" "flush")))
+    (p4-call-shell-command args))
 
 (defp4cmd p4-reshelve (&rest args)
   "reshelve"
@@ -135,11 +141,21 @@
 
 (defp4cmd p4-revert-changelist (&rest args)
   "revert"
-  "Reverts only those files in the specified changelist."
+  "Reverts only the files in the specified changelist."
   (interactive
    (if current-prefix-arg
        (p4-read-args "p4 revert" "" 'pending)
      (append (list "-c" (p4-completing-read 'pending "Changelist: ")) '("//...") )))
+  (p4-call-command "revert" args :mode 'p4-basic-list-mode
+                   :callback (p4-refresh-callback)))
+
+(defp4cmd p4-revert-changelist-but-keep-workspace-files (&rest args)
+  "revert"
+  "Reverts only the files in the specified changelist, while preserving local workspace changes."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 revert" "" 'pending)
+     (append (list "-k" "-c" (p4-completing-read 'pending "Changelist: ")) '("//...") )))
   (p4-call-command "revert" args :mode 'p4-basic-list-mode
                    :callback (p4-refresh-callback)))
 
@@ -196,17 +212,43 @@
                                        'pending "Edit change"))
      :pop-up-output (lambda () t)))
 
-(defp4cmd p4-show-files-for-changelist (&rest args)
+(defp4cmd p4-show-files-for-pending-changelist (&rest args)
   "files"
   "List files and display their status for a specific changelist."
   (interactive
     (if current-prefix-arg
        (p4-read-args "p4 files" "" 'pending)
        (append (list (concat "@=" (p4-completing-read 'pending "Changelist: "))))))
-   (p4-call-command "opened" args :mode 'p4-opened-list-mode
+   (p4-call-command "files" args :mode 'p4-opened-list-mode
      :callback (lambda ()
                  (p4-regexp-create-links "\\<change \\([1-9][0-9]*\\) ([a-z]+)"
                                        'pending "Edit change"))
+     :pop-up-output (lambda () t)))
+
+(defp4cmd p4-show-files-for-shelved-changelist (&rest args)
+  "files"
+  "List shelved files and display their status for a specific changelist."
+  (interactive
+    (if current-prefix-arg
+       (p4-read-args "p4 files" "" 'shelved)
+       (append (list (concat "@=" (p4-completing-read 'shelved "Changelist: "))))))
+   (p4-call-command "files" args :mode 'p4-opened-list-mode
+     :callback (lambda ()
+                 (p4-regexp-create-links "\\<change \\([1-9][0-9]*\\) ([a-z]+)"
+                                       'shelved "Edit change"))
+     :pop-up-output (lambda () t)))
+
+(defp4cmd p4-show-files-for-submitted-changelist (&rest args)
+  "files"
+  "List submitted files and display their status for a specific changelist."
+  (interactive
+    (if current-prefix-arg
+       (p4-read-args "p4 files" "" 'submitted)
+       (append (list (concat "@=" (p4-completing-read 'submitted "Changelist: "))))))
+   (p4-call-command "files" args :mode 'p4-opened-list-mode
+     :callback (lambda ()
+                 (p4-regexp-create-links "\\<change \\([1-9][0-9]*\\) ([a-z]+)"
+                                       'submitted "Edit change"))
      :pop-up-output (lambda () t)))
 
 (defp4cmd p4-unshelve-using-branch-spec (&rest args)
