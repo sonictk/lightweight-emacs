@@ -1304,6 +1304,7 @@ current buffer's, reload dir-locals."
 (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
 
 (setq markdown-fontify-code-blocks-natively t)
+(setq markdown-command "pandoc --from gfm -t html5 --mathjax --highlight-style pygments")
 
 ;; Scroll one line at a time (less "jumpy" than defaults)
 (setq mouse-wheel-scroll-amount '(3 ((shift) . 3))) ;; scroll 3 lines at a time when using mwheel
@@ -1743,12 +1744,13 @@ PWD is not in a git repo (or the git command is not found)."
 (remove-hook 'find-file-hook 'p4-update-status)
 (add-hook 'find-file-hooks 'p4-tramp-workaround-find-file-hook)
 
-(defun my-p4-change-form-mode-hook ()
+(defun my-p4-form-mode-hook ()
   "Custom hook to enable whitespace-mode and visual-line-mode in p4-change-form-mode."
   (whitespace-mode 1)
+  (setq tab-width 4)
+  (indent-tabs-mode t)
   (visual-line-mode 1))
-
-(add-hook 'p4-change-form-mode-hook 'my-p4-change-form-mode-hook)
+(add-hook 'p4-form-mode-hook 'my-p4-form-mode-hook)
 
 (defun toggle-window-dedicated ()
   "Control whether or not Emacs is allowed to display another buffer in current window."
