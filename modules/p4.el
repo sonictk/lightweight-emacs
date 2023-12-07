@@ -3371,8 +3371,10 @@ is NIL, otherwise return NIL."
     (define-key map "r" 'p4-revert)
     (define-key map "t" 'p4-opened-list-type)
     (define-key map "c" 'p4-opened-list-change)
-    (define-key map "d" 'p4-plaintext-diff)
     ; TODO Make a version that works with ediff
+    (define-key map "d" 'p4-plaintext-diff)
+    ; TODO Make this actually unshelve the file
+    ; (define-key map "u" 'p4-unshelve-file)
     (define-key map "s" 'p4-refresh)
     map)
   "The key map to use in P4 Status List Mode.")

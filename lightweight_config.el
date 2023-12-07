@@ -36,7 +36,7 @@
 (setq company-idle-delay nil)
 
 ; Increase completion time for larger C++ projects
-(setq company-async-timeout 10)
+(setq company-async-timeout 25)
 
 ; Company GUI settings
 (setq company-show-numbers t)
@@ -382,7 +382,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
-(setq eglot-connect-timeout 15)
+(setq eglot-connect-timeout 10)
 (setq eglot-sync-connect 5)
 (setq eglot-extend-to-xref t)
 (setq eglot-events-buffer-size 6000000)

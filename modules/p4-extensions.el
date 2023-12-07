@@ -282,6 +282,7 @@
      (append (list "-e" (p4-completing-read 'shelved "Shelved changelist: ")))))
   (p4-call-command "submit" args :mode 'p4-basic-list-mode :callback (p4-refresh-callback)))
 
+; TODO Stuff to implement.
 ;; (defp4cmd p4-list-changes-between-changelists (&rest args)
 ;;   "changes-between"
 ;;   "Lists out the changes between two changelist numbers. Useful for bisecting or figuring out what changes might have triggered an issue."
@@ -291,6 +292,16 @@
 ;;      (append (list "changes" (p4-completing-read 'branch "Branch: ") "..." ))))
 ;;   (p4-call-command "-F" args :mode 'p4-basic-list-mode))
 
+;; (defp4cmd p4-unshelve-file (&rest args)
+;;   "unshelve"
+;;   "Restore a single shelved file from a pending change into a workspace."
+;;   (interactive
+;;    (if current-prefix-arg
+;;        (p4-read-args "p4 unshelve: " "" 'shelved)
+;;      (append (list "-f" "-s" (p4-completing-read 'shelved "Unshelve from: "))
+;;              (when p4-open-in-changelist
+;;                (list "-c" (p4-completing-read 'pending "Open in change: "))))))
+;;   (p4-call-command "unshelve" args :mode 'p4-basic-list-mode))
 
 (defalias 'p4-sync-file 'p4-refresh)
 
