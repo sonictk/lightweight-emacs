@@ -282,16 +282,17 @@
      (append (list "-e" (p4-completing-read 'shelved "Shelved changelist: ")))))
   (p4-call-command "submit" args :mode 'p4-basic-list-mode :callback (p4-refresh-callback)))
 
-; TODO Stuff to implement.
-;; (defp4cmd p4-list-changes-between-changelists (&rest args)
-;;   "changes-between"
-;;   "Lists out the changes between two changelist numbers. Useful for bisecting or figuring out what changes might have triggered an issue."
-;;   (interactive
-;;    (if current-prefix-arg
-;;        (p4-read-args "p4 changes: " "" 'submitted)
-;;      (append (list "changes" (p4-completing-read 'branch "Branch: ") "..." ))))
-;;   (p4-call-command "-F" args :mode 'p4-basic-list-mode))
+; Command is `p4 changes ...@30312822,30313050 -s submitted`
+(defun p4-list-changes-between-changelists (&rest args)
+  "Lists out the changes between two changelist numbers. Useful for bisecting or figuring out what changes might have triggered an issue."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 list-changes-between-changelists: " "" 'submitted)
+     (let ((client-root (string-trim-right (shell-command-to-string "p4 -F %clientRoot% -ztag info"))))
+       (list "-m" "500" "-s" "submitted" (format "%s/...@%s,%s" client-root (p4-completing-read 'submitted "First CL #: ") (p4-completing-read 'submitted "Second CL #: "))))))
+  (p4-call-command "changes" args :mode 'p4-basic-list-mode))
 
+; TODO Stuff to implement.
 ;; (defp4cmd p4-unshelve-file (&rest args)
 ;;   "unshelve"
 ;;   "Restore a single shelved file from a pending change into a workspace."
@@ -302,6 +303,9 @@
 ;;              (when p4-open-in-changelist
 ;;                (list "-c" (p4-completing-read 'pending "Open in change: "))))))
 ;;   (p4-call-command "unshelve" args :mode 'p4-basic-list-mode))
+
+; Implement a mode in the `p4-opened` map that allows bringing up emacs's ediff and also working
+; for CLs that you don't own - i.e. you don't have the files currently open for edit.
 
 (defalias 'p4-sync-file 'p4-refresh)
 

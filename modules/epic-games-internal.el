@@ -28,3 +28,5 @@
                                     (setq buffer-read-only t))))))))
   (with-current-buffer "*Epic SubmitTool*"
     (local-set-key "q" (lambda () (interactive) (quit-window t)))))
+
+(provide 'epic-games-internal)

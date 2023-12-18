@@ -1754,7 +1754,9 @@ twice in the expansion."
 
 (defp4cmd* diff
   "Display diff of client file with depot file."
-  (cons p4-default-diff-options (p4-context-filenames-list))
+  ; We don't use the default diff options because passing `p4 diff -du` to GVim just doesn't work and causes issues.
+  ; (cons p4-default-diff-options (p4-context-filenames-list))
+  (cons "" (p4-context-filenames-list))
   (p4-call-command cmd args :mode 'p4-diff-mode
                    :callback 'p4-activate-diff-buffer))
 
@@ -3376,6 +3378,7 @@ is NIL, otherwise return NIL."
     ; TODO Make this actually unshelve the file
     ; (define-key map "u" 'p4-unshelve-file)
     (define-key map "s" 'p4-refresh)
+    (define-key map "p" 'p4-print)
     map)
   "The key map to use in P4 Status List Mode.")
 

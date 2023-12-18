@@ -1243,11 +1243,8 @@ current buffer's, reload dir-locals."
 (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 
 ; Additional keybindngs for finding header files
-(global-set-key (kbd "C-,") 'ff-find-other-file)
-(global-set-key (kbd "C-.") 'ff-find-other-file-other-window)
-
-; Additional keybinding for finding symbol globally within project
-(global-set-key (kbd "C-M-S-s") 'projectile-find-tag)
+(global-set-key (kbd "C-,") 'projectile-find-other-file)
+(global-set-key (kbd "C-.") 'projectile-find-other-file-other-window)
 
 ; Search using the silver searcher
 (global-set-key (kbd "C-S-f") 'projectile-ripgrep)
@@ -1709,6 +1706,9 @@ PWD is not in a git repo (or the git command is not found)."
      (require 'isearch-dabbrev)
      (define-key isearch-mode-map (kbd "M-/") 'isearch-dabbrev-expand))
 )
+
+; Load Epic Games specific stuff
+(require 'epic-games-internal)
 
 ; Disable garbage collection while the minibuffer is open
 (defun my-minibuffer-setup-hook ()
