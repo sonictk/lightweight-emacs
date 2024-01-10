@@ -235,8 +235,8 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
   ;;;; 3. locate-dominating-file
   ;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
   ;;;; 4. projectile.el (projectile-project-root)
-  ;; (autoload 'projectile-project-root "projectile")
-  ;; (setq consult-project-function (lambda (_) (projectile-project-root)))
+  (autoload 'projectile-project-root "projectile")
+  (setq consult-project-function (lambda (_) (projectile-project-root)))
   ;;;; 5. No project support
   ;; (setq consult-project-function nil)
 
@@ -352,7 +352,6 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (setq enable-recursive-minibuffers t)
 (require 'eglot)
-; (with-eval-after-load 'eglot (require 'eglot-x))
 (add-to-list 'eglot-server-programs '((c++-mode c-mode objc-mode cuda-mode) "clangd"))
 (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
 ; (add-to-list 'eglot-server-programs
@@ -1224,25 +1223,21 @@ current buffer's, reload dir-locals."
 (global-set-key (kbd "C-S-n") 'move-text-down)
 
 ; Project management using Projectile
+(setq projectile-require-project-root nil)
 (setq projectile-known-projects-file '"~/Git/lightweight-emacs/projectile-bookmarks.eld")
+; Remove redundant project name from the mode line
+; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name)))) 
 (setq projectile--mode-line '(:eval (format "" )))
 (setq projectile-mode-line-prefix "")
 ; Force Projectile to use faster indexing in Windows
-; NOTE: If this causes problems, comment it out
 (setq projectile-indexing-method 'alien)
-; Remove redundant project name from the mode line
-; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name)))) 
 (setq projectile-enable-caching t)
 (setq projectile-cache-file '"~/Git/lightweight-emacs/projectile.cache")
 (setq projectile-auto-update-cache nil)
+(setq projectile-file-exists-remote-cache-expire nil)
 (require 'projectile)
 (projectile-global-mode t)
-
-; As of latest projectile 1.1.0, ``projectile-keymap-prefix`` is deprecated and need 
-; to use this instead to set keybindings.
 (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
-
-; Additional keybindngs for finding header files
 (global-set-key (kbd "C-,") 'projectile-find-other-file)
 (global-set-key (kbd "C-.") 'projectile-find-other-file-other-window)
 
@@ -1254,10 +1249,10 @@ current buffer's, reload dir-locals."
   "Perform a replace-string in the current region."
   (interactive "sReplace: \nsReplace: %s  With: ")
   (save-excursion (save-restriction
-		    (narrow-to-region (mark) (point))
-		    (beginning-of-buffer)
-		    (replace-string old-word new-word)
-		    ))
+            (narrow-to-region (mark) (point))
+            (beginning-of-buffer)
+            (replace-string old-word new-word)
+            ))
   )
 (define-key global-map (kbd "C-%") 'lightweight-replace-in-region)
 

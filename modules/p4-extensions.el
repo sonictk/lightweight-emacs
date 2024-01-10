@@ -307,6 +307,13 @@
 ; Implement a mode in the `p4-opened` map that allows bringing up emacs's ediff and also working
 ; for CLs that you don't own - i.e. you don't have the files currently open for edit.
 
+; TODO write an interface to `p4 integrated` and `p4 filelog -i` for viewing revision graph history.
+
 (defalias 'p4-sync-file 'p4-refresh)
+
+;; (defun p4-submit-swarm-review (&rest args)
+;;   "Submits a shelved changelist to Swarm for a review."
+;;   (interactive)
+;;   )
 
 (provide 'p4-extensions)

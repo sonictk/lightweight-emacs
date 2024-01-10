@@ -1,4 +1,5 @@
 (require 'p4)
+(require 'projectile)
 
 (defun epic-launch-submit-tool ()
   "Launch Epic's SubmitTool."
@@ -29,4 +30,17 @@
   (with-current-buffer "*Epic SubmitTool*"
     (local-set-key "q" (lambda () (interactive) (quit-window t)))))
 
+; TODO: `projectile-register-project-type` for epic workspaces so that projectile-project-info can be determined correctly.
+
+;; (defun epic-preflight-shelved-changelist ()
+;;   "Preflight a shelved changelist."
+;;   (interactive)
+;; )
+
+; Allow projectile to recognize the root of the Unreal workspace.
+(with-eval-after-load 'projectile
+  (projectile-register-project-type 'unrealengine '("GenerateProjectFiles.bat" "GenerateProjectFiles.sh" "GenerateProjectFiles.command")
+                                    :project-file '("GenerateProjectFiles.bat" "GenerateProjectFiles.sh" "GenerateProjectFiles.command")))
+
+                                        ; todo should also customize ff-find-other-file by doing ff-other-file-alist
 (provide 'epic-games-internal)
