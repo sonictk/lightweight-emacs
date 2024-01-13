@@ -1,5 +1,5 @@
 (require 'p4)
-(require 'projectile)
+(require 'project)
 
 (defun epic-launch-submit-tool ()
   "Launch Epic's SubmitTool."
@@ -30,17 +30,70 @@
   (with-current-buffer "*Epic SubmitTool*"
     (local-set-key "q" (lambda () (interactive) (quit-window t)))))
 
-; TODO: `projectile-register-project-type` for epic workspaces so that projectile-project-info can be determined correctly.
-
 ;; (defun epic-preflight-shelved-changelist ()
 ;;   "Preflight a shelved changelist."
 ;;   (interactive)
 ;; )
 
-; Allow projectile to recognize the root of the Unreal workspace.
-(with-eval-after-load 'projectile
-  (projectile-register-project-type 'unrealengine '("GenerateProjectFiles.bat" "GenerateProjectFiles.sh" "GenerateProjectFiles.command")
-                                    :project-file '("GenerateProjectFiles.bat" "GenerateProjectFiles.sh" "GenerateProjectFiles.command")))
+; This gets `project.el` to recognize Unreal Engine workspaces as project roots.
+(defcustom project-root-markers
+  '("Default.uprojectdirs") ; This file is always present in any Unreal root workspace.
+  "Files or directories that indicate the root of a project."
+  :type '(repeat string)
+  :group 'project)
 
-                                        ; todo should also customize ff-find-other-file by doing ff-other-file-alist
+(defun project-root-p (path)
+  "Check if the current PATH has any of the project root markers."
+  (catch 'found
+    (dolist (marker project-root-markers)
+      (when (file-exists-p (concat path marker))
+        (throw 'found marker)))))
+
+(defun project-find-root (path)
+  "Search up the PATH for `project-root-markers'."
+  (when-let ((root (locate-dominating-file path #'project-root-p)))
+    (cons 'transient (expand-file-name root))))
+; This really slows down project-files due to the sheer size of the project. Need to be careful here.
+; (add-to-list 'project-find-functions #'project-find-root)
+
+; Allow projectile to recognize the root of the Unreal workspace.
+;; (with-eval-after-load 'projectile
+;;   (projectile-register-project-type 'ue5 '("Default.uprojectdirs")
+;;                                     :project-file "Default.uprojectdirs"))
+; todo should also customize ff-find-other-file by doing ff-other-file-alist
+
+(defun find-public-or-private-directory (path)
+  "Find either 'Public' or 'Private' directory presence."
+  (or (locate-dominating-file path "Public")
+      (locate-dominating-file path "Private")))
+
+(defun trim-first-component (path)
+  "Trim the first component of the path."
+  (let* ((components (split-string path "/"))
+         (remaining-components (cdr components)))
+    (if remaining-components
+        (mapconcat 'identity remaining-components "/")
+      path)))
+
+(defun ue-ff-other-file-alist-function ()
+  "Makes Unreal Engine directory structure work with `find-file.el`."
+  (when (buffer-file-name)
+    (let* ((filename (buffer-file-name))
+           (file-dir (file-name-directory filename))
+           (module-root-dir (find-public-or-private-directory file-dir))
+           (module-relative-path (file-relative-name filename module-root-dir))
+           (module-relative-path (trim-first-component module-relative-path))
+           (module-relative-path (file-name-directory module-relative-path))
+           (public-dir (concat module-root-dir "Public/" module-relative-path))
+           (private-dir (concat module-root-dir "Private/" module-relative-path)))
+      (setq cc-search-directories (nconc cc-search-directories `(,public-dir ,private-dir))))))
+
+(defun ue-ff-restore-search-directories ()
+  (custom-reevaluate-setting 'cc-search-directories))
+
+(add-hook 'ff-pre-find-hooks 'ue-ff-other-file-alist-function)
+(add-hook 'ff-post-load-hooks 'ue-ff-restore-search-directories)
+(add-hook 'ff-not-found-hooks 'ue-ff-restore-search-directories)
+(add-hook 'ff-file-created-hook 'ue-ff-restore-search-directories)
+
 (provide 'epic-games-internal)

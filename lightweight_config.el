@@ -21,6 +21,14 @@
 (setq savehist-additional-variables '(command-history))
 (savehist-mode 1)
 
+(setq edebug-print-length 9999)
+(setq edebug-print-level 9999)
+
+; Project management using `project.el`
+(require 'project)
+(global-set-key (kbd "C-,") 'ff-find-other-file)
+(global-set-key (kbd "C-.") 'ff-find-other-file-other-window)
+
 ; Template system for Emacs - allows macros to do text insertion
 (require 'yasnippet)
 (require 'yasnippet-snippets)
@@ -224,7 +232,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
   ;; Optionally make narrowing help available in the minibuffer.
   ;; You may want to use `embark-prefix-help-command' or which-key instead.
-  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+  (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
   ;; By default `consult-project-function' uses `project-root' from project.el.
   ;; Optionally configure a different project root function.
@@ -235,8 +243,8 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
   ;;;; 3. locate-dominating-file
   ;; (setq consult-project-function (lambda (_) (locate-dominating-file "." ".git")))
   ;;;; 4. projectile.el (projectile-project-root)
-  (autoload 'projectile-project-root "projectile")
-  (setq consult-project-function (lambda (_) (projectile-project-root)))
+  ;; (autoload 'projectile-project-root "projectile")
+  ;; (setq consult-project-function (lambda (_) (projectile-project-root)))
   ;;;; 5. No project support
   ;; (setq consult-project-function nil)
 
@@ -325,7 +333,6 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 ; Faster than ag, rg!
 (require 'wgrep)
 (require 'ripgrep)
-(require 'projectile-ripgrep)
 (require 'rg)
 (autoload 'wgrep-rg-setup "wgrep-rg")
 (add-hook 'rg-mode-hook 'wgrep-rg-setup)
@@ -353,11 +360,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (setq enable-recursive-minibuffers t)
 (require 'eglot)
 (add-to-list 'eglot-server-programs '((c++-mode c-mode objc-mode cuda-mode) "clangd"))
-(add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
-; (add-to-list 'eglot-server-programs
-;              `(python-mode . ("pyls" "-v" "--tcp" "--host"
-;                               "localhost" "--port" :autoport)))
-
+; (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
 (add-to-list 'eglot-server-programs
              `(verse-mode . ("S:/source/repos/epic/dev_valkyrie/Engine/Restricted/NotForLicensees/Binaries/Win64/uLangServer-Win64-Debug.exe")))
 
@@ -377,7 +380,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 ; (add-hook 'csharp-mode-hook 'eglot-ensure)
 (add-hook 'swift-mode 'eglot-ensure)
 (add-hook 'haskell-mode 'eglot-ensure)
-(add-hook 'python-mode-hook 'eglot-ensure)
+; (add-hook 'python-mode-hook 'eglot-ensure)
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
@@ -1221,28 +1224,6 @@ current buffer's, reload dir-locals."
 (require 'move-text)
 (global-set-key (kbd "C-S-p") 'move-text-up)
 (global-set-key (kbd "C-S-n") 'move-text-down)
-
-; Project management using Projectile
-(setq projectile-require-project-root nil)
-(setq projectile-known-projects-file '"~/Git/lightweight-emacs/projectile-bookmarks.eld")
-; Remove redundant project name from the mode line
-; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name)))) 
-(setq projectile--mode-line '(:eval (format "" )))
-(setq projectile-mode-line-prefix "")
-; Force Projectile to use faster indexing in Windows
-(setq projectile-indexing-method 'alien)
-(setq projectile-enable-caching t)
-(setq projectile-cache-file '"~/Git/lightweight-emacs/projectile.cache")
-(setq projectile-auto-update-cache nil)
-(setq projectile-file-exists-remote-cache-expire nil)
-(require 'projectile)
-(projectile-global-mode t)
-(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
-(global-set-key (kbd "C-,") 'projectile-find-other-file)
-(global-set-key (kbd "C-.") 'projectile-find-other-file-other-window)
-
-; Search using the silver searcher
-(global-set-key (kbd "C-S-f") 'projectile-ripgrep)
 
 ; Editing
 (defun lightweight-replace-in-region (old-word new-word)
