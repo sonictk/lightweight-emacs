@@ -21,6 +21,14 @@
 (setq savehist-additional-variables '(command-history))
 (savehist-mode 1)
 
+(setq edebug-print-length 9999)
+(setq edebug-print-level 9999)
+
+; Project management using `project.el`
+(require 'project)
+(global-set-key (kbd "C-,") 'ff-find-other-file)
+(global-set-key (kbd "C-.") 'ff-find-other-file-other-window)
+
 ; Template system for Emacs - allows macros to do text insertion
 (require 'yasnippet)
 (require 'yasnippet-snippets)
@@ -224,7 +232,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
   ;; Optionally make narrowing help available in the minibuffer.
   ;; You may want to use `embark-prefix-help-command' or which-key instead.
-  ;; (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
+  (define-key consult-narrow-map (vconcat consult-narrow-key "?") #'consult-narrow-help)
 
   ;; By default `consult-project-function' uses `project-root' from project.el.
   ;; Optionally configure a different project root function.
@@ -325,7 +333,6 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 ; Faster than ag, rg!
 (require 'wgrep)
 (require 'ripgrep)
-(require 'projectile-ripgrep)
 (require 'rg)
 (autoload 'wgrep-rg-setup "wgrep-rg")
 (add-hook 'rg-mode-hook 'wgrep-rg-setup)
@@ -352,13 +359,8 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (setq enable-recursive-minibuffers t)
 (require 'eglot)
-; (with-eval-after-load 'eglot (require 'eglot-x))
 (add-to-list 'eglot-server-programs '((c++-mode c-mode objc-mode cuda-mode) "clangd"))
-(add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
-; (add-to-list 'eglot-server-programs
-;              `(python-mode . ("pyls" "-v" "--tcp" "--host"
-;                               "localhost" "--port" :autoport)))
-
+; (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
 (add-to-list 'eglot-server-programs
              `(verse-mode . ("S:/source/repos/epic/dev_valkyrie/Engine/Restricted/NotForLicensees/Binaries/Win64/uLangServer-Win64-Debug.exe")))
 
@@ -378,7 +380,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 ; (add-hook 'csharp-mode-hook 'eglot-ensure)
 (add-hook 'swift-mode 'eglot-ensure)
 (add-hook 'haskell-mode 'eglot-ensure)
-(add-hook 'python-mode-hook 'eglot-ensure)
+; (add-hook 'python-mode-hook 'eglot-ensure)
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
@@ -1223,44 +1225,15 @@ current buffer's, reload dir-locals."
 (global-set-key (kbd "C-S-p") 'move-text-up)
 (global-set-key (kbd "C-S-n") 'move-text-down)
 
-; Project management using Projectile
-(setq projectile-known-projects-file '"~/Git/lightweight-emacs/projectile-bookmarks.eld")
-(setq projectile--mode-line '(:eval (format "" )))
-(setq projectile-mode-line-prefix "")
-; Force Projectile to use faster indexing in Windows
-; NOTE: If this causes problems, comment it out
-(setq projectile-indexing-method 'alien)
-; Remove redundant project name from the mode line
-; (setq projectile-mode-line '(:eval (format "[%s]" (projectile-project-name)))) 
-(setq projectile-enable-caching t)
-(setq projectile-cache-file '"~/Git/lightweight-emacs/projectile.cache")
-(setq projectile-auto-update-cache nil)
-(require 'projectile)
-(projectile-global-mode t)
-
-; As of latest projectile 1.1.0, ``projectile-keymap-prefix`` is deprecated and need 
-; to use this instead to set keybindings.
-(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
-
-; Additional keybindngs for finding header files
-(global-set-key (kbd "C-,") 'ff-find-other-file)
-(global-set-key (kbd "C-.") 'ff-find-other-file-other-window)
-
-; Additional keybinding for finding symbol globally within project
-(global-set-key (kbd "C-M-S-s") 'projectile-find-tag)
-
-; Search using the silver searcher
-(global-set-key (kbd "C-S-f") 'projectile-ripgrep)
-
 ; Editing
 (defun lightweight-replace-in-region (old-word new-word)
   "Perform a replace-string in the current region."
   (interactive "sReplace: \nsReplace: %s  With: ")
   (save-excursion (save-restriction
-		    (narrow-to-region (mark) (point))
-		    (beginning-of-buffer)
-		    (replace-string old-word new-word)
-		    ))
+            (narrow-to-region (mark) (point))
+            (beginning-of-buffer)
+            (replace-string old-word new-word)
+            ))
   )
 (define-key global-map (kbd "C-%") 'lightweight-replace-in-region)
 
@@ -1709,6 +1682,9 @@ PWD is not in a git repo (or the git command is not found)."
      (require 'isearch-dabbrev)
      (define-key isearch-mode-map (kbd "M-/") 'isearch-dabbrev-expand))
 )
+
+; Load Epic Games specific stuff
+(require 'epic-games-internal)
 
 ; Disable garbage collection while the minibuffer is open
 (defun my-minibuffer-setup-hook ()
