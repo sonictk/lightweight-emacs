@@ -360,7 +360,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (setq enable-recursive-minibuffers t)
 (require 'eglot)
 (add-to-list 'eglot-server-programs '((c++-mode c-mode objc-mode cuda-mode) "clangd"))
-; (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
+(add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
 (add-to-list 'eglot-server-programs
              `(verse-mode . ("S:/source/repos/epic/dev_valkyrie/Engine/Restricted/NotForLicensees/Binaries/Win64/uLangServer-Win64-Debug.exe")))
 
@@ -380,7 +380,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 ; (add-hook 'csharp-mode-hook 'eglot-ensure)
 (add-hook 'swift-mode 'eglot-ensure)
 (add-hook 'haskell-mode 'eglot-ensure)
-; (add-hook 'python-mode-hook 'eglot-ensure)
+(add-hook 'python-mode-hook 'eglot-ensure)
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)

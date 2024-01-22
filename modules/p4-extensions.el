@@ -1,14 +1,28 @@
 (require 'p4)
+; Swarm review functionality
+(require 'url)
+(require 'json)
 
 ; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - sync -f`
 (defp4cmd p4-force-sync-files-in-changelist (&rest args)
   "force-sync-files-in-changelist"
-  "Forces sync of the files in a given changelist."
+  "Forces sync of the file(s) in a given changelist."
   (interactive
    (if current-prefix-arg
        (p4-read-args "p4 force-sync-files-in-changelist:" "" 'shelved)
      (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'shelved "Changelist: "))  "|"
                    "p4" "-x" "-" "sync" "-f" )))
+    (p4-call-shell-command args))
+
+; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - sync`
+(defp4cmd p4-sync-files-in-changelist (&rest args)
+  "sync-files-in-changelist"
+  "Syncs the file(s) in a given changelist."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 force-sync-files-in-changelist:" "" 'shelved)
+     (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'shelved "Changelist: "))  "|"
+                   "p4" "-x" "-" "sync" )))
     (p4-call-shell-command args))
 
 ; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - sync -r`
@@ -20,6 +34,15 @@
        (p4-read-args "p4 reopen-files-in-changelist:" "" 'shelved)
      (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'shelved "Changelist: "))  "|"
                    "p4" "-x" "-" "sync" "-r" )))
+    (p4-call-shell-command args))
+
+(defp4cmd p4-move-file-to-changelist (&rest args)
+  "move-file-to-changelist"
+  "Moves/reopens the current file in the buffer to a new changelist."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4-move-file-to-changelist:" "" 'pending)
+     (list "reopen" "-c" (p4-completing-read 'pending "Changelist: ") (mapconcat 'identity (p4-context-filenames-list) " "))))
     (p4-call-shell-command args))
 
 ; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - flush`
@@ -311,9 +334,57 @@
 
 (defalias 'p4-sync-file 'p4-refresh)
 
-;; (defun p4-submit-swarm-review (&rest args)
-;;   "Submits a shelved changelist to Swarm for a review."
-;;   (interactive)
-;;   )
+; todo this isn't fully fleshed out yet.
+(defun p4-submit-swarm-review (&rest args)
+  "Submits a Swarm review for the given changelist."
+  (interactive
+  (let* ((changelist (p4-completing-read 'pending "Changelist: "))
+         (swarm-url (getenv "P4SWARMURL"))  ; Environment variable for Swarm URL
+         (p4-user (or (getenv "P4USER") "default_username"))  ; P4USER or default username
+         (p4-ticket (shell-command-to-string "p4 login -s | awk '{print $2}' | tr -d '\n'"))  ; Get the current Perforce ticket
+         (review-id nil)
+         (reviewers (read-string "Enter reviewers (space-separated): "))
+         (groups (read-string "Enter groups (space-separated): ")))
+
+    ;; Ensure required environment variables are set
+    (unless (and swarm-url p4-user p4-ticket)
+      (error "Missing required environment variable(s). Please set `P4SWARMURL`, `P4USER`, and ensure you are logged in using 'p4 login'."))
+
+    ;; Step 1: Create a Swarm review
+    (with-current-buffer
+        (url-retrieve-synchronously
+         (format "%s/api/v10/reviews" swarm-url)
+         (lambda (status)
+           (goto-char (point-min))
+           (search-forward-regexp "\n\n")
+           (setq review-id (json-read))))
+      (let ((data (json-encode `((changelist . ,changelist)
+                                 (reviewers . ,(split-string reviewers))
+                                 (groups . ,(split-string groups)))))
+            (headers `(("Authorization" . ,(concat "Bearer " p4-ticket))
+                       ("Content-Type" . "application/json"))))
+
+        ;; Step 2: Set review details
+        (url-retrieve
+         (format "%s/api/v10/reviews/%s" swarm-url review-id)
+         (lambda (status)
+           (url-insert-file-contents
+            (format "%s/api/v10/reviews/%s" swarm-url review-id))
+           (url-http-parse-response)
+           (let ((json-object-type 'plist))
+             (setq review-details (json-read)))
+           (setq review-details (plist-put review-details :state "approved"))
+           (setq review-details (plist-put review-details :fields `((test-field . "test-value"))))
+
+           ;; Step 3: Submit the review
+           (url-retrieve
+            (format "%s/api/v10/reviews/%s/submit" swarm-url review-id)
+            (lambda (status)
+              (if (= (url-http-parse-response) 200)
+                  (message "Swarm review submitted: %s%s" swarm-url review-id)
+                (message "Failed to submit Swarm review. Status code: %s" status))
+              (kill-buffer))))))))))
+;; Example usage:
+;; (p4-submit-swarm-review <cl number>)
 
 (provide 'p4-extensions)
