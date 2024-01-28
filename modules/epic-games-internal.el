@@ -25,15 +25,21 @@
                                 (lambda (process event)
                                   (when (string= event "finished\n")
                                     (setq buffer-read-only nil)
-                                    (insert "\n[Process completed]\n")
+                                    (with-current-buffer buffer-name
+                                      (insert "\n[Process completed]\n"))
                                     (setq buffer-read-only t))))))))
   (with-current-buffer "*Epic SubmitTool*"
     (local-set-key "q" (lambda () (interactive) (quit-window t)))))
 
-;; (defun epic-preflight-shelved-changelist ()
-;;   "Preflight a shelved changelist."
-;;   (interactive)
-;; )
+(defun epic-preflight-changelist ()
+  "Preflight a changelist on Horde."
+  (interactive)
+  (let* ((stream-name (string-trim-right (shell-command-to-string "p4 -F \"%Stream%\" -ztag client -o")))
+         (cl (p4-completing-read 'shelved "Changelist: ")))
+    (browse-url (concat "https://horde.devtools.epicgames.com/preflight?stream="
+                        (url-hexify-string stream-name)
+                        "&change="
+                        (url-hexify-string cl)))))
 
 ; This gets `project.el` to recognize Unreal Engine workspaces as project roots.
 (defcustom project-root-markers
@@ -60,7 +66,6 @@
 ;; (with-eval-after-load 'projectile
 ;;   (projectile-register-project-type 'ue5 '("Default.uprojectdirs")
 ;;                                     :project-file "Default.uprojectdirs"))
-; todo should also customize ff-find-other-file by doing ff-other-file-alist
 
 (defun find-public-or-private-directory (path)
   "Find either 'Public' or 'Private' directory presence."

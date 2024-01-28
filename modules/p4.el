@@ -1760,6 +1760,8 @@ twice in the expansion."
   (p4-call-command cmd args :mode 'p4-diff-mode
                    :callback 'p4-activate-diff-buffer))
 
+; TODO Implement diff against the shelved version of a file in a changelist.
+
 (defun p4-diff-all-opened ()
   (interactive)
   (p4-diff (list p4-default-diff-options)))

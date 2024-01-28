@@ -305,6 +305,15 @@
      (append (list "-e" (p4-completing-read 'shelved "Shelved changelist: ")))))
   (p4-call-command "submit" args :mode 'p4-basic-list-mode :callback (p4-refresh-callback)))
 
+(defp4cmd p4-submit-changelist (&rest args)
+  "submit"
+  "Submits a pending changelist to the server."
+  (interactive
+   (if current-prefix-arg
+       (p4-read-args "p4 submit: " "" 'pending)
+     (append (list "-c" (p4-completing-read 'pending "Changelist: ")))))
+  (p4-call-command "submit" args :mode 'p4-basic-list-mode :callback (p4-refresh-callback)))
+
 ; Command is `p4 changes ...@30312822,30313050 -s submitted`
 (defun p4-list-changes-between-changelists (&rest args)
   "Lists out the changes between two changelist numbers. Useful for bisecting or figuring out what changes might have triggered an issue."
