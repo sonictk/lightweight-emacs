@@ -341,6 +341,9 @@
 
 ; TODO write an interface to `p4 integrated` and `p4 filelog -i` for viewing revision graph history.
 
+; TODO p4-diff-with-shelved-version
+; TODO p4-print-changelist-have-and-server-versions
+
 (defalias 'p4-sync-file 'p4-refresh)
 
 ; todo this isn't fully fleshed out yet.
@@ -395,5 +398,14 @@
               (kill-buffer))))))))))
 ;; Example usage:
 ;; (p4-submit-swarm-review <cl number>)
+
+(defun p4-open-swarm-for-changelist ()
+  "Opens the Swarm URL for the given changelist."
+  (interactive)
+  (let* ((cl (p4-completing-read 'shelved "Changelist: "))
+         (swarm-url (getenv "P4SWARMURL")))
+    (browse-url (concat swarm-url
+                        "/changes/"
+                        (url-hexify-string cl)))))
 
 (provide 'p4-extensions)
