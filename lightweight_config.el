@@ -35,6 +35,12 @@
                                      "<*>" "<|" "<|>" "<$" "<$>" "<!--" "<-" "<--" "<->" "<+"
                                      "<+>" "<=" "<==" "<=>" "<=<" "<>" "<<" "<<-" "<<=" "<<<"
                                      "<~" "<~~" "</" "</>" "~@" "~-" "~>" "~~" "~~>" "%%"))
+(add-hook 'ediff-startup-hook
+  (lambda ()
+    (global-ligature-mode 0)))
+(add-hook 'ediff-quit-hook
+  (lambda ()
+    (global-ligature-mode 't)))
 (global-ligature-mode 't)
 
 (setq savehist-additional-variables '(command-history))
