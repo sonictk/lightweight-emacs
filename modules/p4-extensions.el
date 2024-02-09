@@ -9,8 +9,8 @@
   "Forces sync of the file(s) in a given changelist."
   (interactive
    (if current-prefix-arg
-       (p4-read-args "p4 force-sync-files-in-changelist:" "" 'shelved)
-     (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'shelved "Changelist: "))  "|"
+       (p4-read-args "p4 force-sync-files-in-changelist:" "" 'pending)
+     (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'pending "Changelist: "))  "|"
                    "p4" "-x" "-" "sync" "-f" )))
     (p4-call-shell-command args))
 
@@ -56,7 +56,7 @@
                    "p4" "-x" "-" "flush")))
     (p4-call-shell-command args))
 
-; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - flush`
+; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - edit`
 (defp4cmd p4-edit-files-in-changelist (&rest args)
   "edit-files-in-changelist"
   "Opens the files in a given changelist for editing."
@@ -343,6 +343,13 @@
 
 ; TODO p4-diff-with-shelved-version
 ; TODO p4-print-changelist-have-and-server-versions
+
+; TODO p4-show-opened-changelists
+; p4 -ztag -F %change% opened and remove duplicate lines
+
+; TODO in general format all commands with have and server revisions
+; p4 -ztag opened put `ztag` to see what can be used for format arguments.
+; p4 -ztag -F "%change%" opened | uniq | p4 -x - -ztag -F "%change% %desc%" describe -s
 
 (defalias 'p4-sync-file 'p4-refresh)
 

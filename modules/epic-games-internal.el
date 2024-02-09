@@ -9,7 +9,7 @@
          (p4client (getenv "P4CLIENT"))
          (localappdata (getenv "LOCALAPPDATA"))
          (root-dir (string-trim-right (shell-command-to-string "p4 -F %clientRoot% -ztag info")))
-         (cl (p4-completing-read 'shelved "Changelist: "))
+         (cl (p4-completing-read 'pending "Changelist: "))
          (buffer-name "*Epic SubmitTool*"))
     (let ((executable (concat localappdata "\\UnrealGameSync\\Tools\\SubmitTool\\Current\\Windows\\Engine\\Binaries\\Win64\\SubmitTool.exe")))
       (with-current-buffer (get-buffer-create buffer-name)

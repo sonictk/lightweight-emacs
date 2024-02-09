@@ -18,6 +18,25 @@
 (add-to-list 'custom-theme-load-path
              (file-name-as-directory "~/Git/lightweight-emacs/themes"))
 
+; Enable font ligatures
+; Fira Code configuration below
+(require 'ligature)
+;; Enable the www ligature in every possible major mode
+(ligature-set-ligatures 't '("www"))
+
+;; Enable ligatures in programming modes                                                           
+(ligature-set-ligatures 'prog-mode '("www" "**" "***" "**/" "*>" "*/" "\\\\" "\\\\\\" "{-" "::"
+                                     ":::" ":=" "!!" "!=" "!==" "-}" "----" "-->" "->" "->>"
+                                     "-<" "-<<" "-~" "#{" "#[" "##" "###" "####" "#(" "#?" "#_"
+                                     "#_(" ".-" ".=" ".." "..<" "..." "?=" "??" ";;" "/*" "/**"
+                                     "/=" "/==" "/>" "//" "///" "&&" "||" "||=" "|=" "|>" "^=" "$>"
+                                     "++" "+++" "+>" "=:=" "==" "===" "==>" "=>" "=>>" "<="
+                                     "=<<" "=/=" ">-" ">=" ">=>" ">>" ">>-" ">>=" ">>>" "<*"
+                                     "<*>" "<|" "<|>" "<$" "<$>" "<!--" "<-" "<--" "<->" "<+"
+                                     "<+>" "<=" "<==" "<=>" "<=<" "<>" "<<" "<<-" "<<=" "<<<"
+                                     "<~" "<~~" "</" "</>" "~@" "~-" "~>" "~~" "~~>" "%%"))
+(global-ligature-mode 't)
+
 (setq savehist-additional-variables '(command-history))
 (savehist-mode 1)
 
@@ -1765,7 +1784,7 @@ PWD is not in a git repo (or the git command is not found)."
 (require 'popper-echo)
 
 ; Set the default font for everything
-(add-to-list 'default-frame-alist '(font . "Liberation Mono-13"))
+(add-to-list 'default-frame-alist '(font . "Fira Code Retina-12"))
 
 ; Cleanup and theme setup
 (defun post-load-stuff ()
