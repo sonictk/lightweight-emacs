@@ -2280,15 +2280,30 @@ return a buffer listing those files. Otherwise, return NIL."
   (p4-context-filenames-list)
   (p4-call-command cmd args :callback (p4-refresh-callback)))
 
+;; (defp4cmd p4-unshelve (&rest args)
+;;   "unshelve"
+;;   "Restore shelved files from a pending change into a workspace."
+;;   (interactive
+;;    (if current-prefix-arg
+;;        (p4-read-args "p4 unshelve: " "" 'shelved)
+;;      (append (list "-f" "-s" (p4-completing-read 'shelved "Unshelve from: "))
+;;              (when p4-open-in-changelist
+;;                (list "-c" (p4-completing-read 'pending "Open in change: "))))))
+;;   (p4-call-command "unshelve" args :mode 'p4-basic-list-mode))
+
+; NOTE: (sonictk) Modified this to auto-fill in the result from the first choice.
 (defp4cmd p4-unshelve (&rest args)
   "unshelve"
   "Restore shelved files from a pending change into a workspace."
   (interactive
-   (if current-prefix-arg
-       (p4-read-args "p4 unshelve: " "" 'shelved)
-     (append (list "-f" "-s" (p4-completing-read 'shelved "Unshelve from: "))
-             (when p4-open-in-changelist
-               (list "-c" (p4-completing-read 'pending "Open in change: "))))))
+   (let ((unshelve-choice (if current-prefix-arg
+                              (p4-read-args "p4 unshelve: " "" 'shelved)
+                            (p4-completing-read 'shelved "Unshelve from: "))))
+     (if current-prefix-arg
+         unshelve-choice
+       (append (list "-f" "-s" unshelve-choice)
+               (when p4-open-in-changelist
+                 (list "-c" (p4-completing-read 'pending "Open in change: " unshelve-choice)))))))
   (p4-call-command "unshelve" args :mode 'p4-basic-list-mode))
 
 (defp4cmd* update

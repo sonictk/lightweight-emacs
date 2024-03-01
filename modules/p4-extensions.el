@@ -20,8 +20,8 @@
   "Syncs the file(s) in a given changelist."
   (interactive
    (if current-prefix-arg
-       (p4-read-args "p4 force-sync-files-in-changelist:" "" 'shelved)
-     (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'shelved "Changelist: "))  "|"
+       (p4-read-args "p4 force-sync-files-in-changelist:" "" 'pending)
+     (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'pending "Changelist: "))  "|"
                    "p4" "-x" "-" "sync" )))
     (p4-call-shell-command args))
 
@@ -173,6 +173,9 @@
      (append (list "-d" (p4-completing-read 'pending "Changelist: ")))))
   (p4-call-command "change" args :mode 'p4-basic-list-mode))
 
+; TODO All these should call:`p4 -ztag -F "%change%" opened | uniq` and then split by line
+; to provide the completion candidates.
+; 
 (defp4cmd p4-revert-changelist (&rest args)
   "revert"
   "Reverts only the files in the specified changelist."
@@ -350,6 +353,8 @@
 ; TODO in general format all commands with have and server revisions
 ; p4 -ztag opened put `ztag` to see what can be used for format arguments.
 ; p4 -ztag -F "%change%" opened | uniq | p4 -x - -ztag -F "%change% %desc%" describe -s
+
+; TODO backup CL
 
 (defalias 'p4-sync-file 'p4-refresh)
 

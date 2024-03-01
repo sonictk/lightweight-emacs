@@ -1,10 +1,10 @@
 ;;; zenburn-theme.el --- A low contrast color theme for Emacs.
 
-;; Copyright (C) 2011-2020 Bozhidar Batsov
+;; Copyright (C) 2011-2022 Bozhidar Batsov
 
 ;; Author: Bozhidar Batsov <bozhidar@batsov.com>
 ;; URL: http://github.com/bbatsov/zenburn-emacs
-;; Version: 2.8.0-snapshot
+;; Version: 2.8.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -31,7 +31,7 @@
 
 ;;; Code:
 
-(deftheme zenburn "The Zenburn color theme")
+(deftheme zenburn "The Zenburn color theme.")
 
 (defgroup zenburn-theme nil
   "Zenburn theme."
@@ -164,7 +164,9 @@ Also bind `class' to ((class color) (min-colors 89))."
 (zenburn-with-color-variables
   (custom-theme-set-faces
    'zenburn
-;;;; Built-in
+
+;;;; Built-in packages
+
 ;;;;; basic coloring
    '(button ((t (:underline t))))
    `(link ((t (:foreground ,zenburn-yellow :underline t :weight bold))))
@@ -182,6 +184,23 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(success ((t (:foreground ,zenburn-green :weight bold))))
    `(warning ((t (:foreground ,zenburn-orange :weight bold))))
    `(tooltip ((t (:foreground ,zenburn-fg :background ,zenburn-bg+1))))
+;;;;; ansi-colors
+   `(ansi-color-black ((t (:foreground ,zenburn-bg
+                                       :background ,zenburn-bg-1))))
+   `(ansi-color-red ((t (:foreground ,zenburn-red-2
+                                     :background ,zenburn-red-4))))
+   `(ansi-color-green ((t (:foreground ,zenburn-green
+                                       :background ,zenburn-green+2))))
+   `(ansi-color-yellow ((t (:foreground ,zenburn-orange
+                                        :background ,zenburn-yellow))))
+   `(ansi-color-blue ((t (:foreground ,zenburn-blue-1
+                                      :background ,zenburn-blue-4))))
+   `(ansi-color-magenta ((t (:foreground ,zenburn-magenta
+                                         :background ,zenburn-red))))
+   `(ansi-color-cyan ((t (:foreground ,zenburn-cyan
+                                      :background ,zenburn-blue))))
+   `(ansi-color-white ((t (:foreground ,zenburn-fg
+                                       :background ,zenburn-fg-1))))
 ;;;;; compilation
    `(compilation-column-face ((t (:foreground ,zenburn-yellow))))
    `(compilation-enter-directory-face ((t (:foreground ,zenburn-green))))
@@ -293,7 +312,9 @@ Also bind `class' to ((class color) (min-colors 89))."
 ;;;;; woman
    '(woman-bold   ((t (:inherit font-lock-keyword-face))))
    '(woman-italic ((t (:inherit (font-lock-string-face italic)))))
-;;;; Third-party
+
+;;;; Third-party packages
+
 ;;;;; ace-jump
    `(ace-jump-face-background
      ((t (:foreground ,zenburn-fg-1 :background ,zenburn-bg :inverse-video nil))))
@@ -303,6 +324,24 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(aw-background-face
      ((t (:foreground ,zenburn-fg-1 :background ,zenburn-bg :inverse-video nil))))
    `(aw-leading-char-face ((t (:inherit aw-mode-line-face))))
+;;;;; adoc-mode
+   `(adoc-anchor-face ((t (:foreground ,zenburn-blue+1))))
+   `(adoc-code-face ((t (:inherit font-lock-constant-face))))
+   `(adoc-command-face ((t (:foreground ,zenburn-yellow))))
+   `(adoc-emphasis-face ((t (:inherit bold))))
+   `(adoc-internal-reference-face ((t (:foreground ,zenburn-yellow-2 :underline t))))
+   `(adoc-list-face ((t (:foreground ,zenburn-fg+1))))
+   `(adoc-meta-face ((t (:foreground ,zenburn-yellow))))
+   `(adoc-meta-hide-face ((t (:foreground ,zenburn-yellow))))
+   `(adoc-secondary-text-face ((t (:foreground ,zenburn-yellow-1))))
+   `(adoc-title-0-face ((t (:inherit font-lock-function-name-face :weight bold))))
+   `(adoc-title-1-face ((t (:inherit font-lock-function-name-face :weight bold))))
+   `(adoc-title-2-face ((t (:inherit font-lock-function-name-face :weight bold))))
+   `(adoc-title-3-face ((t (:inherit font-lock-function-name-face :weight bold))))
+   `(adoc-title-4-face ((t (:inherit font-lock-function-name-face :weight bold))))
+   `(adoc-typewriter-face ((t (:inherit font-lock-constant-face))))
+   `(adoc-verbatim-face ((t (:inherit font-lock-constant-face))))
+   `(adoc-value-face ((t (:foreground ,zenburn-yellow))))
 ;;;;; android mode
    `(android-mode-debug-face ((t (:foreground ,zenburn-green+1))))
    `(android-mode-error-face ((t (:foreground ,zenburn-orange :weight bold))))
@@ -373,6 +412,11 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(company-scrollbar-bg ((t (:background ,zenburn-bg+2))))
    `(company-preview ((t (:background ,zenburn-green+2))))
    `(company-preview-common ((t (:foreground ,zenburn-green+2 :background ,zenburn-bg-1))))
+;;;;; corfu
+   `(corfu-default ((t (:foreground ,zenburn-fg :background ,zenburn-bg+1))))
+   `(corfu-current ((t (:foreground ,zenburn-fg :background ,zenburn-bg-1))))
+   `(corfu-bar ((t (:background ,zenburn-bg-1))))
+   `(corfu-bar ((t (:background ,zenburn-bg-2))))
 ;;;;; bm
    `(bm-face ((t (:background ,zenburn-yellow-1 :foreground ,zenburn-bg))))
    `(bm-fringe-face ((t (:background ,zenburn-yellow-1 :foreground ,zenburn-bg))))
@@ -1465,6 +1509,29 @@ Also bind `class' to ((class color) (min-colors 89))."
       (t
        (:underline ,zenburn-green))))
    `(slime-highlight-face ((t (:inherit highlight))))
+;;;;; SLY
+   `(sly-mrepl-output-face ((t (:foreground ,zenburn-red))))
+   `(sly-error-face
+     ((((supports :underline (:style wave)))
+       (:underline (:style wave :color ,zenburn-red)))
+      (t
+       (:underline ,zenburn-red))))
+   `(sly-warning-face
+     ((((supports :underline (:style wave)))
+       (:underline (:style wave :color ,zenburn-orange)))
+      (t
+       (:underline ,zenburn-orange))))
+   `(sly-style-warning-face
+     ((((supports :underline (:style wave)))
+       (:underline (:style wave :color ,zenburn-yellow)))
+      (t
+       (:underline ,zenburn-yellow))))
+   `(sly-note-face
+     ((((supports :underline (:style wave)))
+       (:underline (:style wave :color ,zenburn-green)))
+      (t
+       (:underline ,zenburn-green))))
+   `(sly-stickers-placed-face ((t (:foreground ,zenburn-fg :background ,zenburn-bg+3))))
 ;;;;; solaire
    `(solaire-default-face ((t (:inherit default :background ,zenburn-bg-08))))
    `(solaire-minibuffer-face ((t (:inherit default :background ,zenburn-bg-08))))
@@ -1512,6 +1579,18 @@ Also bind `class' to ((class color) (min-colors 89))."
    `(tab-bar-tab-inactive ((t (:foreground ,zenburn-fg
                                            :background ,zenburn-bg+1
                                            :box (:line-width -1 :style released-button)))))
+;;;;; tab-line
+   `(tab-line ((t (:background ,zenburn-bg+1))))
+   `(tab-line-tab ((t (:foreground ,zenburn-fg
+                                  :background ,zenburn-bg
+                                  :weight bold
+                                  :box (:line-width -1 :style released-button)))))
+   `(tab-line-tab-inactive ((t (:foreground ,zenburn-fg
+                                           :background ,zenburn-bg+1
+                                           :box (:line-width -1 :style released-button)))))
+   `(tab-line-tab-current ((t (:foreground ,zenburn-fg
+                                           :background ,zenburn-bg+1
+                                           :box (:line-width -1 :style pressed-button)))))
 ;;;;; term
    `(term-color-black ((t (:foreground ,zenburn-bg
                                        :background ,zenburn-bg-1))))

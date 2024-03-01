@@ -43,6 +43,34 @@
     (global-ligature-mode 't)))
 (global-ligature-mode 't)
 
+; TODO: Figure out what's wrong with the config that makes whitespace mode not work with tree-sitter modes.
+(setq treesit-language-source-alist
+   '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+     (cmake "https://github.com/uyha/tree-sitter-cmake")
+     (css "https://github.com/tree-sitter/tree-sitter-css")
+     (c "https://github.com/tree-sitter/tree-sitter-c.git")
+     (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git")
+     (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+     (go "https://github.com/tree-sitter/tree-sitter-go")
+     (html "https://github.com/tree-sitter/tree-sitter-html")
+     (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+     (json "https://github.com/tree-sitter/tree-sitter-json")
+     (make "https://github.com/alemuller/tree-sitter-make")
+     (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+     (python "https://github.com/tree-sitter/tree-sitter-python")
+     (toml "https://github.com/tree-sitter/tree-sitter-toml")
+     (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+     (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+     (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+
+(setq treesit-font-lock-level 4)
+
+; Use tree-sitter for C/C++
+(add-to-list 'major-mode-remap-alist '(c-mode . c-ts-mode))
+(add-to-list 'major-mode-remap-alist '(c++-mode . c++-ts-mode))
+(add-to-list 'major-mode-remap-alist
+             '(c-or-c++-mode . c-or-c++-ts-mode))
+
 (setq savehist-additional-variables '(command-history))
 (savehist-mode 1)
 
@@ -102,6 +130,7 @@
 (setq native-comp-async-query-on-exit t)
 (setq native-comp-async-jobs-number 4)
 (setq native-comp-async-report-warnings-errors nil)
+(setq native-comp-speed 3)
 
 ; Because `view-hello-file` is slow, we unbind the keybind that could accidentally trigger it
 (define-key global-map (kbd "C-h h") nil)
@@ -384,7 +413,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (setq enable-recursive-minibuffers t)
 (require 'eglot)
-(add-to-list 'eglot-server-programs '((c++-mode c-mode objc-mode cuda-mode) "clangd"))
+(add-to-list 'eglot-server-programs '((c++-mode c++-ts-mode c-mode c-ts-mode objc-mode cuda-mode) "clangd"))
 (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
 (add-to-list 'eglot-server-programs
              `(verse-mode . ("S:/source/repos/epic/dev_valkyrie/Engine/Restricted/NotForLicensees/Binaries/Win64/uLangServer-Win64-Debug.exe")))
@@ -401,11 +430,14 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (add-hook 'c-mode-hook 'eglot-ensure)
 (add-hook 'c++-mode-hook 'eglot-ensure)
+(add-hook 'c-ts-mode-hook 'eglot-ensure)
+(add-hook 'c++-ts-mode-hook 'eglot-ensure)
 (add-hook 'objc-mode-hook 'eglot-ensure)
 ; (add-hook 'csharp-mode-hook 'eglot-ensure)
 (add-hook 'swift-mode 'eglot-ensure)
 (add-hook 'haskell-mode 'eglot-ensure)
 (add-hook 'python-mode-hook 'eglot-ensure)
+(add-hook 'typescript-ts-mode-hook 'eglot-ensure)
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
@@ -739,7 +771,9 @@ current buffer's, reload dir-locals."
  '(hes-mode-alist
    (quote
     ((c-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]+\\|u[[:xdigit:]]\\{4\\}\\|U[[:xdigit:]]\\{8\\}\\|[\"'?\\abfnrtv]\\)\\)")
+     (c-ts-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]+\\|u[[:xdigit:]]\\{4\\}\\|U[[:xdigit:]]\\{8\\}\\|[\"'?\\abfnrtv]\\)\\)")
      (c++-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]+\\|u[[:xdigit:]]\\{4\\}\\|U[[:xdigit:]]\\{8\\}\\|[\"'?\\abfnrtv]\\)\\)")
+     (c++-ts-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]+\\|u[[:xdigit:]]\\{4\\}\\|U[[:xdigit:]]\\{8\\}\\|[\"'?\\abfnrtv]\\)\\)")
      (cmake-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]+\\|u[[:xdigit:]]\\{4\\}\\|U[[:xdigit:]]\\{8\\}\\|[\"'?\\abfnrtv]\\)\\)")
      (objc-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]+\\|u[[:xdigit:]]\\{4\\}\\|U[[:xdigit:]]\\{8\\}\\|[\"'?\\abfnrtv]\\)\\)")
      (python-mode . "\\(\\\\\\([0-7]\\{1,3\\}\\|x[[:xdigit:]]+\\|u[[:xdigit:]]\\{4\\}\\|U[[:xdigit:]]\\{8\\}\\|[\"'?\\abfnrtv]\\)\\)")
@@ -1373,16 +1407,17 @@ current buffer's, reload dir-locals."
 
   '(linum-face ((t (:foreground "peru" :background "#3F3F3F"))))
 
+  ; It's necessary to re-colour these because the Zenburn theme sets weird colours for these, and it looks bad in `whitespace-mode`.
   '(whitespace-space ((t (:bold t :foreground "gray37" :background "gray24"))))
-  '(whitespace-empty ((t (:foreground "gray37" :background "gray24"))))
   '(whitespace-hspace ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-indentation ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-line ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-newline ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-space-after-tab ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-space-before-tab ((t (:foreground "gray37" :background "gray24"))))
   '(whitespace-tab ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-newline ((t (:foreground "gray37" :background "gray24"))))
   '(whitespace-trailing ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-line ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-space-before-tab ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-indentation ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-empty ((t (:foreground "gray37" :background "gray24"))))
+  '(whitespace-space-after-tab ((t (:foreground "gray37" :background "gray24"))))
 
   '(markdown-code-face ((t nil)))
 )
@@ -1509,8 +1544,7 @@ current buffer's, reload dir-locals."
 (autoload 'js-mode "js-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.json$" . js-mode))
 ; Support TypeScript as well
-(autoload 'typescript-mode "typescript-mode" nil t)
-(add-to-list 'auto-mode-alist '("\\.ts$" . typescript-mode))
+(add-to-list 'auto-mode-alist '("\\.ts$" . typescript-ts-mode))
 
 ; Add MEL mode syntax highlighting
 (autoload 'mel-mode "mel-mode" nil t)
@@ -1723,6 +1757,8 @@ PWD is not in a git repo (or the git command is not found)."
 
 ; Aliases for unintuitive commands
 (defalias 'refresh-syntax-highlighting 'font-lock-fontify-buffer)
+
+(require 'git-extensions)
 
 ; Perforce support
 (require 'p4)
