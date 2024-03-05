@@ -1546,6 +1546,11 @@ current buffer's, reload dir-locals."
 ; Support TypeScript as well
 (add-to-list 'auto-mode-alist '("\\.ts$" . typescript-ts-mode))
 
+; treesitter defaults to 2 space indentation for some reason
+(setq typescript-ts-mode-indent-offset 4)
+(setq c-ts-mode-indent-offset 4)
+(setq sgml-basic-offset 4)
+
 ; Add MEL mode syntax highlighting
 (autoload 'mel-mode "mel-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.mel$" . mel-mode))
