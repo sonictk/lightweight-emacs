@@ -2834,6 +2834,8 @@ to the matches for ANNOTATION."
   (let ((completion (p4-get-completion completion-type))
         (completion-extra-properties
          '(:annotation-function p4-completion-annotate)))
+    ; NOTE: (sonictk) Purge the completion cache at the start of a completion request so that we get the up-to-date completions.
+    (p4-partial-cache-cleanup completion-type)
     (completing-read prompt
                      (p4-completion-arg-completion-fn completion)
                      nil nil initial-input
@@ -2846,7 +2848,7 @@ the depot."
   (let ((client (p4-current-client)))
     (when client
       (cons "default"
-            (p4-output-annotations `("changes" "-m" "250" "-s" ,status "-c" ,client, "-l")
+            (p4-output-annotations `("changes" "-m" "100" "-s" ,status "-c" ,client, "-l")
                                    "^Change \\([0-9]+\\) .*\n+\\(.*\\)\n"
                                    1 2)))))
 
@@ -2913,7 +2915,8 @@ hash table."
 completions for STRING, and update the annotations hash table.
 Use the cache if available, otherwise fetch them from the depot
 and update the cache accordingly."
-  (p4-purge-completion-cache completion)
+  ; NOTE: (sonictk) Just re-use the completion cache 
+  ; (p4-purge-completion-cache completion)
   (let* ((cache (p4-completion-cache completion))
          (cached (assoc string cache)))
     ;; Exact cache hit?

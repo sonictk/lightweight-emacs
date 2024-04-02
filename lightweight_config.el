@@ -65,6 +65,13 @@
 
 (setq treesit-font-lock-level 4)
 
+; tree-sitter defaults to 2 space indentation for some reason
+(setq typescript-ts-mode-indent-offset 4)
+(setq c-ts-mode-indent-offset 4)
+(setq c-ts-mode-indent-style 'bsd)
+; p(c-ts-mode-set-global-style 'bsd)
+(setq sgml-basic-offset 4)
+
 ; Use tree-sitter for C/C++
 (add-to-list 'major-mode-remap-alist '(c-mode . c-ts-mode))
 (add-to-list 'major-mode-remap-alist '(c++-mode . c++-ts-mode))
@@ -415,8 +422,10 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (require 'eglot)
 (add-to-list 'eglot-server-programs '((c++-mode c++-ts-mode c-mode c-ts-mode objc-mode cuda-mode) "clangd"))
 (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
-(add-to-list 'eglot-server-programs
-             `(verse-mode . ("S:/source/repos/epic/dev_valkyrie/Engine/Restricted/NotForLicensees/Binaries/Win64/uLangServer-Win64-Debug.exe")))
+
+(when lightweight-win32
+  (add-to-list 'eglot-server-programs
+               `(verse-mode . ("S:/source/repos/epic/ysiew_devvk/Engine/Restricted/NotForLicensees/Binaries/Win64/uLangServer-Win64-Debug.exe" ""))))
 
 (when lightweight-aquamacs
 (add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/XcodeBeta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
@@ -441,11 +450,12 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
-(setq eglot-connect-timeout 10)
-(setq eglot-sync-connect 5)
+(setq eglot-connect-timeout 20)
+(setq eglot-sync-connect 4)
 (setq eglot-extend-to-xref t)
 (setq eglot-events-buffer-size 6000000)
 (setq eglot-send-changes-idle-time 0.75)
+(setq eglot-report-progress t)
 
 (require 'consult-eglot)
 
@@ -1546,11 +1556,6 @@ current buffer's, reload dir-locals."
 ; Support TypeScript as well
 (add-to-list 'auto-mode-alist '("\\.ts$" . typescript-ts-mode))
 
-; treesitter defaults to 2 space indentation for some reason
-(setq typescript-ts-mode-indent-offset 4)
-(setq c-ts-mode-indent-offset 4)
-(setq sgml-basic-offset 4)
-
 ; Add MEL mode syntax highlighting
 (autoload 'mel-mode "mel-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.mel$" . mel-mode))
@@ -1773,7 +1778,7 @@ PWD is not in a git repo (or the git command is not found)."
 (setq p4-check-empty-diffs t)
 (setq p4-follow-symlinks t)
 (setq p4-open-in-changelist t)
-(setq p4-cleanup-time 5)
+(setq p4-cleanup-time 10)
 (defun p4-tramp-workaround-find-file-hook ()
     "do not let p4.el process remote TRAMP buffers"
     (when

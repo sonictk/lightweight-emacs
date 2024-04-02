@@ -16,13 +16,20 @@
 
 ; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - sync`
 (defp4cmd p4-sync-files-in-changelist (&rest args)
-  "sync-files-in-changelist"
-  "Syncs the file(s) in a given changelist."
+          "sync-files-in-changelist"
+          "Syncs the file(s) in a given changelist."
+          (interactive)
+          (p4-call-shell-command (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'pending "Changelist: "))  "|"
+                                       "p4" "-x" "-" "sync")))
+
+; Command is `p4 sync @=28337241`
+(defp4cmd p4-sync-changelist-only (&rest args)
+  "sync-changelist-only"
+  "Syncs only the given changelist and no other intervening changes."
   (interactive
    (if current-prefix-arg
-       (p4-read-args "p4 force-sync-files-in-changelist:" "" 'pending)
-     (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'pending "Changelist: "))  "|"
-                   "p4" "-x" "-" "sync" )))
+       (p4-read-args "p4 sync-changelist-only:" "" 'submitted)
+     (list "sync" (concat "@=" (p4-completing-read 'submitted "Changelist: ")) )))
     (p4-call-shell-command args))
 
 ; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - sync -r`
@@ -118,7 +125,7 @@
         (set-process-query-on-exit-flag process nil)
         (set-process-sentinel process 'p4-process-sentinel)
         (p4-set-process-coding-system process)
-        (message "Run: p4 %s" (p4-join-list (car p4-process-args)))))))
+        (message "Command executed: p4 %s" (p4-join-list (car p4-process-args)))))))
 
 (defun* p4-call-shell-command (cmd &optional args &key mode callback after-show
                              (auto-login t) synchronous pop-up-output)
@@ -419,5 +426,15 @@
     (browse-url (concat swarm-url
                         "/changes/"
                         (url-hexify-string cl)))))
+
+(defun p4-open-timelapse-view-of-file (file-path)
+  "Run p4vc timelapse on a given path."
+  (interactive
+   (list (read-string "Enter path: " (buffer-file-name))))
+  (let ((process-name "p4vc-timelapse-process")
+        (command "p4vc")
+        (arguments (list "timelapse" file-path)))
+    (apply #'start-process process-name nil command arguments)
+    (message "Started p4vc timelapse on: %s" file-path)))
 
 (provide 'p4-extensions)
