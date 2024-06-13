@@ -299,15 +299,15 @@ well."
         (pt (point))
         (str (browse-kill-ring-current-string buf pt)))
     (cl-case insert-action
-      ('insert (browse-kill-ring-do-insert buf pt nil))
-      ('append (browse-kill-ring-do-append-insert buf pt nil))
-      ('prepend (browse-kill-ring-do-prepend-insert buf pt nil))
+      (insert (browse-kill-ring-do-insert buf pt nil))
+      (append (browse-kill-ring-do-append-insert buf pt nil))
+      (prepend (browse-kill-ring-do-prepend-insert buf pt nil))
       (t (error "Unknown insert-action: %s" insert-action)))
     (cl-case post-action
-      ('move
+      (move
         (browse-kill-ring-delete)
         (kill-new str))
-      ('delete (browse-kill-ring-delete))
+      (delete (browse-kill-ring-delete))
       (t (error "Unknown post-action: %s" post-action)))
     (if quit
       (browse-kill-ring-quit)
@@ -393,7 +393,7 @@ of the *Kill Ring*."
          (with-no-warnings
            (pulse-momentary-highlight-region
           start end browse-kill-ring-inserted-item-face))))
-      ('solid
+      (solid
        (let ((o (make-overlay start end)))
          (overlay-put o 'face browse-kill-ring-inserted-item-face)
          (sit-for 0.5)

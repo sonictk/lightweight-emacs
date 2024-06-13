@@ -450,7 +450,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect nil)
-(setq eglot-connect-timeout 20)
+(setq eglot-connect-timeout 30)
 (setq eglot-sync-connect 4)
 (setq eglot-extend-to-xref t)
 (setq eglot-events-buffer-size 6000000)
@@ -578,8 +578,8 @@ See also `newline-and-indent'."
 
 ; Allow for loading recent files
 (recentf-mode 1)
-(setq recentf-max-menu-items 999)
-(setq recentf-max-saved-items 9999)
+(setq recentf-max-menu-items 1000)
+(setq recentf-max-saved-items 2000)
 (global-set-key "\C-x\ \C-r" 'recentf-open-files)
 (setq recentf-save-file (expand-file-name "recentf" "~/Git/lightweight-emacs/"))
 

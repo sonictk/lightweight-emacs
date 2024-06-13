@@ -14,6 +14,7 @@
                    "p4" "-x" "-" "sync" "-f" )))
     (p4-call-shell-command args))
 
+; TODO This is now borked for some reason.
 ; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - sync`
 (defp4cmd p4-sync-files-in-changelist (&rest args)
           "sync-files-in-changelist"
@@ -436,5 +437,17 @@
         (arguments (list "timelapse" file-path)))
     (apply #'start-process process-name nil command arguments)
     (message "Started p4vc timelapse on: %s" file-path)))
+
+(defun p4-open-revision-graph-view-of-file (file-path)
+  "Run p4vc revisiongraph on a given path."
+  (interactive
+   (list (read-string "Enter path: " (buffer-file-name))))
+  (let ((process-name "p4vc-revisiongraph-process")
+        (command "p4vc")
+        (arguments (list "revisiongraph" file-path)))
+    (apply #'start-process process-name nil command arguments)
+    (message "Started p4vc revisiongraph on: %s" file-path)))
+
+; TODO: make a command that gets the latest CL description that modified a given line in a source file.
 
 (provide 'p4-extensions)
