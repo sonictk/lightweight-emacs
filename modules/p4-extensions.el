@@ -3,24 +3,23 @@
 (require 'url)
 (require 'json)
 
-; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - sync -f`
+; Command is `p4 -F %depotFile% opened  -c 28337241 | p4 -x - sync -f`
 (defp4cmd p4-force-sync-files-in-changelist (&rest args)
   "force-sync-files-in-changelist"
   "Forces sync of the file(s) in a given changelist."
   (interactive
    (if current-prefix-arg
        (p4-read-args "p4 force-sync-files-in-changelist:" "" 'pending)
-     (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'pending "Changelist: "))  "|"
+     (list "-F" "%depotFile%" "opened" (concat "-c " (p4-completing-read 'pending "Changelist: "))  "|"
                    "p4" "-x" "-" "sync" "-f" )))
     (p4-call-shell-command args))
 
-; TODO This is now borked for some reason.
-; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - sync`
+; Command is `p4 -F %depotFile% opened -c 28337241 | p4 -x - sync`
 (defp4cmd p4-sync-files-in-changelist (&rest args)
           "sync-files-in-changelist"
           "Syncs the file(s) in a given changelist."
           (interactive)
-          (p4-call-shell-command (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'pending "Changelist: "))  "|"
+          (p4-call-shell-command (list "-F" "%depotFile%" "opened" (concat "-c " (p4-completing-read 'pending "Changelist: "))  "|"
                                        "p4" "-x" "-" "sync")))
 
 ; Command is `p4 sync @=28337241`
@@ -33,14 +32,14 @@
      (list "sync" (concat "@=" (p4-completing-read 'submitted "Changelist: ")) )))
     (p4-call-shell-command args))
 
-; Command is `p4 -F %depotFile% files @=28337241 | p4 -x - sync -r`
+; Command is `p4 -F %depotFile% opened -c 28337241 | p4 -x - sync -r`
 (defp4cmd p4-reopen-files-in-changelist (&rest args)
   "reopen-files-in-changelist"
   "Reopens the files that are mapped to new locations in the depot in a given changelist."
   (interactive
    (if current-prefix-arg
        (p4-read-args "p4 reopen-files-in-changelist:" "" 'shelved)
-     (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'shelved "Changelist: "))  "|"
+     (list "-F" "%depotFile%" "opened" (concat "-c " (p4-completing-read 'shelved "Changelist: "))  "|"
                    "p4" "-x" "-" "sync" "-r" )))
     (p4-call-shell-command args))
 
@@ -125,8 +124,9 @@
                             p4-process-args)))
         (set-process-query-on-exit-flag process nil)
         (set-process-sentinel process 'p4-process-sentinel)
+        (setq p4-process-args (car p4-process-args)) ; Unwrap the extra list so that things print properly
         (p4-set-process-coding-system process)
-        (message "Command executed: p4 %s" (p4-join-list (car p4-process-args)))))))
+        (message "Command executed: p4 %s" (p4-join-list p4-process-args))))))
 
 (defun* p4-call-shell-command (cmd &optional args &key mode callback after-show
                              (auto-login t) synchronous pop-up-output)

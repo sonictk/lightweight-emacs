@@ -43,6 +43,9 @@
     (global-ligature-mode 't)))
 (global-ligature-mode 't)
 
+; Use ibuffer instead of list-buffers for the default hotkey.
+(global-set-key (kbd "C-x C-b") 'ibuffer)
+
 ; TODO: Figure out what's wrong with the config that makes whitespace mode not work with tree-sitter modes.
 (setq treesit-language-source-alist
    '((bash "https://github.com/tree-sitter/tree-sitter-bash")
@@ -747,6 +750,7 @@ current buffer's, reload dir-locals."
 
 (add-hook 'ediff-before-setup-hook #'my-store-pre-ediff-winconfig)
 (add-hook 'ediff-quit-hook #'my-restore-pre-ediff-winconfig)
+(add-hook 'ediff-suspend-hook #'my-restore-pre-ediff-winconfig)
 
 ; Turn off the bell on Mac OS X
 (defun nil-bell ())
