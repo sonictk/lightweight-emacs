@@ -169,6 +169,12 @@
       completion-category-overrides '((file (styles basic partial-completion))))
 
 (define-key company-mode-map [remap completion-at-point] #'consult-company)
+(define-key company-active-map [remap pixel-scroll-interpolate-up] 'company-previous-page)
+(define-key company-active-map [remap pixel-scroll-interpolate-down] 'company-next-page)
+(define-key company-active-map [remap View-scroll-page-backward] 'company-previous-page)
+(define-key company-active-map [remap View-scroll-page-forward] 'company-next-page)
+(define-key company-active-map [remap View-scroll-half-page-backward] 'company-previous-page)
+(define-key company-active-map [remap View-scroll-half-page-forward] 'company-next-page)
 
 ; (add-to-list 'completion-styles 'substring)
 
