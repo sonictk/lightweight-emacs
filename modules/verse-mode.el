@@ -252,7 +252,7 @@
 ;     ("stub" "stub{}")))
 
 ;;;###autoload
-(define-derived-mode verse-mode fundamental-mode "Verse"
+(define-derived-mode verse-mode prog-mode "Verse"
   "VERSE mode is a major mode for editing VERSE files"
   :syntax-table verse-mode-syntax-table
   ;:abbrev-table verse-mode-abbrev-table

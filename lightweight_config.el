@@ -49,18 +49,21 @@
 ; TODO: Figure out what's wrong with the config that makes whitespace mode not work with tree-sitter modes.
 (setq treesit-language-source-alist
    '((bash "https://github.com/tree-sitter/tree-sitter-bash")
-     (cmake "https://github.com/uyha/tree-sitter-cmake")
-     (css "https://github.com/tree-sitter/tree-sitter-css")
      (c "https://github.com/tree-sitter/tree-sitter-c.git")
+     (cmake "https://github.com/uyha/tree-sitter-cmake")
      (cpp "https://github.com/tree-sitter/tree-sitter-cpp.git")
+     (csharp "https://github.com/tree-sitter/tree-sitter-c-sharp.git")
+     (css "https://github.com/tree-sitter/tree-sitter-css")
      (elisp "https://github.com/Wilfred/tree-sitter-elisp")
      (go "https://github.com/tree-sitter/tree-sitter-go")
+     (haskell "https://github.com/tree-sitter/tree-sitter-haskell")
      (html "https://github.com/tree-sitter/tree-sitter-html")
      (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
      (json "https://github.com/tree-sitter/tree-sitter-json")
      (make "https://github.com/alemuller/tree-sitter-make")
      (markdown "https://github.com/ikatyang/tree-sitter-markdown")
      (python "https://github.com/tree-sitter/tree-sitter-python")
+     (rust "https://github.com/tree-sitter/tree-sitter-rust")
      (toml "https://github.com/tree-sitter/tree-sitter-toml")
      (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
      (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
@@ -1561,8 +1564,8 @@ current buffer's, reload dir-locals."
 (require 'python-black)
 
 ; Use js-mode to highlight JSON files
-(autoload 'js-mode "js-mode" nil t)
-(add-to-list 'auto-mode-alist '("\\.json$" . js-mode))
+(add-to-list 'auto-mode-alist '("\\.json$" . js-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.js$" . js-ts-mode))
 ; Support TypeScript as well
 (add-to-list 'auto-mode-alist '("\\.ts$" . typescript-ts-mode))
 
@@ -1579,7 +1582,6 @@ current buffer's, reload dir-locals."
 )
 
 ; Add support for C#
-(autoload 'csharp-mode "csharp-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.cs\\'" . csharp-mode))
 
 ; Add support for the Rust programming language
