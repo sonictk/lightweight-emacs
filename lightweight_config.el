@@ -84,6 +84,8 @@
 (add-to-list 'major-mode-remap-alist
              '(c-or-c++-mode . c-or-c++-ts-mode))
 
+(add-to-list 'major-mode-remap-alist '(csharp-mode . csharp-ts-mode))
+
 (setq savehist-additional-variables '(command-history))
 (savehist-mode 1)
 
@@ -441,13 +443,13 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (when lightweight-aquamacs
 (add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/XcodeBeta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
-(add-to-list 'eglot-server-programs '(csharp-mode . ("/usr/local/bin/omnisharp" "-lsp"))))
+(add-to-list 'eglot-server-programs '(csharp-ts-mode . ("/usr/local/bin/omnisharp" "-lsp"))))
 
 (when lightweight-linux
-(add-to-list 'eglot-server-programs '(csharp-mode . ("/usr/local/bin/omnisharp" "-lsp"))))
+(add-to-list 'eglot-server-programs '(csharp--ts-mode . ("/usr/local/bin/omnisharp" "-lsp"))))
 
 (when lightweight-win32
-(add-to-list 'eglot-server-programs '(csharp-mode . ("C:/omnisharp/OmniSharp.exe" "-lsp"))))
+(add-to-list 'eglot-server-programs '(csharp-ts-mode . ("~/dist/omnisharp/OmniSharp.exe" "-lsp"))))
 
 (add-hook 'c-mode-hook 'eglot-ensure)
 (add-hook 'c++-mode-hook 'eglot-ensure)
@@ -461,11 +463,11 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (add-hook 'typescript-ts-mode-hook 'eglot-ensure)
 
 (setq eglot-autoshutdown t)
-(setq eglot-autoreconnect nil)
+(setq eglot-autoreconnect 3)
 (setq eglot-connect-timeout 30)
-(setq eglot-sync-connect 4)
+(setq eglot-sync-connect 6)
 (setq eglot-extend-to-xref t)
-(setq eglot-events-buffer-size 6000000)
+(setq eglot-events-buffer-config (list :size 0 :format 'full))
 (setq eglot-send-changes-idle-time 0.75)
 (setq eglot-report-progress t)
 
@@ -473,13 +475,10 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (setq flymake-no-changes-timeout 1.0)
 
-; Don't want the eldoc box showing everywhere, have a global bind for it
-; (add-hook 'eglot-managed-mode-hook #'eldoc-box-hover-mode t)
 (setq global-eldoc-mode t)
 (setq eldoc-idle-delay 0.5)
 (setq eldoc-echo-area-prefer-doc-buffer t)
 (setq eldoc-documentation-strategy 'eldoc-documentation-compose)
-; (add-to-list 'eglot-ignored-server-capabilites :hoverProvider)
 (setq eldoc-echo-area-use-multiline-p nil)
 
 (global-set-key (kbd "M-RET") 'eglot-rename)
@@ -552,7 +551,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
    (imenu--menubar-select imenu--rescan-item))
 
 ; Do not save semanticdb file to user home emacs directory
-(setq semanticdb-default-save-directory "~/Git/lightweight-emacs/semantic-cache")
+(setq semanticdb-default-save-directory "~/source/repos/lightweight-emacs/semantic-cache")
 
 ; Configure scrolling to only scroll half a page at a time
 (global-set-key "\C-v"   'View-scroll-half-page-forward)
@@ -1065,27 +1064,6 @@ current buffer's, reload dir-locals."
 (setq auto-mode-alist
      (cons '("SConscript" . python-mode) auto-mode-alist))
 
-; (require 'eldoc-box)
-; (setq x-gtk-resize-child-frames 'resize-mode)
-; (setq eldoc-box-max-pixel-width 1900)
-; (setq eldoc-box-max-pixel-height 1000)
-; 
-; ; Eldoc copy-to-buffer version
-; (defun eldoc-box-eglot-copy-help-to-clipboard()
-;   "Copy documentation of the symbol at point to the yank ring."
-;   (interactive)
-;   (when eglot--managed-mode
-;     (let ((eldoc-box-position-function #'eldoc-box--default-at-point-position-function))
-;       (kill-new
-;        (eglot--dbind ((Hover) contents range)
-;                      (jsonrpc-request (eglot--current-server-or-lose) :textDocument/hover
-;                                       (eglot--TextDocumentPositionParams))
-;                      (when (seq-empty-p contents) (eglot--error "No hover info here"))
-;                      (eglot--hover-info contents range)))
-;     )
-;   )
-; )
-
 ; CC++ mode handling
 (defun lightweight-c-hook ()
   ; 4-space tabs
@@ -1582,7 +1560,7 @@ current buffer's, reload dir-locals."
 )
 
 ; Add support for C#
-(add-to-list 'auto-mode-alist '("\\.cs\\'" . csharp-mode))
+(add-to-list 'auto-mode-alist '("\\.cs\\'" . csharp-ts-mode))
 
 ; Add support for the Rust programming language
 (autoload 'rust-mode "rust-mode" nil t)

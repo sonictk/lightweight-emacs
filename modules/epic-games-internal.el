@@ -97,6 +97,21 @@
 (defun ue-ff-restore-search-directories ()
   (custom-reevaluate-setting 'cc-search-directories))
 
+(defun goto-jira-issue ()
+  "Opens the JIRA URL for the given issue key."
+  (interactive)
+  (let* ((issue (p4-completing-read 'shelved "Issue: "))
+         (jira-url (getenv "JIRAURL")))
+    (browse-url (concat jira-url
+                        "/browse/"
+                        (url-hexify-string issue)))))
+
+(defun file-jira-issue ()
+  "Opens a new JIRA issue."
+  (interactive)
+  (browse-url (concat jira-url
+                        "secure/CreateIssue!default.jspa")))
+
 (add-hook 'ff-pre-find-hooks 'ue-ff-other-file-alist-function)
 (add-hook 'ff-post-load-hooks 'ue-ff-restore-search-directories)
 (add-hook 'ff-not-found-hooks 'ue-ff-restore-search-directories)
