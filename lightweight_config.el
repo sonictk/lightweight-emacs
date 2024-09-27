@@ -11,6 +11,7 @@
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult") 
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult-company") 
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult-eglot") 
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult-eglot/extensions/consult-eglot-embark") 
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/vertico") 
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/embark") 
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/marginalia") 
@@ -434,6 +435,10 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (setq enable-recursive-minibuffers t)
 (require 'eglot)
+
+; Disable formatting as you type.
+(add-to-list 'eglot-ignored-server-capabilites :documentOnTypeFormattingProvider)
+
 (add-to-list 'eglot-server-programs '((c++-mode c++-ts-mode c-mode c-ts-mode objc-mode cuda-mode) "clangd"))
 (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
 
@@ -472,6 +477,11 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (setq eglot-report-progress t)
 
 (require 'consult-eglot)
+(require 'consult-eglot-embark)
+(with-eval-after-load 'embark
+  (with-eval-after-load 'consult-eglot
+    (require 'consult-eglot-embark)
+    (consult-eglot-embark-mode)))
 
 (setq flymake-no-changes-timeout 1.0)
 

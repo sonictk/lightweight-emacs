@@ -449,5 +449,6 @@
     (message "Started p4vc revisiongraph on: %s" file-path)))
 
 ; TODO: make a command that gets the latest CL description that modified a given line in a source file.
+; TODO: make a command that allows modifying the description of a given changelist.
 
 (provide 'p4-extensions)
