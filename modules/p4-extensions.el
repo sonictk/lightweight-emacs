@@ -332,7 +332,7 @@
    (if current-prefix-arg
        (p4-read-args "p4 list-changes-between-changelists: " "" 'submitted)
      (let ((client-root (string-trim-right (shell-command-to-string "p4 -F %clientRoot% -ztag info"))))
-       (list "-m" "500" "-s" "submitted" (format "%s/...@%s,%s" client-root (p4-completing-read 'submitted "First CL #: ") (p4-completing-read 'submitted "Second CL #: "))))))
+       (list "-m" "9999" "-s" "submitted" (format "%s/...@%s,%s" client-root (p4-completing-read 'submitted "First CL #: ") (p4-completing-read 'submitted "Second CL #: "))))))
   (p4-call-command "changes" args :mode 'p4-basic-list-mode))
 
 ; TODO Stuff to implement.
@@ -450,5 +450,7 @@
 
 ; TODO: make a command that gets the latest CL description that modified a given line in a source file.
 ; TODO: make a command that allows modifying the description of a given changelist.
+; TODO: make a command that allows using show files in shelved changelist to diff2 between the depot revision and the revision in the shelf,
+; and also to diff against the current revision locally. Look at the current revision number, then look at the changelist number, print the two out to some buffer, and ediff those.
 
 (provide 'p4-extensions)

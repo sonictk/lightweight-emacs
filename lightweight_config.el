@@ -108,6 +108,11 @@
 (require 'company)
 (setq company-backends (delete 'company-semantic company-backends))
 (global-set-key [(ctrl tab)] 'company-complete)
+; Alternative keybinding as well.
+(global-set-key (kbd "C-S-SPC") 'company-complete)
+
+; Allow raw insertion of tabs when the auto-indentation is wonky.
+(global-set-key (kbd "C-S-<tab>") '(lambda () (interactive) (insert-char ?\t)))
 
 ; Disable idle completion, idle is the devil's work
 (setq company-idle-delay nil)
@@ -439,7 +444,28 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 ; Disable formatting as you type.
 (add-to-list 'eglot-ignored-server-capabilites :documentOnTypeFormattingProvider)
 
-(add-to-list 'eglot-server-programs '((c++-mode c++-ts-mode c-mode c-ts-mode objc-mode cuda-mode) "clangd"))
+; Using in-memory PCH storage for perf and also no need to cleanup when `clangd` crashes. Setting unlimited file rename limit as well.
+(add-to-list 'eglot-server-programs '((c++-mode c++-ts-mode c-mode c-ts-mode objc-mode cuda-mode) .
+                                      ("clangd"
+                                       "--background-index"
+                                       "--clang-tidy"
+                                       "--completion-style=detailed"
+                                       "--enable-config"
+                                       "--experimental-modules-support"
+                                       "--function-arg-placeholders"
+                                       "--header-insertion=iwyu"
+                                       "--import-insertions"
+                                       "--limit-references=999999"
+                                       "--limit-results=999999"
+                                       "--log=error"
+                                       "--parse-forwarding-functions"
+                                       "--pch-storage=memory"
+                                       "--ranking-model=decision_forest"
+                                       "--rename-file-limit=999999"
+                                       "--use-dirty-headers"
+                                       "-j"
+                                       "64"
+                                       )))
 (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
 
 (when lightweight-win32
@@ -497,6 +523,9 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (global-set-key [C-mouse-1] 'xref-find-defintions-at-mouse)
 (global-set-key (kbd "C-c ?") 'eldoc-print-current-symbol-info)
 (global-set-key (kbd "C-M-.") 'consult-eglot-symbols)
+
+(require 'breadcrumb)
+(breadcrumb-mode 1)
 
 ; Allow for peek window definition. This is a modified version of: https://tuhdo.github.io/emacs-frame-peek.html 
 ; that works with xref.
