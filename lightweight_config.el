@@ -118,7 +118,7 @@
 (setq company-idle-delay nil)
 
 ; Increase completion time for larger C++ projects
-(setq company-async-timeout 25)
+(setq company-async-timeout 6)
 
 ; Company GUI settings
 (setq company-show-numbers t)
@@ -458,13 +458,11 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
                                        "--limit-references=999999"
                                        "--limit-results=999999"
                                        "--log=error"
-                                       "--parse-forwarding-functions"
                                        "--pch-storage=memory"
                                        "--ranking-model=decision_forest"
                                        "--rename-file-limit=999999"
-                                       "--use-dirty-headers"
                                        "-j"
-                                       "64"
+                                       "32"
                                        )))
 (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
 
@@ -494,13 +492,14 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (add-hook 'typescript-ts-mode-hook 'eglot-ensure)
 
 (setq eglot-autoshutdown t)
-(setq eglot-autoreconnect 3)
-(setq eglot-connect-timeout 30)
+(setq eglot-autoreconnect 6)
+(setq eglot-connect-timeout 6)
 (setq eglot-sync-connect 6)
 (setq eglot-extend-to-xref t)
 (setq eglot-events-buffer-config (list :size 0 :format 'full))
-(setq eglot-send-changes-idle-time 0.75)
+(setq eglot-send-changes-idle-time 0.8)
 (setq eglot-report-progress t)
+(setq eglot-menu-string "Eg")
 
 (require 'consult-eglot)
 (require 'consult-eglot-embark)
