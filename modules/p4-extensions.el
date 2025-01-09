@@ -448,6 +448,23 @@
     (apply #'start-process process-name nil command arguments)
     (message "Started p4vc revisiongraph on: %s" file-path)))
 
+; To compare two specific revisions alone, give a prefix argument to `p4-ediff`.
+(defun p4-ediff-latest ()
+  "Use ediff to compare file with the latest revision."
+  (interactive)
+  (p4-call-command "print" (list (concat (p4-context-single-filename) "#head"))
+                   :after-show (p4-activate-ediff-callback)))
+
+(defun p4-ediff-against (revision)
+  "Use ediff to compare the current file against a user-specified revision."
+  (interactive "sEnter revision (defaults to #head): ")
+  (when (string= revision "")
+    (setq revision "#head"))
+  (p4-call-command "print"
+                   (list (concat (p4-context-single-filename) revision))
+                   :after-show (p4-activate-ediff-callback)))
+
+
 ; TODO: make a command that gets the latest CL description that modified a given line in a source file.
 ; TODO: make a command that allows modifying the description of a given changelist.
 ; TODO: make a command that allows using show files in shelved changelist to diff2 between the depot revision and the revision in the shelf,
