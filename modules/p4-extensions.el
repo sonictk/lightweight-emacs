@@ -335,35 +335,6 @@
        (list "-m" "9999" "-s" "submitted" (format "%s/...@%s,%s" client-root (p4-completing-read 'submitted "First CL #: ") (p4-completing-read 'submitted "Second CL #: "))))))
   (p4-call-command "changes" args :mode 'p4-basic-list-mode))
 
-; TODO Stuff to implement.
-;; (defp4cmd p4-unshelve-file (&rest args)
-;;   "unshelve"
-;;   "Restore a single shelved file from a pending change into a workspace."
-;;   (interactive
-;;    (if current-prefix-arg
-;;        (p4-read-args "p4 unshelve: " "" 'shelved)
-;;      (append (list "-f" "-s" (p4-completing-read 'shelved "Unshelve from: "))
-;;              (when p4-open-in-changelist
-;;                (list "-c" (p4-completing-read 'pending "Open in change: "))))))
-;;   (p4-call-command "unshelve" args :mode 'p4-basic-list-mode))
-
-; Implement a mode in the `p4-opened` map that allows bringing up emacs's ediff and also working
-; for CLs that you don't own - i.e. you don't have the files currently open for edit.
-
-; TODO write an interface to `p4 integrated` and `p4 filelog -i` for viewing revision graph history.
-
-; TODO p4-diff-with-shelved-version
-; TODO p4-print-changelist-have-and-server-versions
-
-; TODO p4-show-opened-changelists
-; p4 -ztag -F %change% opened and remove duplicate lines
-
-; TODO in general format all commands with have and server revisions
-; p4 -ztag opened put `ztag` to see what can be used for format arguments.
-; p4 -ztag -F "%change%" opened | uniq | p4 -x - -ztag -F "%change% %desc%" describe -s
-
-; TODO backup CL
-
 (defalias 'p4-sync-file 'p4-refresh)
 
 ; todo this isn't fully fleshed out yet.
@@ -464,10 +435,40 @@
                    (list (concat (p4-context-single-filename) revision))
                    :after-show (p4-activate-ediff-callback)))
 
-
 ; TODO: make a command that gets the latest CL description that modified a given line in a source file.
 ; TODO: make a command that allows modifying the description of a given changelist.
 ; TODO: make a command that allows using show files in shelved changelist to diff2 between the depot revision and the revision in the shelf,
 ; and also to diff against the current revision locally. Look at the current revision number, then look at the changelist number, print the two out to some buffer, and ediff those.
+
+; TODO Stuff to implement.
+;; (defp4cmd p4-unshelve-file (&rest args)
+;;   "unshelve"
+;;   "Restore a single shelved file from a pending change into a workspace."
+;;   (interactive
+;;    (if current-prefix-arg
+;;        (p4-read-args "p4 unshelve: " "" 'shelved)
+;;      (append (list "-f" "-s" (p4-completing-read 'shelved "Unshelve from: "))
+;;              (when p4-open-in-changelist
+;;                (list "-c" (p4-completing-read 'pending "Open in change: "))))))
+;;   (p4-call-command "unshelve" args :mode 'p4-basic-list-mode))
+
+; Implement a mode in the `p4-opened` map that allows bringing up emacs's ediff and also working
+; for CLs that you don't own - i.e. you don't have the files currently open for edit.
+
+; TODO write an interface to `p4 integrated` and `p4 filelog -i` for viewing revision graph history in pure text form.
+
+; TODO p4-print-changelist-client-and-depot-versions
+; TODO p4-print-file-client-and-depot-versions
+
+; TODO p4-show-opened-changelists
+; p4 -ztag -F %change% opened and remove duplicate lines
+
+; TODO in general format all commands with have and server revisions
+; p4 -ztag opened put `ztag` to see what can be used for format arguments.
+; p4 -ztag -F "%change%" opened | uniq | p4 -x - -ztag -F "%change% %desc%" describe -s
+
+; TODO make a command that can safely backup a given CL to a new one.
+; TODO make shelve command fail if it tries to shelve empty so that it stops overwriting shelves.
+
 
 (provide 'p4-extensions)
