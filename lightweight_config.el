@@ -519,9 +519,11 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (setq eldoc-echo-area-use-multiline-p nil)
 
 (global-set-key (kbd "M-RET") 'eglot-rename)
-(global-set-key (kbd "M-,") 'xref-find-definitions-other-window)
+(global-set-key (kbd "C->") 'xref-find-definitions-other-window)
 (global-set-key (kbd "M-.") 'xref-find-definitions)
 (global-set-key [C-mouse-1] 'xref-find-defintions-at-mouse)
+(global-set-key (kbd "C-M-,") 'xref-go-forward)
+(global-set-key (kbd "M-,") 'xref-go-back)
 (global-set-key (kbd "C-c ?") 'eldoc-print-current-symbol-info)
 (global-set-key (kbd "C-M-.") 'consult-eglot-symbols)
 
@@ -930,6 +932,8 @@ will be killed."
          ("\\.mm$" . objc-mode)
          ("\\.cu$" . cuda-mode)
          ("\\.swift$" . swift-mode)
+         ("\\.xml$" . xml-mode)
+         ("\\.natvis$" . xml-mode)
          ) auto-mode-alist))
 
 ; C++ indentation style
