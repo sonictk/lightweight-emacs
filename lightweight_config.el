@@ -95,6 +95,7 @@
 
 ; Project management using `project.el`
 (require 'project)
+
 (global-set-key (kbd "C-,") 'ff-find-other-file)
 (global-set-key (kbd "C-.") 'ff-find-other-file-other-window)
 
@@ -166,7 +167,7 @@
 (require 'consult-imenu)
 (require 'consult-info)
 (require 'consult-kmacro)
-; (require 'consult-org) TODO: Need to fix problems with Emacs built from source since org-mode is broken there
+(require 'consult-org)
 (require 'consult-register)
 (require 'consult-xref)
 (require 'consult-imenu)
@@ -247,8 +248,10 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (global-set-key (kbd "M-g o") 'consult-outline)
 (global-set-key (kbd "M-g m") 'consult-mark)
 (global-set-key (kbd "M-g k") 'consult-global-mark)
-(global-set-key (kbd "M-g i") 'consult-imenu)
-(global-set-key (kbd "M-g I") 'consult-imenu-multi)
+(global-set-key (kbd "M-g i") 'consult-treesit-imenu)
+(global-set-key (kbd "M-g M-i") 'consult-imenu)
+(global-set-key (kbd "M-g I") 'consult-treesit-imenu-multi)
+(global-set-key (kbd "M-g M-I") 'consult-imenu-multi)
 
 (global-set-key (kbd "M-s d") 'consult-find)
 (global-set-key (kbd "M-s D") 'consult-locate)
@@ -443,6 +446,9 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (setq enable-recursive-minibuffers t)
 (require 'eglot)
 
+(global-set-key (kbd "C-M-S-e") #'eglot)
+(global-set-key (kbd "C-M-S-E") #'eglot-shutdown)
+
 ; Disable formatting as you type.
 (add-to-list 'eglot-ignored-server-capabilites :documentOnTypeFormattingProvider)
 
@@ -450,21 +456,24 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (add-to-list 'eglot-server-programs '((c++-mode c++-ts-mode c-mode c-ts-mode objc-mode cuda-mode) .
                                       ("clangd"
                                        "--background-index"
+                                       "--background-index-priority=low"
                                        "--clang-tidy"
                                        "--completion-style=detailed"
+                                       "--completion-parse=auto"
                                        "--enable-config"
                                        "--experimental-modules-support"
-                                       "--function-arg-placeholders"
+                                       "--function-arg-placeholders=1"
                                        "--header-insertion=iwyu"
                                        "--import-insertions"
-                                       "--limit-references=999999"
-                                       "--limit-results=999999"
-                                       "--log=error"
+                                       "--limit-references=10000"
+                                       "--limit-results=1000"
+                                       "--log=verbose"
                                        "--pch-storage=memory"
                                        "--ranking-model=decision_forest"
-                                       "--rename-file-limit=999999"
+                                       "--rename-file-limit=1000"
+                                       "--use-dirty-headers"
                                        "-j"
-                                       "32"
+                                       "64"
                                        )))
 (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
 
@@ -482,16 +491,30 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (when lightweight-win32
 (add-to-list 'eglot-server-programs '(csharp-ts-mode . ("~/dist/omnisharp/OmniSharp.exe" "-lsp"))))
 
-(add-hook 'c-mode-hook 'eglot-ensure)
-(add-hook 'c++-mode-hook 'eglot-ensure)
-(add-hook 'c-ts-mode-hook 'eglot-ensure)
-(add-hook 'c++-ts-mode-hook 'eglot-ensure)
-(add-hook 'objc-mode-hook 'eglot-ensure)
-; (add-hook 'csharp-mode-hook 'eglot-ensure)
-(add-hook 'swift-mode 'eglot-ensure)
-(add-hook 'haskell-mode 'eglot-ensure)
-(add-hook 'python-mode-hook 'eglot-ensure)
-(add-hook 'typescript-ts-mode-hook 'eglot-ensure)
+; TODO: move this to the p4 extensions module
+(defun maybe-enable-eglot ()
+  (unless (or (string-prefix-p "*P4 " (buffer-name))
+              (bound-and-true-p ediff-minor-mode))
+    (eglot-ensure)))
+
+(defun disable-eglot-inlay-hints-in-p4-print ()
+  "Disable Eglot inlay hints in *P4 ... buffers."
+  (when (string-prefix-p "*P4 " (buffer-name))
+    (eglot-inlay-hints-mode -1)))
+
+(add-hook 'eglot-managed-mode-hook #'disable-eglot-inlay-hints-in-p4-print)
+
+(add-hook 'c-mode-hook #'maybe-enable-eglot)
+(add-hook 'c++-mode-hook #'maybe-enable-eglot)
+(add-hook 'c-ts-mode-hook #'maybe-enable-eglot)
+(add-hook 'c++-ts-mode-hook #'maybe-enable-eglot)
+
+(add-hook 'objc-mode-hook #'maybe-enable-eglot)
+; (add-hook 'csharp-mode-hook #'maybe-enable-eglot)
+(add-hook 'swift-mode #'maybe-enable-eglot)
+(add-hook 'haskell-mode #'maybe-enable-eglot)
+(add-hook 'python-mode-hook #'maybe-enable-eglot)
+(add-hook 'typescript-ts-mode-hook #'maybe-enable-eglot)
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect 6)
@@ -510,6 +533,27 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
     (require 'consult-eglot-embark)
     (consult-eglot-embark-mode)))
 
+; Faster versions of building the imenu index using tree-sitter instead of eglot, which may be slow for larger projects.
+(defun consult-treesit-imenu ()
+  "Use `treesit-simple-imenu` if available, else fall back to default."
+  (interactive)
+  (let ((imenu-create-index-function
+         (if (and (fboundp 'treesit-parser-list)
+                  (treesit-parser-list))
+             #'treesit-simple-imenu
+           #'imenu-default-create-index-function)))
+    (consult-imenu)))
+
+(defun consult-treesit-imenu-multi ()
+  "Use `treesit-simple-imenu` if available, else fall back to default."
+  (interactive)
+  (let ((imenu-create-index-function
+         (if (and (fboundp 'treesit-parser-list)
+                  (treesit-parser-list))
+             #'treesit-simple-imenu
+           #'imenu-default-create-index-function)))
+    (consult-imenu-multi)))
+
 (setq flymake-no-changes-timeout 1.0)
 
 (setq global-eldoc-mode t)
@@ -521,7 +565,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (global-set-key (kbd "M-RET") 'eglot-rename)
 (global-set-key (kbd "C->") 'xref-find-definitions-other-window)
 (global-set-key (kbd "M-.") 'xref-find-definitions)
-(global-set-key [C-mouse-1] 'xref-find-defintions-at-mouse)
+(global-set-key [C-down-mouse-1] 'xref-find-definitions-at-mouse)
 (global-set-key (kbd "C-M-,") 'xref-go-forward)
 (global-set-key (kbd "M-,") 'xref-go-back)
 (global-set-key (kbd "C-c ?") 'eldoc-print-current-symbol-info)
@@ -630,11 +674,12 @@ See also `newline-and-indent'."
 (global-set-key [(ctrl shift return)] 'insert-empty-line-backwards)
 
 ; Allow for loading recent files
+(setq recentf-auto-cleanup 'never)
 (recentf-mode 1)
 (setq recentf-max-menu-items 1000)
-(setq recentf-max-saved-items 2000)
+(setq recentf-max-saved-items 10000)
 (global-set-key "\C-x\ \C-r" 'recentf-open-files)
-(setq recentf-save-file (expand-file-name "recentf" "~/Git/lightweight-emacs/"))
+; (setq recentf-save-file (expand-file-name "recentf" "~/.emacs/recentf"))
 
 ; Allow toggling hiding of comments
 (require 'hide-comnt)
@@ -806,6 +851,11 @@ will be killed."
 (when lightweight-win32
   (setq compile-command "build.bat")
 )
+
+; Force Emacs to always favour vertical split instead of horizontal split.
+;(setq split-height-threshold nil   ; ⇒ nil means “don’t split horizontally”
+;      split-width-threshold 0      ; ⇒ 0 means “OK to split vertically if >0 columns”
+;      split-window-preferred-function 'split-window-sensibly)
 
 (defun lightweight-ediff-setup-windows (buffer-A buffer-B buffer-C control-buffer)
   (ediff-setup-windows-plain buffer-A buffer-B buffer-C control-buffer)
@@ -1468,28 +1518,28 @@ will be killed."
   :group 'basic-faces)
 (defvar note-font-lock-face 'note-face) ; This is needed for font-lock to access the face
 (defvar todo-font-lock-face 'todo-face) ; This is needed for font-lock to access the face
-(custom-set-faces
-  '(font-lock-warning-face ((t (:foreground "pink" :underline t :slant italic :weight bold))))
-  '(hes-escape-backslash-face ((t (:foreground "tan" :slant italic :weight bold))))
-  '(hes-escape-sequence-face ((t (:foreground "tan" :slant italic :weight bold))))
-  '(hi-blue-b ((t (:foreground "sandy brown" :weight bold))))
 
-  '(linum-face ((t (:foreground "peru" :background "#3F3F3F"))))
+(with-eval-after-load 'zenburn-theme
+  (custom-set-faces
+   '(font-lock-warning-face ((t (:foreground "pink" :underline t :slant italic :weight bold))))
+   '(hes-escape-backslash-face ((t (:foreground "tan" :slant italic :weight bold))))
+   '(hes-escape-sequence-face ((t (:foreground "tan" :slant italic :weight bold))))
+   '(hi-blue-b ((t (:foreground "sandy brown" :weight bold))))
+   '(markdown-code-face ((t nil))) ; Don't want special face for Markdown syntax.
 
-  ; It's necessary to re-colour these because the Zenburn theme sets weird colours for these, and it looks bad in `whitespace-mode`.
-  '(whitespace-space ((t (:bold t :foreground "gray37" :background "gray24"))))
-  '(whitespace-hspace ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-tab ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-newline ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-trailing ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-line ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-space-before-tab ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-indentation ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-empty ((t (:foreground "gray37" :background "gray24"))))
-  '(whitespace-space-after-tab ((t (:foreground "gray37" :background "gray24"))))
+   '(linum-face ((t (:foreground "peru" :background nil))))
+   ; Zenburn theme has some really weird background colours when visualizing whitespace, so we override them.
+   '(whitespace-space ((t (:foreground "gray37" :background nil))))
+   '(whitespace-hspace ((t (:foreground "gray37" :background nil))))
+   '(whitespace-tab ((t (:foreground "gray37" :background nil))))
+   '(whitespace-newline ((t (:foreground "gray37" :background nil))))
+   '(whitespace-trailing ((t (:foreground "gray37" :background nil))))
+   '(whitespace-line ((t (:foreground "gray37" :background nil))))
+   '(whitespace-space-before-tab ((t (:foreground "gray37" :background nil))))
+   '(whitespace-indentation ((t (:foreground "gray37" :background nil))))
+   '(whitespace-empty ((t (:foreground "gray37" :background nil))))
+   '(whitespace-space-after-tab ((t (:foreground "gray37" :background nil))))))
 
-  '(markdown-code-face ((t nil)))
-)
 (defun font-lock-comment-annotations ()
     "Highlight a bunch of well known comment annotations.
   This functions should be added to the hooks of major modes for programming."

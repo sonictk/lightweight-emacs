@@ -1,6 +1,29 @@
 (require 'p4)
 (require 'project)
 
+; TODO This is all Windows-development-specific. Might need to eventually make this work on other platforms if needed.
+
+(defun p4-backout-changelist ()
+  "Backout/undo a previously-submitted changelist. (Epic-specific.)"
+  (interactive)
+  (let* ((localappdata (getenv "LOCALAPPDATA"))
+         (p4client (getenv "P4CLIENT"))
+         (cl (p4-completing-read 'submitted "Changelist: "))
+         (buffer-name "*Epic Safe Backout Tool*"))
+    (let ((executable (concat localappdata "\\Epic Games\\P4VUtils\\P4VUtils.exe")))
+      (with-current-buffer (get-buffer-create buffer-name)
+        (setq buffer-read-only t)
+        (display-buffer (current-buffer))
+        (let ((proc (start-process "Epic-SafeBackoutTool" buffer-name executable
+                                   "backout" cl p4client)))
+          (set-process-sentinel proc
+                                (lambda (process event)
+                                  (when (string= event "finished\n")
+                                    (setq buffer-read-only nil)
+                                    (with-current-buffer buffer-name
+                                      (insert "\n[Process completed]\n"))
+                                    (setq buffer-read-only t)))))))))
+
 (defun epic-launch-submit-tool ()
   "Launch Epic's SubmitTool."
   (interactive)
@@ -57,7 +80,7 @@
 
 (defun project-find-root (path)
   "Search up the PATH for `project-root-markers'."
-  (when-let ((root (locate-dominating-file path #'project-root-p)))
+  (when-let* ((root (locate-dominating-file path #'project-root-p)))
     (cons 'transient (expand-file-name root))))
 ; This really slows down project-files due to the sheer size of the project. Need to be careful here.
 ; This can affect things like eglot as well for languages that support workspace symbols.
@@ -71,7 +94,8 @@
 (defun find-public-or-private-directory (path)
   "Find either 'Public' or 'Private' directory presence."
   (or (locate-dominating-file path "Public")
-      (locate-dominating-file path "Private")))
+      (locate-dominating-file path "Private")
+      (locate-dominating-file path "Classes")))
 
 (defun trim-first-component (path)
   "Trim the first component of the path."
@@ -91,8 +115,9 @@
            (module-relative-path (trim-first-component module-relative-path))
            (module-relative-path (file-name-directory module-relative-path))
            (public-dir (concat module-root-dir "Public/" module-relative-path))
-           (private-dir (concat module-root-dir "Private/" module-relative-path)))
-      (setq cc-search-directories (nconc cc-search-directories `(,public-dir ,private-dir))))))
+           (private-dir (concat module-root-dir "Private/" module-relative-path))
+           (classes-dir (concat module-root-dir "Classes/" module-relative-path)))
+      (setq cc-search-directories (nconc cc-search-directories `(,public-dir ,private-dir ,classes-dir))))))
 
 (defun ue-ff-restore-search-directories ()
   (custom-reevaluate-setting 'cc-search-directories))

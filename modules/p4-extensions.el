@@ -2,6 +2,7 @@
 ; Swarm review functionality
 (require 'url)
 (require 'json)
+; (require 'request)
 
 ; Command is `p4 -F %depotFile% opened  -c 28337241 | p4 -x - sync -f`
 (defp4cmd p4-force-sync-files-in-changelist (&rest args)
@@ -10,16 +11,25 @@
   (interactive
    (if current-prefix-arg
        (p4-read-args "p4 force-sync-files-in-changelist:" "" 'pending)
-     (list "-F" "%depotFile%" "opened" (concat "-c " (p4-completing-read 'pending "Changelist: "))  "|"
-                   "p4" "-x" "-" "sync" "-f" )))
+     (list "-Ztag" "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'pending "Changelist: "))  "|"
+                   "p4" "-x" "-" "sync" "-f")))
     (p4-call-shell-command args))
 
-; Command is `p4 -F %depotFile% opened -c 28337241 | p4 -x - sync`
+; e.g. p4 -Ztag -F %depotFile% files @=40196354 | p4 -x - sync 
 (defp4cmd p4-sync-files-in-changelist (&rest args)
           "sync-files-in-changelist"
           "Syncs the file(s) in a given changelist."
           (interactive)
-          (p4-call-shell-command (list "-F" "%depotFile%" "opened" (concat "-c " (p4-completing-read 'pending "Changelist: "))  "|"
+          (p4-call-shell-command (list "-Ztag" "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'pending "Changelist: "))  "|"
+                                       "p4" "-x" "-" "sync")))
+
+; TODO Not sure if this is correct.
+; Command is `p4 -F %depotFile%@39506137 opened -c 28337241 | p4 -x - sync`
+(defp4cmd p4-sync-files-in-changelist-to-revision (&rest args)
+          "sync-files-in-changelist-to-revision"
+          "Syncs the file(s) in a given changelist to a specific revision."
+          (interactive)
+          (p4-call-shell-command (list "-Ztag" "-F" "%depotFile%" (concat "@" (p4-completing-read 'submitted "Sync to changelist: ")) "opened" (concat "-c " (p4-completing-read 'pending "Changelist: "))  "|"
                                        "p4" "-x" "-" "sync")))
 
 ; Command is `p4 sync @=28337241`
@@ -71,7 +81,7 @@
    (if current-prefix-arg
        (p4-read-args "p4 edit-files-in-changelist:" "" 'shelved)
      (list "-F" "%depotFile%" "files" (concat "@=" (p4-completing-read 'shelved "Changelist: "))  "|"
-                   "p4" "-x" "-" "edit")))
+                   "p4" "-x" "-" "edit" "-c" (p4-completing-read 'pending "Open in Changelist: "))))
     (p4-call-shell-command args))
 
 (defp4cmd p4-reshelve (&rest args)
@@ -154,6 +164,7 @@
                    "p4" "-x" "-" "reopen" "-c" (p4-completing-read 'pending "Move files to: "))))
     (p4-call-shell-command args))
 
+; TODO This should check if you're about to blow away a shelf with empty local changes first.
 (defp4cmd p4-shelve-force (&rest args)
   "shelve"
   "Store files (or a stream spec) from a pending changelist in the depot, without submitting them."
@@ -172,6 +183,7 @@
      (append (list "-d" "-c" (p4-completing-read 'shelved "Changelist: ")))))
   (p4-call-command "shelve" args :mode 'p4-basic-list-mode))
 
+; TODO This should just call p4-shelve-discard-files if there are already files in the changelist and provide confirmation asking.
 (defp4cmd p4-change-delete (&rest args)
   "change"
   "Delete the changelist. This is only allowed if the pending changelist has no files or pending fixes."
@@ -325,6 +337,7 @@
      (append (list "-c" (p4-completing-read 'pending "Changelist: ")))))
   (p4-call-command "submit" args :mode 'p4-basic-list-mode :callback (p4-refresh-callback)))
 
+; TODO: Allow setting stream to check in.
 ; Command is `p4 changes ...@30312822,30313050 -s submitted`
 (defun p4-list-changes-between-changelists (&rest args)
   "Lists out the changes between two changelist numbers. Useful for bisecting or figuring out what changes might have triggered an issue."
@@ -332,7 +345,7 @@
    (if current-prefix-arg
        (p4-read-args "p4 list-changes-between-changelists: " "" 'submitted)
      (let ((client-root (string-trim-right (shell-command-to-string "p4 -F %clientRoot% -ztag info"))))
-       (list "-m" "9999" "-s" "submitted" (format "%s/...@%s,%s" client-root (p4-completing-read 'submitted "First CL #: ") (p4-completing-read 'submitted "Second CL #: "))))))
+       (list "-m" "200000" "-s" "submitted" (format "%s/...@%s,%s" client-root (p4-completing-read 'submitted "First CL #: ") (p4-completing-read 'submitted "Second CL #: "))))))
   (p4-call-command "changes" args :mode 'p4-basic-list-mode))
 
 (defalias 'p4-sync-file 'p4-refresh)
@@ -469,6 +482,13 @@
 
 ; TODO make a command that can safely backup a given CL to a new one.
 ; TODO make shelve command fail if it tries to shelve empty so that it stops overwriting shelves.
+; TODO make a patching utillity that uses
+; p4 describe -du -S <CL number here> | sed -Ee 's|==== //(.*)#[0-9]+(.*)|+++ \1\n--- \1|' | awk '/^+++ /{f=1}f'
+
+(defun p4-create-swarm-review (reviewers groups)
+  "TODO Create a Swarm review."
+  
+  )
 
 
 (provide 'p4-extensions)
