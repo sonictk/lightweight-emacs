@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 (defun ediff-patch-file (patch-file)
   "Open a unified patch file in ediff-mode with a side-by-side view of the diffs."
   (interactive "fPatch file: ")

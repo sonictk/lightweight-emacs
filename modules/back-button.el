@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; MODIFIED by sonictk to remove default bindings which stomp Emacs bindings
 ;;; back-button.el --- Visual navigation through mark rings
 ;;

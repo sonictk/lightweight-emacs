@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; yascroll.el --- Yet Another Scroll Bar Mode
 
 ;; Copyright (C) 2011-2015  Tomohiro Matsuyama

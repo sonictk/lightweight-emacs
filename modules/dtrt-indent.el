@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; dtrt-indent.el --- Adapt to foreign indentation offsets
 
 ;; Copyright (C) 2003, 2007, 2008 Julian Scheid

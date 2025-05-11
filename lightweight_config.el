@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ; Lightweight Emacs configuration file
 
 ; Add custom module path so that nothing is saved to the global emacs config

@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; zenburn-theme.el --- A low contrast color theme for Emacs.
 
 ;; Copyright (C) 2011-2024 Bozhidar Batsov

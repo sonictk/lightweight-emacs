@@ -1,4 +1,5 @@
-;;; breadcrumb.el --- project and imenu-based breadcrumb paths   -*- lexical-binding: t; -*-
+;; -*- lexical-binding: t; -*-
+;;; breadcrumb.el --- project and imenu-based breadcrumb paths
 
 ;; Copyright (C) 2023  Free Software Foundation, Inc.
 

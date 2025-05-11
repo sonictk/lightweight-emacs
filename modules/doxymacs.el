@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; -*-emacs-lisp-*-
 ;;; doxymacs.el --- ELisp package for making doxygen related stuff easier.
 ;;

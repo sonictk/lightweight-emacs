@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; p4.el --- Simple Perforce-Emacs Integration
 
 ;; Copyright (c) 1996-1997 Eric Promislow

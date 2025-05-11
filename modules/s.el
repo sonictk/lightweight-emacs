@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; s.el --- The long lost Emacs string manipulation library.
 
 ;; Copyright (C) 2012-2015 Magnar Sveen

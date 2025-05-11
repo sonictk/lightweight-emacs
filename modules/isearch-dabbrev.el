@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; isearch-dabbrev.el --- Use dabbrev in isearch
 
 ;; Copyright (C) 2014 by Dewdrops

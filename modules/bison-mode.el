@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; bison-mode.el --- Major mode for editing bison, yacc and lex files.
 
 ;; Copyright (C) 1998 Eric Beuscher

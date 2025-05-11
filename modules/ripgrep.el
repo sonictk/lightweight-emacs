@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; ripgrep.el --- Front-end for ripgrep, a command line search tool
 
 ;; Copyright (C) 2016 Nicolas Lamirault <nicolas.lamirault@gmail.com>

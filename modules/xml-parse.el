@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; xml-parse --- code to efficiently read/write XML data with Elisp
 
 ;; Copyright (C) 2001 John Wiegley.

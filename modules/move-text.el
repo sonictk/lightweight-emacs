@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; move-text.el --- Move current line or region with M-up or M-down.
 
 ;; filename: move-text.el

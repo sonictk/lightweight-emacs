@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; cmake-mode.el --- major-mode for editing CMake sources
 
 ;; Package-Requires: ((emacs "24.1"))

@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 (require 'p4)
 ; Swarm review functionality
 (require 'url)

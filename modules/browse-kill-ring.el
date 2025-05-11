@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; browse-kill-ring.el --- interactively insert items from kill-ring -*- coding: utf-8 -*-
 
 ;; Copyright (C) 2001, 2002 Colin Walters <walters@verbum.org>

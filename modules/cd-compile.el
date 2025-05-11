@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; cd-compile.el --- run compile in a specific directory
 
 ;; Copyright (C) 2014 Jamie Nicol

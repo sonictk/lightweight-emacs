@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; hide-comnt.el --- Hide/show comments in code.
 ;;
 ;; Filename: hide-comnt.el

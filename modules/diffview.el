@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 ;;; diffview.el --- View diffs in side-by-side format
 
 ;; Copyright (C) 2013-2015, Mitchel Humpherys
