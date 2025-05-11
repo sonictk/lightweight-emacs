@@ -307,11 +307,11 @@ These structures don't have a `breadcrumb-region' property on."
 
 (defun bc--summarize (crumbs cutoff separator)
   "Return a string that summarizes CRUMBS, a list of strings.
-\"Summarization\" consists of truncating some CRUMBS to 1
-character.  Rightmost members of CRUMBS are summarized last.
-Members with a `breadcrumb-dont-shorten' are never truncated.
-Aim for a return string that is at most CUTOFF characters long.
-Join the crumbs with SEPARATOR."
+\"Summarization\" consists of truncating some CRUMBS to 1 character.
+Rightmost members of CRUMBS are summarized last.  Members with a non-nil
+`breadcrumb-dont-shorten' property are never truncated.  Aim for a
+return string that is at most CUTOFF characters long.  Join the crumbs
+with SEPARATOR."
   (let ((rcrumbs
          (cl-loop
           for available = (- cutoff used)
@@ -371,7 +371,9 @@ propertized crumbs."
   "Describing the current file inside project."
   (bc--summarize
    (if buffer-file-name (bc--project-crumbs-1 buffer-file-name)
-     (list (propertize (buffer-name) 'face 'bc-project-leaf-face)))
+     (list (propertize (buffer-name)
+                       'face 'bc-project-leaf-face
+                       'bc-dont-shorten t)))
    (bc--length bc-project-max-length)
    (propertize bc-project-crumb-separator
                'face 'bc-project-crumbs-face)))

@@ -122,6 +122,19 @@
 (defun ue-ff-restore-search-directories ()
   (custom-reevaluate-setting 'cc-search-directories))
 
+; TODO This should query recent JIRAs that "involve" me in some way and allow for completion on it.
+; Needs to execute the JQL
+;(
+;  assignee = currentUser()
+;  OR reporter = currentUser()
+;  OR watcher = currentUser()
+;  OR creator = currentUser()
+;  OR commenter = currentUser()
+;  OR description ~ "your.name"
+;  OR comment ~ "your.name"
+;)
+;ORDER BY updated DESC
+; Get that result, and make it auto-complete using the results.
 (defun goto-jira-issue ()
   "Opens the JIRA URL for the given issue key."
   (interactive)

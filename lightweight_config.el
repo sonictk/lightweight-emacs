@@ -518,8 +518,9 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect 6)
-(setq eglot-connect-timeout 6)
-(setq eglot-sync-connect 6)
+(setq eglot-connect-timeout 10)
+(setq eglot-advertise-cancellation t)
+(setq eglot-sync-connect 3)
 (setq eglot-extend-to-xref t)
 (setq eglot-events-buffer-config (list :size 0 :format 'full))
 (setq eglot-send-changes-idle-time 0.8)
@@ -1527,18 +1528,18 @@ will be killed."
    '(hi-blue-b ((t (:foreground "sandy brown" :weight bold))))
    '(markdown-code-face ((t nil))) ; Don't want special face for Markdown syntax.
 
-   '(linum-face ((t (:foreground "peru" :background nil))))
+   '(linum-face ((t (:foreground "peru" :background unspecified))))
    ; Zenburn theme has some really weird background colours when visualizing whitespace, so we override them.
-   '(whitespace-space ((t (:foreground "gray37" :background nil))))
-   '(whitespace-hspace ((t (:foreground "gray37" :background nil))))
-   '(whitespace-tab ((t (:foreground "gray37" :background nil))))
-   '(whitespace-newline ((t (:foreground "gray37" :background nil))))
-   '(whitespace-trailing ((t (:foreground "gray37" :background nil))))
-   '(whitespace-line ((t (:foreground "gray37" :background nil))))
-   '(whitespace-space-before-tab ((t (:foreground "gray37" :background nil))))
-   '(whitespace-indentation ((t (:foreground "gray37" :background nil))))
-   '(whitespace-empty ((t (:foreground "gray37" :background nil))))
-   '(whitespace-space-after-tab ((t (:foreground "gray37" :background nil))))))
+   '(whitespace-space ((t (:foreground "gray37" :background unspecified))))
+   '(whitespace-hspace ((t (:foreground "gray37" :background unspecified))))
+   '(whitespace-tab ((t (:foreground "gray37" :background unspecified))))
+   '(whitespace-newline ((t (:foreground "gray37" :background unspecified))))
+   '(whitespace-trailing ((t (:foreground "gray37" :background unspecified))))
+   '(whitespace-line ((t (:foreground "gray37" :background unspecified))))
+   '(whitespace-space-before-tab ((t (:foreground "gray37" :background unspecified))))
+   '(whitespace-indentation ((t (:foreground "gray37" :background unspecified))))
+   '(whitespace-empty ((t (:foreground "gray37" :background unspecified))))
+   '(whitespace-space-after-tab ((t (:foreground "gray37" :background unspecified))))))
 
 (defun font-lock-comment-annotations ()
     "Highlight a bunch of well known comment annotations.
@@ -1922,6 +1923,8 @@ PWD is not in a git repo (or the git command is not found)."
 ; Allow for switching between visible windows with Shift + arrow keys
 (when (fboundp 'windmove-default-keybindings)
   (windmove-default-keybindings))
+
+(require 'olivetti)
 
 ; Popper for nicer UX of "floating" windows
 (require 'popper)

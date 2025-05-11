@@ -485,6 +485,9 @@
 ; TODO make a patching utillity that uses
 ; p4 describe -du -S <CL number here> | sed -Ee 's|==== //(.*)#[0-9]+(.*)|+++ \1\n--- \1|' | awk '/^+++ /{f=1}f'
 
+; TODO Make megapatch generation command
+; p4 -Ztag -F %change% changes -m 10000 -s submitted //Fortnite/Release-35.00/...@41406195,41440259 | p4 -x - describe -du -S
+
 (defun p4-create-swarm-review (reviewers groups)
   "TODO Create a Swarm review."
   
