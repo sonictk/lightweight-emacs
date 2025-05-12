@@ -528,6 +528,12 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (setq eglot-report-progress t)
 (setq eglot-menu-string "Eg")
 
+(require 'eglot-booster)
+(with-eval-after-load 'eglot
+           (require 'eglot-booster)
+           (eglot-booster-mode))
+(setq eglot-booster-io-only t)
+
 (require 'consult-eglot)
 (require 'consult-eglot-embark)
 (with-eval-after-load 'embark
