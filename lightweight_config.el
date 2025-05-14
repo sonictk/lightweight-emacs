@@ -457,14 +457,15 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (add-to-list 'eglot-server-programs '((c++-mode c++-ts-mode c-mode c-ts-mode objc-mode cuda-mode) .
                                       ("clangd"
                                        "--background-index"
-                                       "--background-index-priority=low"
+                                       "--background-index-priority=normal"
                                        "--clang-tidy"
                                        "--completion-style=detailed"
                                        "--completion-parse=auto"
                                        "--enable-config"
-                                       "--experimental-modules-support"
+                                       ; "--experimental-modules-support"
                                        "--function-arg-placeholders=1"
                                        "--header-insertion=iwyu"
+                                       "--header-insertion-decorators"
                                        "--import-insertions"
                                        "--limit-references=10000"
                                        "--limit-results=1000"
@@ -473,8 +474,8 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
                                        "--ranking-model=decision_forest"
                                        "--rename-file-limit=1000"
                                        "--use-dirty-headers"
-                                       "-j"
-                                       "64"
+                                       ; "-j"
+                                       ; "1"
                                        )))
 (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
 
@@ -519,9 +520,9 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect 6)
-(setq eglot-connect-timeout 10)
+(setq eglot-connect-timeout 15)
 (setq eglot-advertise-cancellation t)
-(setq eglot-sync-connect 3)
+(setq eglot-sync-connect 5)
 (setq eglot-extend-to-xref t)
 (setq eglot-events-buffer-config (list :size 0 :format 'full))
 (setq eglot-send-changes-idle-time 0.8)
@@ -532,7 +533,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (with-eval-after-load 'eglot
            (require 'eglot-booster)
            (eglot-booster-mode))
-(setq eglot-booster-io-only t)
+; (setq eglot-booster-io-only t)
 
 (require 'consult-eglot)
 (require 'consult-eglot-embark)

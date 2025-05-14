@@ -495,4 +495,22 @@
   )
 
 
+;; describe -s 42024482
+;; change -o 42024482
+;; fstat -Op -Rs -e 42024482 //...
+;; describe -s 42024482
+;; fstat -Olhp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp
+;; fstat -Olhp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp
+;; fstat -OL -L //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6
+;; fstat -Olp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6
+;; fstat -OL -L //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6
+;; fstat -Olp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp@=42024482
+;; diff2 //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6 //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp@=42024482
+;; print -o C:\Users\YILIAN~1\AppData\Local\Temp\p4v\CDW-AQRHE1HHT39_perforce-useredge-sanjose.epicgames.net_1666\Fortnite\Main\Engine\Source\Runtime\VerseCompiler\Private\uLang\SemanticAnalyzer\Desugarer#6.cpp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6
+;; print -o C:\Users\YILIAN~1\AppData\Local\Temp\p4v\CDW-AQRHE1HHT39_perforce-useredge-sanjose.epicgames.net_1666\Fortnite\Main\Engine\Source\Runtime\VerseCompiler\Private\uLang\SemanticAnalyzer\Desugarer@=42024482.cpp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp@=42024482
+;; 150018eb] //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6 - edit change 41956326 (text)
+;; 150018eb] //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6 - edit change 42024482 (text)
+
+
+
 (provide 'p4-extensions)
