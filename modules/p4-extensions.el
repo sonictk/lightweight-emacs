@@ -494,6 +494,21 @@
   
   )
 
+(defun p4-integ-changelist-to-branch (changelist from-branch to-branch)
+  "Integrate files from a given CHANGELIST, changing FROM-BRANCH to TO-BRANCH in depot paths."
+  (interactive "nChangelist number: \nsFrom branch prefix (e.g. //depot/dev/): \nsTo branch prefix (e.g. //depot/main/): ")
+  (let* ((cmd (format "p4 -Ztag -F %%depotFile%% files @=%d" changelist))
+         (files (split-string (shell-command-to-string cmd) "\n" t))
+         (pairs (mapcar (lambda (file)
+                          (let ((target (replace-regexp-in-string
+                                         (regexp-quote from-branch) to-branch file)))
+                            (format "p4 integ %s %s" file target)))
+                        files)))
+    (with-output-to-temp-buffer "*P4 Integ Output*"
+      (dolist (cmd pairs)
+        (princ (format "%s\n" cmd))
+        (shell-command cmd)))))
+
 
 ;; describe -s 42024482
 ;; change -o 42024482

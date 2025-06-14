@@ -77,7 +77,7 @@
 (setq typescript-ts-mode-indent-offset 4)
 (setq c-ts-mode-indent-offset 4)
 (setq c-ts-mode-indent-style 'bsd)
-; p(c-ts-mode-set-global-style 'bsd)
+; (c-ts-mode-set-global-style 'bsd)
 (setq sgml-basic-offset 4)
 
 ; Use tree-sitter for C/C++
@@ -120,15 +120,18 @@
 (setq company-idle-delay nil)
 
 ; Increase completion time for larger C++ projects
-(setq company-async-timeout 6)
+(setq company-async-timeout 15)
 
 ; Company GUI settings
 (setq company-show-numbers t)
-(setq company-tooltip-maximum-width 100)
-(setq company-tooltip-limit 15)
+(setq company-tooltip-maximum-width 200)
+(setq company-tooltip-limit 20)
 (setq company-selection-wrap-around t)
 (setq company-require-match nil)
 (setq company-lighter-base "")
+(setq company-tooltip-flip-when-above t)
+(setq company-tooltip-align-annotations t)
+(setq company-tooltip-margin 2)
 
 ; FIX for fci-mode distorting the popup for company completions
 (defvar-local company-fci-mode-on-p nil)
@@ -522,17 +525,17 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (setq eglot-autoreconnect 6)
 (setq eglot-connect-timeout 15)
 (setq eglot-advertise-cancellation t)
-(setq eglot-sync-connect 5)
+(setq eglot-sync-connect nil)
 (setq eglot-extend-to-xref t)
 (setq eglot-events-buffer-config (list :size 0 :format 'full))
 (setq eglot-send-changes-idle-time 0.8)
 (setq eglot-report-progress t)
 (setq eglot-menu-string "Eg")
 
-(require 'eglot-booster)
-(with-eval-after-load 'eglot
-           (require 'eglot-booster)
-           (eglot-booster-mode))
+;; (require 'eglot-booster)
+;; (with-eval-after-load 'eglot
+;;            (require 'eglot-booster)
+;;            (eglot-booster-mode))
 ; (setq eglot-booster-io-only t)
 
 (require 'consult-eglot)
