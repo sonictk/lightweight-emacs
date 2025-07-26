@@ -120,7 +120,7 @@
 (setq company-idle-delay nil)
 
 ; Increase completion time for larger C++ projects
-(setq company-async-timeout 15)
+(setq company-async-timeout 25)
 
 ; Company GUI settings
 (setq company-show-numbers t)
@@ -465,20 +465,20 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
                                        "--completion-style=detailed"
                                        "--completion-parse=auto"
                                        "--enable-config"
-                                       ; "--experimental-modules-support"
+                                       "--experimental-modules-support"
                                        "--function-arg-placeholders=1"
                                        "--header-insertion=iwyu"
                                        "--header-insertion-decorators"
                                        "--import-insertions"
-                                       "--limit-references=10000"
+                                       "--limit-references=1000"
                                        "--limit-results=1000"
-                                       "--log=verbose"
+                                       "--log=info"
                                        "--pch-storage=memory"
                                        "--ranking-model=decision_forest"
                                        "--rename-file-limit=1000"
                                        "--use-dirty-headers"
-                                       ; "-j"
-                                       ; "1"
+                                       ;"-j"
+                                       ;"32"
                                        )))
 (add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
 
@@ -522,21 +522,22 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (add-hook 'typescript-ts-mode-hook #'maybe-enable-eglot)
 
 (setq eglot-autoshutdown t)
-(setq eglot-autoreconnect 6)
-(setq eglot-connect-timeout 15)
+(setq eglot-autoreconnect 3)
+(setq eglot-connect-timeout 30)
 (setq eglot-advertise-cancellation t)
 (setq eglot-sync-connect nil)
 (setq eglot-extend-to-xref t)
 (setq eglot-events-buffer-config (list :size 0 :format 'full))
-(setq eglot-send-changes-idle-time 0.8)
+(setq eglot-send-changes-idle-time 1.5)
 (setq eglot-report-progress t)
 (setq eglot-menu-string "Eg")
+(setq eglot-inlay-hints-mode nil)
 
-;; (require 'eglot-booster)
-;; (with-eval-after-load 'eglot
-;;            (require 'eglot-booster)
-;;            (eglot-booster-mode))
-; (setq eglot-booster-io-only t)
+(require 'eglot-booster)
+(with-eval-after-load 'eglot
+           (require 'eglot-booster)
+           (eglot-booster-mode))
+(setq eglot-booster-io-only t)
 
 (require 'consult-eglot)
 (require 'consult-eglot-embark)
@@ -639,7 +640,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
       (make-frame-visible doc-frame)))
 
-(global-set-key (kbd "C-M-,") 'xref-peek-definition)
+(global-set-key (kbd "C-x 6 .") 'xref-peek-definition)
 
 (require 'bison-mode)
 

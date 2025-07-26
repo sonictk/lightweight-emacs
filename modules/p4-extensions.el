@@ -489,6 +489,58 @@
 ; TODO Make megapatch generation command
 ; p4 -Ztag -F %change% changes -m 10000 -s submitted //Fortnite/Release-35.00/...@41406195,41440259 | p4 -x - describe -du -S
 
+; This replaces needing to go to Swarm to see the diff of a changelist. This command doesn't show the context
+(defun p4-generate-patch-for-changelist (&optional changelist-arg context-lines-arg)
+  "Generate a Perforce patch file from a specified changelist.
+
+  When called interactively:
+  - Prompts for the Perforce changelist number.
+  - Optionally prompts for the number of context lines (default 3).
+
+  When called non-interactively:
+  - `CHANGELIST-ARG`: The changelist number (string).
+  - `CONTEXT-LINES-ARG`: The number of context lines (integer, defaults to 3 if nil or 0).
+
+  The output of 'p4 describe -du -S <CL#>' is processed and displayed
+  in a new buffer named 'diff-<CL#>.patch'."
+  (interactive
+   (let* ((cl-num (p4-completing-read 'pending "Changelist: "))
+          (context-lines-str (read-string "Context lines (default 3): " nil nil "3"))
+          (context-lines (if (string-empty-p context-lines-str)
+                             3
+                           (string-to-number context-lines-str))))
+     (list cl-num context-lines)))
+
+  (let* ((changelist (or changelist-arg (error "Changelist number must be provided.")))
+         (effective-context-lines (if (and context-lines-arg (> context-lines-arg 0))
+                                      context-lines-arg
+                                    3)) ;; Default to 3 if arg is nil or <= 0
+         (buffer-name (format "*diff-%s.patch*" changelist))
+         (command (format "p4 describe -du%d -S %s | sed -Ee \"s|==== //(.*)#[0-9]+(.*)|+++ \\1\\n--- \\1|\" | awk \"/^+++ /{f=1}f\""
+                          effective-context-lines changelist))
+         patch-content)
+
+    (message "Generating patch for changelist %s with %d context lines..."
+             changelist effective-context-lines)
+
+    (setq patch-content (shell-command-to-string command))
+
+    (with-current-buffer (get-buffer-create buffer-name)
+      (erase-buffer)
+      (insert patch-content)
+      (goto-char (point-min))
+      (diff-mode)
+      (setq-local compilation-read-only-buffer t) ; For compilation-mode derivatives
+      (setq-local buffer-read-only t)             ; General read-only
+      (display-buffer (current-buffer)))
+
+    (when (string-empty-p patch-content)
+      (message "No patch content generated for changelist %s. Check changelist number and P4 environment." changelist)
+      (kill-buffer buffer-name) ;; Clean up empty buffer
+      (error "Patch generation failed or resulted in empty content."))
+
+    (message "Patch for changelist %s generated in buffer %s." changelist buffer-name)))
+
 (defun p4-create-swarm-review (reviewers groups)
   "TODO Create a Swarm review."
   

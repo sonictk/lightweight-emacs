@@ -1140,9 +1140,11 @@ instead."
     (when (buffer-live-p buffer)
       (p4-process-finished buffer (process-name process) message))))
 
-(defun p4-process-restart ()
+(defun p4-process-restart (&optional ignore-exit-code)
   "Start a Perforce process in the current buffer with command
-and arguments taken from the local variable `p4-process-args'."
+and arguments taken from the local variable `p4-process-args'.
+The optional IGNORE-EXIT-CODE argument, if non-NIL, will cause certain
+non-zero exit codes to be treated as success."
   (interactive)
   (unless p4-process-args
     (error "Can't restart Perforce process in this buffer."))
@@ -1150,11 +1152,18 @@ and arguments taken from the local variable `p4-process-args'."
     (erase-buffer)
     (if p4-process-synchronous
         (p4-with-coding-system
-          (let ((status (apply #'p4-call-process nil t nil
-                               p4-process-args)))
-            (p4-process-finished (current-buffer) "P4"
-                                 (if (zerop status) "finished\n"
-                                   (format "exited with status %d\n" status)))))
+          (let* ((status (apply #'p4-call-process nil t nil
+                                p4-process-args))
+                 ;; The 'cmd' variable is no longer explicitly needed here for
+                 ;; handling ignore-exit-code, but keeping it doesn't harm.
+                 (cmd (car p4-process-args))
+                 (message (cond
+                           ;; If status is 0, or the passed ignore-exit-code is true,
+                           ;; always treat as finished.
+                           ((or (zerop status) ignore-exit-code) "finished\n")
+                           ;; Otherwise, report the exit status as an error.
+                           (t (format "exited with status %d\n" status)))))
+            (p4-process-finished (current-buffer) "P4" message)))
       (let ((process (apply #'p4-start-process "P4" (current-buffer)
                             p4-process-args)))
         (set-process-query-on-exit-flag process nil)
@@ -1170,7 +1179,8 @@ and arguments taken from the local variable `p4-process-args'."
   (format "*P4 %s*" (p4-join-list args)))
 
 (defun* p4-call-command (cmd &optional args &key mode callback after-show
-                             (auto-login t) synchronous pop-up-output)
+                             (auto-login t) synchronous pop-up-output
+                             (ignore-exit-code nil))
   "Start a Perforce command.
 First (required) argument CMD is the p4 command to run.
 Second (optional) argument ARGS is a list of arguments to the p4 command.
@@ -1194,7 +1204,7 @@ opposed to showing it in the echo area)."
           p4-process-pop-up-output pop-up-output
           p4-process-synchronous
           (or synchronous (memq (intern cmd) p4-synchronous-commands)))
-    (p4-process-restart)))
+    (p4-process-restart ignore-exit-code)))
 
 ;; This empty function can be passed as an :after-show callback
 ;; function to p4-call-command where it has the side effect of
@@ -1759,7 +1769,8 @@ twice in the expansion."
   ; (cons p4-default-diff-options (p4-context-filenames-list))
   (cons "" (p4-context-filenames-list))
   (p4-call-command cmd args :mode 'p4-diff-mode
-                   :callback 'p4-activate-diff-buffer))
+                   :callback 'p4-activate-diff-buffer
+                   :ignore-exit-code t))
 
 ; TODO Implement diff against the shelved version of a file in a changelist.
 
