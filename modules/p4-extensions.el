@@ -489,8 +489,19 @@
 ; TODO Make megapatch generation command
 ; p4 -Ztag -F %change% changes -m 10000 -s submitted //Fortnite/Release-35.00/...@41406195,41440259 | p4 -x - describe -du -S
 
-; This replaces needing to go to Swarm to see the diff of a changelist. This command doesn't show the context
-(defun p4-generate-patch-for-changelist (&optional changelist-arg context-lines-arg)
+(defun p4-get-changes-for-range (stream begin end diff-type)
+  "Generate a Perforce \"megapatch\" of the changes between a changelist range."
+  (interactive
+   (let* ((stream (p4-completing-read 'streams "Stream to use: "))
+          (begin (p4-completing-read 'submitted "Starting from changelist: "))
+          (end (p4-completing-read 'submitted "Until changelist: "))
+          ))
+   (list begin end)
+   )
+  )
+
+; This replaces needing to go to Swarm to see the diff of a changelist.
+(defun p4-generate-patch-for-changelist (changelist-arg &optional context-lines-arg)
   "Generate a Perforce patch file from a specified changelist.
 
   When called interactively:

@@ -2853,6 +2853,27 @@ to the matches for ANNOTATION."
                      nil nil initial-input
                      (p4-completion-history completion))))
 
+(defun p4-fetch-streams-completions (completion)
+  "Fetch streams from the depot, optionally filtered by COMPLETION as a stream path pattern.
+
+  COMPLETION should be a stream path pattern, e.g., `//name/...` or `//depot/mainline/...`."
+  (interactive "sStream pattern (e.g., //depot/...): ") ;; Changed interactive to prompt for string
+  (let* ((client (p4-current-client))
+         (p4-command-args `("-ztag" "-F" "%Stream%" "streams" "-m" "1000")))
+
+    ;; Conditionally add the completion pattern if provided and not empty
+    (when (and completion (not (string-empty-p completion)))
+      (setq p4-command-args (append p4-command-args (list completion))))
+
+    (when client
+      ;; We don't strictly need the client for 'p4 streams' itself,
+      ;; but 'p4-output-annotations' might assume a client context.
+      (p4-output-annotations p4-command-args
+                             ;; Regex to match the entire line output by -F "%Stream%"
+                             ;; and capture it as group 1.
+                             "\\(.*\\)"
+                             1)))) ;; Only extract the first (and only) capturing group
+
 (defun p4-fetch-change-completions (completion string status)
   "Fetch change completions (with status STATUS) for STRING from
 the depot."
@@ -2990,6 +3011,7 @@ and update the cache accordingly."
 (defvar p4-pending-history nil "P4 pending change history.")
 (defvar p4-shelved-history nil "P4 shelved change history.")
 (defvar p4-submitted-history nil "P4 submitted change history.")
+(defvar p4-streams-history nil "P4 streams history.")
 (defvar p4-user-history nil "P4 user history.")
 
 (defvar p4-all-completions
@@ -3031,6 +3053,9 @@ and update the cache accordingly."
    (cons 'submitted  (p4-make-completion
                     :fetch-completions-fn 'p4-fetch-submitted-completions
                     :history 'p4-submitted-history))
+   (cons 'streams  (p4-make-completion
+                    :fetch-completions-fn 'p4-fetch-streams-completions
+                    :history 'p4-streams-history))
    (cons 'user     (p4-make-completion
                     :query-cmd "users" :query-prefix ""
                     :regexp "^\\([^ \n]+\\)"
