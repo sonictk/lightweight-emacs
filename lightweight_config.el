@@ -1,5 +1,6 @@
 ;; -*- lexical-binding: t; -*-
 ; Lightweight Emacs configuration file
+(setq use-package-always-ensure nil) ; Never download from ELPA
 
 ; Add custom module path so that nothing is saved to the global emacs config
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
@@ -14,6 +15,7 @@
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult-eglot") 
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult-eglot/extensions/consult-eglot-embark") 
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/vertico") 
+(add-to-list 'load-path "~/Git/lightweight-emacs/modules/vertico/extensions") 
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/embark") 
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/marginalia") 
 (add-to-list 'load-path "~/Git/lightweight-emacs/modules/orderless") 
@@ -87,9 +89,6 @@
              '(c-or-c++-mode . c-or-c++-ts-mode))
 
 (add-to-list 'major-mode-remap-alist '(csharp-mode . csharp-ts-mode))
-
-(setq savehist-additional-variables '(command-history))
-(savehist-mode 1)
 
 (setq edebug-print-length 9999)
 (setq edebug-print-level 9999)
@@ -175,14 +174,89 @@
 (require 'consult-register)
 (require 'consult-xref)
 (require 'consult-imenu)
-(require 'vertico)
 (require 'embark)
 (require 'embark-consult)
 (require 'marginalia)
 (require 'orderless)
 (require 'consult-company)
-(setq completion-styles '(orderless basic)
-      completion-category-overrides '((file (styles basic partial-completion))))
+
+(require 'vertico)
+(require 'vertico-sort)
+(require 'vertico-directory)
+(require 'vertico-mouse)
+(require 'vertico-multiform)
+(require 'vertico-indexed)
+
+;; Persist history over Emacs restarts. Vertico sorts by history position.
+(use-package savehist
+  :custom
+  (savehist-additional-variables '(command-history))
+  :init
+  (savehist-mode))
+
+(use-package vertico
+  :custom
+  (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
+  (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
+  (vertico-sort-function #'vertico-sort-history-length-alpha)
+  :ensure nil
+  :init
+  (vertico-mode))
+
+(use-package vertico-sort
+  :after vertico
+  :ensure nil)
+
+(use-package vertico-directory
+  :after vertico
+  :ensure nil
+  ;; More convenient directory navigation commands
+  :bind (:map vertico-map
+              ("C-v" . vertico-scroll-up)
+              ("M-v" . vertico-scroll-down)
+              ("RET" . vertico-directory-enter)
+              ("DEL" . vertico-directory-delete-char)
+              ("M-DEL" . vertico-directory-delete-word))
+  ;; Tidy shadowed file names
+  :hook (rfn-eshadow-update-overlay . vertico-directory-tidy))
+
+(use-package vertico-mouse
+  :after vertico
+  :ensure nil)
+
+(use-package vertico-multiform
+  :after vertico
+  :ensure nil)
+
+(use-package vertico-indexed
+  :after vertico
+  :ensure nil)
+
+;; Emacs minibuffer configurations.
+(use-package emacs
+  :custom
+  ;; Enable context menu. `vertico-multiform-mode' adds a menu in the minibuffer
+  ;; to switch display modes.
+  (context-menu-mode t)
+  ;; Support opening new minibuffers from inside existing minibuffers.
+  (enable-recursive-minibuffers t)
+  ;; Hide commands in M-x which do not work in the current mode.  Vertico
+  ;; commands are hidden in normal buffers. This setting is useful beyond
+  ;; Vertico.
+  (read-extended-command-predicate #'command-completion-default-include-p)
+  ;; Do not allow the cursor in the minibuffer prompt
+  (minibuffer-prompt-properties
+   '(read-only t cursor-intangible t face minibuffer-prompt)))
+
+;; Optionally use the `orderless' completion style.
+(use-package orderless
+  :custom
+  ;; Configure a custom style dispatcher (see the Consult wiki)
+  ;; (orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch))
+  ;; (orderless-component-separator #'orderless-escapable-split-on-space)
+  (completion-styles '(orderless basic))
+  (completion-category-defaults nil)
+  (completion-category-overrides '((file (styles basic gpartial-completion)))))
 
 (define-key company-mode-map [remap completion-at-point] #'consult-company)
 (define-key company-active-map [remap pixel-scroll-interpolate-up] 'company-previous-page)
@@ -363,7 +437,6 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
                (default-directory dir))
     (find-file (consult--find prompt #'consult--fd-builder initial))))
 
-(vertico-mode 1)
 (marginalia-mode 1)
 
 ;; Show the Embark target at point via Eldoc.  You may adjust the Eldoc
@@ -447,7 +520,6 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
   (dolist (buf  (buffer-list))
     (unless (get-buffer-window buf 'visible) (kill-buffer buf))))
 
-(setq enable-recursive-minibuffers t)
 (require 'eglot)
 
 (global-set-key (kbd "C-M-S-e") #'eglot)
@@ -655,8 +727,6 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 ; Configure scrolling to only scroll half a page at a time
 (global-set-key "\C-v"   'View-scroll-half-page-forward)
 (global-set-key "\M-v"   'View-scroll-half-page-backward)
-(define-key vertico-map (kbd "C-v") #'vertico-scroll-up)
-(define-key vertico-map (kbd "M-v") #'vertico-scroll-down)
 
 ;; insert an empty line after the current line and position the cursor on its beginning
 (defun insert-empty-line ()
@@ -1805,7 +1875,6 @@ PWD is not in a git repo (or the git command is not found)."
                                  (vc-mode nil)
                                  (vc-dired-mode nil)
                                  (erc-track-minor-mode nil)
-                                 ; (savehist-mode nil)
                                  (global-whitespace-mode nil)
                                  (global-smartparens-mode nil))) ; Prevent desktop read from being slow
 
