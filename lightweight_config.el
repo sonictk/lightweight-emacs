@@ -3,24 +3,24 @@
 (setq use-package-always-ensure nil) ; Never download from ELPA
 
 ; Add custom module path so that nothing is saved to the global emacs config
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/yasnippet-snippets")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/swift-mode")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/wgrep")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/rg")
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/compat.el") ; transient.el requires this dependency
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult") 
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult-company") 
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult-eglot") 
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/consult-eglot/extensions/consult-eglot-embark") 
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/vertico") 
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/vertico/extensions") 
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/embark") 
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/marginalia") 
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/orderless") 
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/")
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/yasnippet")
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/yasnippet-snippets")
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/swift-mode")
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/wgrep")
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/rg")
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/compat.el") ; transient.el requires this dependency
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/consult") 
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/consult-company") 
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/consult-eglot") 
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/consult-eglot/extensions/consult-eglot-embark") 
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/vertico") 
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/vertico/extensions") 
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/embark") 
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/marginalia") 
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/orderless") 
 (add-to-list 'custom-theme-load-path
-             (file-name-as-directory "~/Git/lightweight-emacs/themes"))
+             (file-name-as-directory "~/source/repos/lightweight-emacs/themes"))
 
 ; Enable font ligatures
 ; Fira Code configuration below
@@ -102,10 +102,10 @@
 ; Template system for Emacs - allows macros to do text insertion
 (require 'yasnippet)
 (require 'yasnippet-snippets)
-(setq yas-snippet-dirs '("~/Git/lightweight-emacs/modules/yasnippet-snippets/snippets"))
+(setq yas-snippet-dirs '("~/source/repos/lightweight-emacs/modules/yasnippet-snippets/snippets"))
 
 ; Set up auto-complete for code
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/company-mode/")
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/company-mode/")
 (require 'company)
 (setq company-backends (delete 'company-semantic company-backends))
 (global-set-key [(ctrl tab)] 'company-complete)
@@ -453,9 +453,9 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
                (window-parameters (mode-line-format . none))))
 
 ; Haskell support
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/haskell-mode")
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/haskell-mode")
 (require 'haskell-mode-autoloads)
-(add-to-list 'Info-default-directory-list "~/Git/lightweight-emacs/modules/haskell-mode")
+(add-to-list 'Info-default-directory-list "~/source/repos/lightweight-emacs/modules/haskell-mode")
 
 ; Determine the underlying operating system
 (setq lightweight-aquamacs (string-equal system-type "darwin"))
@@ -504,9 +504,9 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (require 'fd-dired)
 
 (require 'transient)
-(setq transient-levels-file '"~/Git/lightweight-emacs/transient/levels.el")
-(setq transient-values-file '"~/Git/lightweight-emacs/transient/values.el")
-(setq transient-history-file '"~/Git/lightweight-emacs/transient/history.el")
+(setq transient-levels-file '"~/source/repos/lightweight-emacs/transient/levels.el")
+(setq transient-values-file '"~/source/repos/lightweight-emacs/transient/values.el")
+(setq transient-history-file '"~/source/repos/lightweight-emacs/transient/history.el")
 
 ; Binding for line wrapping
 (global-set-key (kbd "C-M-S-w") 'visual-line-mode)
@@ -1674,7 +1674,7 @@ will be killed."
 (global-set-key (kbd "RET") 'newline-and-indent)  ; automatically indent when press RET
 
 ; Set up auto-pairing for parentheses
-(add-to-list 'load-path "~/Git/lightweight-emacs/modules/smartparens")
+(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/smartparens")
 (require 'dash)
 (require 'smartparens-config)
 (add-to-list 'sp-ignore-modes-list '(minibuffer-inactive-mode picture-mode markdown-mode text-mode artist-mode))
@@ -1865,7 +1865,7 @@ PWD is not in a git repo (or the git command is not found)."
 (global-set-key (kbd "C-x M-m") 'shell)
 
 ; Save the Emacs sessions
-(setq desktop-dirname             "~/Git/lightweight-emacs/"
+(setq desktop-dirname             "~/source/repos/lightweight-emacs/"
       desktop-base-file-name      "emacs.desktop"
       desktop-base-lock-name      "lock"
       desktop-path                (list desktop-dirname)
