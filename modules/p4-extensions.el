@@ -484,7 +484,7 @@
 ; TODO make a command that can safely backup a given CL to a new one.
 ; TODO make shelve command fail if it tries to shelve empty so that it stops overwriting shelves.
 ; TODO make a patching utillity that uses
-; p4 describe -du -S <CL number here> | sed -Ee 's|==== //(.*)#[0-9]+(.*)|+++ \1\n--- \1|' | awk '/^+++ /{f=1}f'
+; p4 describe -du -S <CL number here> | sed -Ee "s|==== //(.*)#[0-9]+(.*)|+++ \1\n--- \1|" | awk "/^+++ /{f=1}f"
 
 ; TODO Make megapatch generation command
 ; p4 -Ztag -F %change% changes -m 10000 -s submitted //Fortnite/Release-35.00/...@41406195,41440259 | p4 -x - describe -du -S
@@ -541,6 +541,7 @@
       (insert patch-content)
       (goto-char (point-min))
       (diff-mode)
+      (view-mode)
       (setq-local compilation-read-only-buffer t) ; For compilation-mode derivatives
       (setq-local buffer-read-only t)             ; General read-only
       (display-buffer (current-buffer)))

@@ -197,7 +197,7 @@
 (use-package vertico
   :custom
   (vertico-resize t) ;; Grow and shrink the Vertico minibuffer
-  (vertico-cycle t) ;; Enable cycling for `vertico-next/previous'
+  (vertico-cycle nil) ;; Enable cycling for `vertico-next/previous'
   (vertico-sort-function #'vertico-sort-history-length-alpha)
   :ensure nil
   :init
@@ -250,13 +250,14 @@
 
 ;; Optionally use the `orderless' completion style.
 (use-package orderless
+  :ensure nil
   :custom
   ;; Configure a custom style dispatcher (see the Consult wiki)
   ;; (orderless-style-dispatchers '(+orderless-consult-dispatch orderless-affix-dispatch))
   ;; (orderless-component-separator #'orderless-escapable-split-on-space)
   (completion-styles '(orderless basic))
   (completion-category-defaults nil)
-  (completion-category-overrides '((file (styles basic gpartial-completion)))))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
 
 (define-key company-mode-map [remap completion-at-point] #'consult-company)
 (define-key company-active-map [remap pixel-scroll-interpolate-up] 'company-previous-page)
@@ -528,32 +529,36 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 ; Disable formatting as you type.
 (add-to-list 'eglot-ignored-server-capabilites :documentOnTypeFormattingProvider)
 
-; Using in-memory PCH storage for perf and also no need to cleanup when `clangd` crashes. Setting unlimited file rename limit as well.
-(add-to-list 'eglot-server-programs '((c++-mode c++-ts-mode c-mode c-ts-mode objc-mode cuda-mode) .
-                                      ("clangd"
-                                       "--background-index"
-                                       "--background-index-priority=normal"
-                                       "--clang-tidy"
-                                       "--completion-style=detailed"
-                                       "--completion-parse=auto"
-                                       "--enable-config"
-                                       "--experimental-modules-support"
-                                       "--function-arg-placeholders=1"
-                                       "--header-insertion=iwyu"
-                                       "--header-insertion-decorators"
-                                       "--import-insertions"
-                                       "--limit-references=1000"
-                                       "--limit-results=1000"
-                                       "--log=info"
-                                       "--pch-storage=memory"
-                                       "--ranking-model=decision_forest"
-                                       "--rename-file-limit=1000"
-                                       "--use-dirty-headers"
-                                       ;"-j"
-                                       ;"32"
-                                       )))
-(add-to-list 'eglot-server-programs '(python-mode . ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
+(defvar my-clangd-executable-path "clangd"
+  "Path to the clangd executable to use.")
 
+; Using in-memory PCH storage for perf and also no need to cleanup when `clangd` crashes. Setting unlimited file rename limit as well.
+(add-to-list 'eglot-server-programs
+             `((c++-mode c++-ts-mode c-mode c-ts-mode objc-mode cuda-mode)
+               . ,(lambda (&rest_)
+                    (list my-clangd-executable-path
+                          "--background-index"
+                          "--background-index-priority=normal"
+                          "--clang-tidy"
+                          "--completion-style=detailed"
+                          "--completion-parse=auto"
+                          "--enable-config"
+                          "--experimental-modules-support"
+                          "--function-arg-placeholders=1"
+                          "--header-insertion=iwyu"
+                          "--header-insertion-decorators"
+                          "--import-insertions"
+                          "--limit-references=1000"
+                          "--limit-results=500"
+                          "--log=info"
+                          "--pch-storage=memory"
+                          "--ranking-model=decision_forest"
+                          "--rename-file-limit=1000"
+                          "--use-dirty-headers"))))
+(add-to-list 'eglot-server-programs '((python-mode python-ts-mode). ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
+(add-to-list 'eglot-server-programs
+             '((rust-ts-mode rust-mode) .
+               ("rust-analyzer" :initializationOptions (:check (:command "clippy")))))
 (when lightweight-win32
   (add-to-list 'eglot-server-programs
                `(verse-mode . ("S:/source/repos/epic/ysiew_devvk/Engine/Restricted/NotForLicensees/Binaries/Win64/uLangServer-Win64-Debug.exe" ""))))
@@ -574,24 +579,23 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
               (bound-and-true-p ediff-minor-mode))
     (eglot-ensure)))
 
-(defun disable-eglot-inlay-hints-in-p4-print ()
-  "Disable Eglot inlay hints in *P4 ... buffers."
-  (when (string-prefix-p "*P4 " (buffer-name))
-    (eglot-inlay-hints-mode -1)))
+; (defun disable-eglot-inlay-hints-in-p4-print ()
+;   "Disable Eglot inlay hints in *P4 ... buffers."
+;   (when (string-prefix-p "*P4 " (buffer-name))
+;     (eglot-inlay-hints-mode nil)))
+;(add-hook 'eglot-managed-mode-hook #'disable-eglot-inlay-hints-in-p4-print)
 
-(add-hook 'eglot-managed-mode-hook #'disable-eglot-inlay-hints-in-p4-print)
+; (add-hook 'c-mode-hook #'maybe-enable-eglot)
+; (add-hook 'c++-mode-hook #'maybe-enable-eglot)
+; (add-hook 'c-ts-mode-hook #'maybe-enable-eglot)
+; (add-hook 'c++-ts-mode-hook #'maybe-enable-eglot)
 
-(add-hook 'c-mode-hook #'maybe-enable-eglot)
-(add-hook 'c++-mode-hook #'maybe-enable-eglot)
-(add-hook 'c-ts-mode-hook #'maybe-enable-eglot)
-(add-hook 'c++-ts-mode-hook #'maybe-enable-eglot)
-
-(add-hook 'objc-mode-hook #'maybe-enable-eglot)
+; (add-hook 'objc-mode-hook #'maybe-enable-eglot)
 ; (add-hook 'csharp-mode-hook #'maybe-enable-eglot)
-(add-hook 'swift-mode #'maybe-enable-eglot)
-(add-hook 'haskell-mode #'maybe-enable-eglot)
-(add-hook 'python-mode-hook #'maybe-enable-eglot)
-(add-hook 'typescript-ts-mode-hook #'maybe-enable-eglot)
+; (add-hook 'swift-mode #'maybe-enable-eglot)
+; (add-hook 'haskell-mode #'maybe-enable-eglot)
+; (add-hook 'python-mode-hook #'maybe-enable-eglot)
+; (add-hook 'typescript-ts-mode-hook #'maybe-enable-eglot)
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect 3)
@@ -603,13 +607,14 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (setq eglot-send-changes-idle-time 1.5)
 (setq eglot-report-progress t)
 (setq eglot-menu-string "Eg")
-(setq eglot-inlay-hints-mode nil)
 
-(require 'eglot-booster)
-(with-eval-after-load 'eglot
-           (require 'eglot-booster)
-           (eglot-booster-mode))
-(setq eglot-booster-io-only t)
+(add-hook 'eglot-managed-mode-hook (lambda () (eglot-inlay-hints-mode -1)))
+
+; (require 'eglot-booster)
+; (with-eval-after-load 'eglot
+;            (require 'eglot-booster)
+;            (eglot-booster-mode))
+; (setq eglot-booster-io-only t)
 
 (require 'consult-eglot)
 (require 'consult-eglot-embark)
@@ -776,6 +781,9 @@ See also `newline-and-indent'."
 ; Auto reload-buffers when files are changed on disk
 (global-auto-revert-mode t)
 
+(setq enable-local-eval t)
+(setq enable-local-variables :all)
+
 ; Enable remote .dir-locals.el files to be found
 (setq enable-remote-dir-locals t)
 
@@ -888,9 +896,9 @@ will be killed."
 (setq inhibit-startup-screen t)
 
 (setq compilation-directory-locked nil)
+(setq compilation-max-output-line-length 500)
 (scroll-bar-mode -1)
 (setq shift-select-mode nil)
-(setq enable-local-variables nil)
 
 ; Only display the line numbers when goto line is activated
 (global-set-key [remap goto-line] 'goto-line-with-feedback)
