@@ -567,10 +567,14 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
   (add-to-list 'eglot-server-programs
                `(verse-mode . (,(expand-file-name verse-lsp-server-path) ""))))
 
-(when (getenv "OMNISHARP_LSP_SERVER_PATH")
-  (setq omnisharp-lsp-server-path (getenv "OMNISHARP_LSP_SERVER_PATH"))
+(when (getenv "CSHARP_LSP_SERVER_PATH")
+  (setq csharp-lsp-server-path (getenv "CSHARP_LSP_SERVER_PATH"))
   (add-to-list 'eglot-server-programs
-               `(csharp-ts-mode . (,(expand-file-name omnisharp-lsp-server-path) "-lsp"))))
+               `(csharp-ts-mode . (,(expand-file-name csharp-lsp-server-path) "-lsp"))))
+
+; (when-let ((server-path (getenv "CSHARP_LSP_SERVER_PATH")))
+;   (add-to-list 'eglot-server-programs
+;                `(csharp-ts-mode . ,(list (expand-file-name server-path)))))
 
 (when lightweight-aquamacs
   (add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/XcodeBeta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp"))))
@@ -601,7 +605,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect 3)
-(setq eglot-connect-timeout nil)
+(setq eglot-connect-timeout 40)
 (setq eglot-advertise-cancellation t)
 (setq eglot-sync-connect nil)
 (setq eglot-extend-to-xref t)
