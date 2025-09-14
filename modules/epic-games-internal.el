@@ -85,7 +85,7 @@
     (cons 'transient (expand-file-name root))))
 ; This really slows down project-files due to the sheer size of the project. Need to be careful here.
 ; This can affect things like eglot as well for languages that support workspace symbols.
-;(add-to-list 'project-find-functions #'project-find-root)
+(add-to-list 'project-find-functions #'project-find-root)
 
 ; Allow projectile to recognize the root of the Unreal workspace.
 ;; (with-eval-after-load 'projectile

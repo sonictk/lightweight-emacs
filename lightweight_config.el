@@ -50,6 +50,8 @@
 ; Use ibuffer instead of list-buffers for the default hotkey.
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 
+(setq nxml-outline-child-indent 4)
+
 ; TODO: Figure out what's wrong with the config that makes whitespace mode not work with tree-sitter modes.
 (setq treesit-language-source-alist
    '((bash "https://github.com/tree-sitter/tree-sitter-bash")
@@ -559,19 +561,19 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (add-to-list 'eglot-server-programs
              '((rust-ts-mode rust-mode) .
                ("rust-analyzer" :initializationOptions (:check (:command "clippy")))))
-(when lightweight-win32
+
+(when (getenv "VERSE_LSP_SERVER_PATH")
+  (setq verse-lsp-server-path (getenv "VERSE_LSP_SERVER_PATH"))
   (add-to-list 'eglot-server-programs
-               `(verse-mode . ("S:/source/repos/epic/ysiew_devvk/Engine/Restricted/NotForLicensees/Binaries/Win64/uLangServer-Win64-Debug.exe" ""))))
+               `(verse-mode . (,(expand-file-name verse-lsp-server-path) ""))))
+
+(when (getenv "OMNISHARP_LSP_SERVER_PATH")
+  (setq omnisharp-lsp-server-path (getenv "OMNISHARP_LSP_SERVER_PATH"))
+  (add-to-list 'eglot-server-programs
+               `(csharp-ts-mode . (,(expand-file-name omnisharp-lsp-server-path) "-lsp"))))
 
 (when lightweight-aquamacs
-(add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/XcodeBeta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp")))
-(add-to-list 'eglot-server-programs '(csharp-ts-mode . ("/usr/local/bin/omnisharp" "-lsp"))))
-
-(when lightweight-linux
-(add-to-list 'eglot-server-programs '(csharp--ts-mode . ("/usr/local/bin/omnisharp" "-lsp"))))
-
-(when lightweight-win32
-(add-to-list 'eglot-server-programs '(csharp-ts-mode . ("~/dist/omnisharp/OmniSharp.exe" "-lsp"))))
+  (add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/XcodeBeta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp"))))
 
 ; TODO: move this to the p4 extensions module
 (defun maybe-enable-eglot ()
@@ -599,11 +601,11 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 
 (setq eglot-autoshutdown t)
 (setq eglot-autoreconnect 3)
-(setq eglot-connect-timeout 30)
+(setq eglot-connect-timeout nil)
 (setq eglot-advertise-cancellation t)
 (setq eglot-sync-connect nil)
 (setq eglot-extend-to-xref t)
-(setq eglot-events-buffer-config (list :size 0 :format 'full))
+(setq eglot-events-buffer-config (list :size nil :format 'full))
 (setq eglot-send-changes-idle-time 1.5)
 (setq eglot-report-progress t)
 (setq eglot-menu-string "Eg")
