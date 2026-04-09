@@ -50,8 +50,6 @@
 ; Use ibuffer instead of list-buffers for the default hotkey.
 (global-set-key (kbd "C-x C-b") 'ibuffer)
 
-(setq nxml-outline-child-indent 4)
-
 ; TODO: Figure out what's wrong with the config that makes whitespace mode not work with tree-sitter modes.
 (setq treesit-language-source-alist
    '((bash "https://github.com/tree-sitter/tree-sitter-bash")
@@ -83,6 +81,7 @@
 (setq c-ts-mode-indent-style 'bsd)
 ; (c-ts-mode-set-global-style 'bsd)
 (setq sgml-basic-offset 4)
+(add-hook 'nxml-mode-hook  (lambda () (setq nxml-outline-child-indent 4)))
 
 ; Use tree-sitter for C/C++
 (add-to-list 'major-mode-remap-alist '(c-mode . c-ts-mode))
@@ -529,7 +528,9 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (global-set-key (kbd "C-M-S-E") #'eglot-shutdown)
 
 ; Disable formatting as you type.
-(add-to-list 'eglot-ignored-server-capabilites :documentOnTypeFormattingProvider)
+(with-eval-after-load 'eglot
+  ;; Note the corrected spelling of 'capabilities' here!
+  (add-to-list 'eglot-ignored-server-capabilities :documentOnTypeFormattingProvider))
 
 (defvar my-clangd-executable-path "clangd"
   "Path to the clangd executable to use.")
@@ -557,7 +558,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
                           "--ranking-model=decision_forest"
                           "--rename-file-limit=1000"
                           "--use-dirty-headers"))))
-(add-to-list 'eglot-server-programs '((python-mode python-ts-mode). ("pyright-langserver" "--stdio"))) ; Force Python to use pyright
+(add-to-list 'eglot-server-programs '((python-mode python-ts-mode). ("uvx" "ty" "server")))
 (add-to-list 'eglot-server-programs
              '((rust-ts-mode rust-mode) .
                ("rust-analyzer" :initializationOptions (:check (:command "clippy")))))
@@ -567,15 +568,70 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
   (add-to-list 'eglot-server-programs
                `(verse-mode . (,(expand-file-name verse-lsp-server-path) ""))))
 
+;;; --- 1. THE URI PATCH (Conditional & Safe) ---
+(defun my/fix-eglot-uri-for-windows-csharp (original-fn &rest args)
+  "Patch Eglot to send 'file:///c:/' instead of 'file:///c%3A/'
+   ONLY for C# buffers on Windows. This fixes the Roslyn crash without breaking other LSPs."
+  (let ((uri (apply original-fn args))) ;; Pass ALL args safely
+    (if (and (eq system-type 'windows-nt)
+             ;; Only apply this patch if we are in a C# buffer or dealing with a .cs file
+             (or (derived-mode-p 'csharp-mode 'csharp-ts-mode)
+                 (and (stringp (car args)) (string-suffix-p ".cs" (car args) t)))
+             (stringp uri)
+             (string-match-p "^file:///[a-zA-Z]%3A" uri))
+        ;; targeted replacement: file:///c%3A/... -> file:///c:/...
+        (replace-regexp-in-string "file:///\\([a-zA-Z]\\)%3A" "file:///\\1:" uri)
+      uri)))
+
+;; Apply the advice
+(advice-add 'eglot-path-to-uri :around #'my/fix-eglot-uri-for-windows-csharp)
+
+
+;;; --- 2. THE CONTACT STRATEGY ---
+(defun roslyn-contact (_interactive)
+  "Calculate the Roslyn command arguments, dynamically finding the .sln file."
+  (let* ((server-dll (getenv "CSHARP_LSP_SERVER_PATH"))
+         (manual-sln (getenv "ROSLYN_LSP_PROJECT_PATH"))
+         
+         ;; Find the solution file
+         (sln-path 
+          (cond 
+           (manual-sln manual-sln)
+           (t (when-let ((dir (locate-dominating-file default-directory 
+                                                      (lambda (d) 
+                                                        (directory-files d nil "\\.slnx$")))))
+                (expand-file-name (car (directory-files dir nil "\\.slnx$")) dir))))))
+
+    (unless (and server-dll (file-exists-p server-dll))
+      (error "CSHARP_LSP_SERVER_PATH not set or file missing"))
+
+    ;; Construct the command
+    (append 
+     (list "dotnet"
+           (expand-file-name server-dll)
+           "--stdio"
+           "--telemetryLevel" "off"
+           "--logLevel" "Information"
+           "--extensionLogDirectory" (temporary-file-directory))
+     
+     ;; Pass the solution path if found
+     (when sln-path
+       ;; Ensure backslashes for the initialization option (Roslyn prefers this)
+       (let ((win-sln (if (eq system-type 'windows-nt)
+                          (replace-regexp-in-string "/" "\\\\" sln-path)
+                        sln-path)))
+         (list :initializationOptions 
+               (list :solution win-sln)))))))
+
+
+;;; --- 3. REGISTER THE SERVER ---
 (when (getenv "CSHARP_LSP_SERVER_PATH")
-  (setq csharp-lsp-server-path (getenv "CSHARP_LSP_SERVER_PATH"))
+  ;; Clean up old registration
+  (setq eglot-server-programs 
+        (assoc-delete-all 'csharp-ts-mode eglot-server-programs))
+
   (add-to-list 'eglot-server-programs
-               `(csharp-ts-mode . (,(expand-file-name csharp-lsp-server-path) "-lsp"))))
-
-; (when-let ((server-path (getenv "CSHARP_LSP_SERVER_PATH")))
-;   (add-to-list 'eglot-server-programs
-;                `(csharp-ts-mode . ,(list (expand-file-name server-path)))))
-
+               `(csharp-ts-mode . roslyn-contact)))
 (when lightweight-aquamacs
   (add-to-list 'eglot-server-programs '(swift-mode . ("/Applications/XcodeBeta.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/sourcekit-lsp"))))
 
@@ -657,6 +713,14 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 (setq eldoc-echo-area-prefer-doc-buffer t)
 (setq eldoc-documentation-strategy 'eldoc-documentation-compose)
 (setq eldoc-echo-area-use-multiline-p nil)
+
+(defun copy-eldoc-buffer ()
+  "Copy the entire contents of the *eldoc* buffer to the kill ring."
+  (interactive)
+  (when (get-buffer "*eldoc*")
+    (with-current-buffer "*eldoc*"
+      (kill-new (buffer-string))
+      (message "Copied Eldoc buffer to kill ring."))))
 
 (global-set-key (kbd "M-RET") 'eglot-rename)
 (global-set-key (kbd "C->") 'xref-find-definitions-other-window)
@@ -1168,36 +1232,6 @@ will be killed."
 (global-set-key (kbd "<C-S-f7>") 'gud-stepi)
 (global-set-key (kbd "<f7>") 'gud-step)
 
-; GDB control which windows new buffers are displayed in.
-;(add-to-list 'display-buffer-alist
-;         (cons 'cdb-source-code-buffer-p
-;           (cons 'display-source-code-buffer nil)))
-;
-;(defun cdb-source-code-buffer-p (bufName action)
-;  "Return whether BUFNAME is a source code buffer."
-;  (let ((buf (get-buffer bufName)))
-;    (and buf
-;     (with-current-buffer buf
-;       (derived-mode-p buf 'c++-mode 'c-mode 'csharp-mode 'nxml-mode)))))
-;
-;(defun display-source-code-buffer (sourceBuf alist)
-;  "Find a window with source code and set sourceBuf inside it."
-;  (let* ((curbuf (current-buffer))
-;     (wincurbuf (get-buffer-window curbuf))
-;     (win (if (and wincurbuf
-;               (derived-mode-p sourceBuf 'c++-mode 'c-mode 'nxml-mode)
-;               (derived-mode-p (current-buffer) 'c++-mode 'c-mode 'nxml-mode))
-;          wincurbuf
-;        (get-window-with-predicate
-;         (lambda (window)
-;           (let ((bufName (buffer-name (window-buffer window))))
-;             (or (cdb-source-code-buffer-p bufName nil)
-;             (assoc bufName display-buffer-alist)
-;             ))))))) ;; derived-mode-p doesn't work inside this, don't know why...
-;    (set-window-buffer win sourceBuf)
-;    win))
-;
-
 ; Force the interpreter window to scroll when typing something in gdb, 
 ; and scroll the window when there is output and when the window is not in focus.
 (setq comint-scroll-to-bottom-on-input t)
@@ -1674,7 +1708,7 @@ will be killed."
 
 ; Guess indentation in files
 (require 'dtrt-indent)
-(dtrt-indent-mode 1)
+(dtrt-indent-global-mode t)
 (setq dtrt-indent-verbosity 0)
 
 (global-set-key (kbd "RET") 'newline-and-indent)  ; automatically indent when press RET
@@ -2020,6 +2054,11 @@ PWD is not in a git repo (or the git command is not found)."
   (windmove-default-keybindings))
 
 (require 'olivetti)
+
+;; Manually add the Windows certificate stores to Emacs's trust list
+(require 'gnutls)
+(add-to-list 'gnutls-trustfiles "c:/Windows/System32/cert.pem")
+(add-to-list 'gnutls-trustfiles "c:/Windows/System32/cert.p7b")
 
 ; Popper for nicer UX of "floating" windows
 (require 'popper)
