@@ -166,15 +166,6 @@
   (let ((root (project-root (project-current))))
     (directory-files root t "\\.sln$" t)))
 
-(defun goto-jira-issue ()
-  "Opens the JIRA URL for the given issue key."
-  (interactive)
-  (let* ((issue (p4-completing-read 'shelved "Issue: "))
-         (jira-url (getenv "JIRAURL")))
-    (browse-url (concat jira-url
-                        "/browse/"
-                        (url-hexify-string issue)))))
-
 (defun file-jira-issue ()
   "Opens a new JIRA issue."
   (interactive)
@@ -227,36 +218,127 @@ Set this to the full 'connect.sid=...' string."
     (set-buffer-modified-p nil)
     (read-only-mode)))
 
-(defun epic-codescout-search-callback (status)
-  "Callback that handles buggy status and dirty buffer from url.el."
-  (if (or (eq status 'successful) (listp status))
-      (let ((results-buffer (get-buffer-create "*codescout-search-results*")))
-        (with-current-buffer (current-buffer)
-          (goto-char (point-min))
-          (when (re-search-forward "\n\r?\n\r?" nil t)
-            (delete-region (point-min) (point)))
-          (condition-case err
-              (let ((json-key-type 'symbol)) ; Ensure parser creates symbols for keys
-                (let ((json-data (json-read-from-string (buffer-string))))
-                  (switch-to-buffer-other-window results-buffer)
-                  (epic-codescout--format-results results-buffer json-data)))
-            (error (message "CodeScout Result: Could not parse JSON. %s" err))))
-        (kill-buffer (current-buffer)))
-    (message "CodeScout search failed. Status: %s" status)))
+(defun epic-codescout--response-is-auth-failure-p ()
+  "Return non-nil if the current buffer contains an HTML login page rather than JSON."
+  (save-excursion
+    (goto-char (point-min))
+    (looking-at-p "<!DOCTYPE\\|<html")))
 
-(defun epic-codescout-search (search-term)
-  "Perform a search on Epic's CodeScout for SEARCH-TERM."
-  (interactive "sSearch CodeScout for: ")
-  (unless (and epic-codescout-cookie (not (string-empty-p epic-codescout-cookie)))
-    (error "CodeScout cookie is not set. Use `M-x customize-variable epic-codescout-cookie`"))
+(defun epic-codescout--try-read-firefox-cookie ()
+  "Try to read the current connect.sid cookie for CodeScout from Firefox.
+Requires sqlite3 on PATH.  Returns \"connect.sid=VALUE\" or nil."
+  (when (executable-find "sqlite3")
+    (let* ((profiles-dir (expand-file-name "Mozilla/Firefox/Profiles" (getenv "APPDATA")))
+           (dbs (when (file-directory-p profiles-dir)
+                  (seq-filter #'file-exists-p
+                              (mapcar (lambda (entry)
+                                        (expand-file-name
+                                         "cookies.sqlite"
+                                         (expand-file-name entry profiles-dir)))
+                                      (directory-files profiles-dir nil "^[^.]")))))
+           (db  (car (sort dbs
+                           (lambda (a b)
+                             (time-less-p
+                              (file-attribute-modification-time (file-attributes b))
+                              (file-attribute-modification-time (file-attributes a))))))))
+      (when db
+        (let ((tmp (make-temp-file "cs-cookies" nil ".sqlite")))
+          (condition-case nil (copy-file db tmp t) (error nil))
+          (let ((val (string-trim
+                      (shell-command-to-string
+                       (format "sqlite3 %s \"SELECT value FROM moz_cookies WHERE host='codescout.internal.epicgames.net' AND name='connect.sid' ORDER BY lastAccessed DESC LIMIT 1\""
+                               (shell-quote-argument tmp))))))
+            (ignore-errors (delete-file tmp))
+            (unless (string-empty-p val)
+              (concat "connect.sid=" val))))))))
+
+(defun epic-codescout--reauthenticate (search-term path-filter)
+  "Acquire a fresh CodeScout cookie and retry the search.
+Reads the cookie directly from Firefox if possible.  Only opens a browser
+and prompts the user when auto-detection fails."
+  (let ((auto (epic-codescout--try-read-firefox-cookie)))
+    (if auto
+        (progn
+          (customize-save-variable 'epic-codescout-cookie auto)
+          (message "CodeScout: cookie refreshed from Firefox, retrying...")
+          (epic-codescout--do-search search-term path-filter t))
+      (browse-url "https://codescout.internal.epicgames.net/")
+      (when (y-or-n-p "CodeScout: log in via Okta in your browser, then press y: ")
+        (let ((val (read-string
+                    "Paste connect.sid value (Firefox DevTools -> Storage -> Cookies -> codescout): ")))
+          (unless (string-empty-p val)
+            (let ((cookie (if (string-prefix-p "connect.sid=" val) val
+                            (concat "connect.sid=" val))))
+              (customize-save-variable 'epic-codescout-cookie cookie)
+              (message "CodeScout: cookie updated, retrying...")
+              (epic-codescout--do-search search-term path-filter t))))))))
+
+(defun epic-codescout--handle-auth-failure (search-term path-filter reauth-attempted)
+  "React to a CodeScout session expiry."
+  (if reauth-attempted
+      (message "CodeScout: authentication still failed after re-login.")
+    (message "CodeScout: session expired.")
+    (epic-codescout--reauthenticate search-term path-filter)))
+
+(defun epic-codescout--status-is-auth-failure-p (status)
+  "Return non-nil if STATUS signals a session expiry redirect."
+  (or (plist-get status :redirect)
+      (eq (cadr (plist-get status :error)) 'http-redirect-limit)))
+
+(defun epic-codescout-search-callback (status search-term path-filter reauth-attempted)
+  "Handle the url-retrieve response for a CodeScout search."
+  (cond
+   ((epic-codescout--status-is-auth-failure-p status)
+    (kill-buffer (current-buffer))
+    (epic-codescout--handle-auth-failure search-term path-filter reauth-attempted))
+   ((plist-get status :error)
+    (kill-buffer (current-buffer))
+    (message "CodeScout search failed: %s" (plist-get status :error)))
+   (t
+    (goto-char (point-min))
+    (when (re-search-forward "\n\r?\n\r?" nil t)
+      (delete-region (point-min) (point)))
+    (if (epic-codescout--response-is-auth-failure-p)
+        (progn
+          (kill-buffer (current-buffer))
+          (epic-codescout--handle-auth-failure search-term path-filter reauth-attempted))
+      (condition-case err
+          (let* ((json-key-type 'symbol)
+                 (json-data     (json-read-from-string (buffer-string)))
+                 (results-buf   (get-buffer-create "*codescout-search-results*")))
+            (kill-buffer (current-buffer))
+            (switch-to-buffer-other-window results-buf)
+            (epic-codescout--format-results results-buf json-data))
+        (error
+         (kill-buffer (current-buffer))
+         (message "CodeScout: could not parse response: %s" err)))))))
+
+(defun epic-codescout--do-search (search-term path-filter reauth-attempted)
+  "Fire the CodeScout HTTP request for SEARCH-TERM filtered by PATH-FILTER."
   (let* ((base-url "https://codescout.internal.epicgames.net/api/find-in-files")
          (params `(("branch"    "//Fortnite/Main")
                    ("searchStr" ,search-term)
-                   ("pathsStr"  "")
+                   ("pathsStr"  ,(or path-filter ""))
                    ("options"   "{\"matchCase\":false,\"wholeWord\":false}")))
          (full-url (concat base-url "?" (url-build-query-string params)))
-         (url-request-extra-headers `(("Cookie" . ,epic-codescout-cookie))))
-    (url-retrieve full-url 'epic-codescout-search-callback)))
+         (url-request-extra-headers
+          (when (and epic-codescout-cookie (not (string-empty-p epic-codescout-cookie)))
+            `(("Cookie" . ,epic-codescout-cookie))))
+         (url-max-redirections 0))
+    (url-retrieve full-url
+                  (lambda (status)
+                    (epic-codescout-search-callback status search-term path-filter reauth-attempted)))))
+
+(defun epic-codescout-search (search-term &optional path-filter)
+  "Search Epic's CodeScout for SEARCH-TERM.
+With a prefix argument (C-u), also prompt for a path/filetype filter
+\(e.g. *.cpp, Engine/Source/Runtime\).
+If the session cookie is expired, opens the Okta login page automatically."
+  (interactive
+   (list (read-string "Search CodeScout for: ")
+         (when current-prefix-arg
+           (read-string "Filter by path/filetype (e.g. *.cpp, Engine/Source): "))))
+  (epic-codescout--do-search search-term (or path-filter "") nil))
 
 (add-hook 'ff-pre-find-hooks 'ue-ff-other-file-alist-function)
 (add-hook 'ff-post-load-hooks 'ue-ff-restore-search-directories)

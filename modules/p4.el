@@ -68,7 +68,6 @@
 ; - Added submitted changes history as well.
 
 ;;; Code:
-
 (require 'compile) ; compilation-error-regexp-alist
 (require 'comint) ; comint-check-proc
 (require 'dired) ; dired-get-filename

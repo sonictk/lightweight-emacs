@@ -30,7 +30,7 @@
           "sync-files-in-changelist-to-revision"
           "Syncs the file(s) in a given changelist to a specific revision."
           (interactive)
-          (p4-call-shell-command (list "-Ztag" "-F" "%depotFile%" (concat "@" (p4-completing-read 'submitted "Sync to changelist: ")) "opened" (concat "-c " (p4-completing-read 'pending "Changelist: "))  "|"
+          (p4-call-shell-command (list "-Ztag" "-F" "%depotFile%" (concat "@" (p4-completing-read 'pending "Sync to changelist: ")) "opened" (concat "-c " (p4-completing-read 'submitted "Changelist: "))  "|"
                                        "p4" "-x" "-" "sync")))
 
 ; Command is `p4 sync @=28337241`
@@ -469,8 +469,6 @@
 ; Implement a mode in the `p4-opened` map that allows bringing up emacs's ediff and also working
 ; for CLs that you don't own - i.e. you don't have the files currently open for edit.
 
-; TODO write an interface to `p4 integrated` and `p4 filelog -i` for viewing revision graph history in pure text form.
-
 ; TODO p4-print-changelist-client-and-depot-versions
 ; TODO p4-print-file-client-and-depot-versions
 
@@ -573,6 +571,185 @@
         (princ (format "%s\n" cmd))
         (shell-command cmd)))))
 
+(defun p4-user-insert-at-point ()
+  "Prompt for a Perforce username with completion and insert it at point."
+  (interactive)
+  (let ((username (p4-completing-read 'user "Username: ")))
+    (when (and username (not (string-empty-p username)))
+      (insert username))))
+
+(define-derived-mode p4-revision-graph-mode p4-basic-mode "P4 Rev Graph"
+  "Major mode for displaying a Perforce revision graph.")
+
+(defun p4--rgraph-parse (output)
+  "Parse p4 filelog -i -l OUTPUT into an alist of (FILE-PATH . REVISIONS).
+Each revision is a plist: :rev :change :action :date :user :integrations.
+Each integration is a plist: :direction (from|into) :action :path."
+  (let (result cur-file cur-revs cur-rev cur-desc)
+    (with-temp-buffer
+      (insert output)
+      (goto-char (point-min))
+      (while (not (eobp))
+        (let ((line (buffer-substring-no-properties
+                     (line-beginning-position) (line-end-position))))
+          (cond
+           ;; File header: bare depot path with no leading dots
+           ((string-match "^\\(//[^ \t\n]+\\)$" line)
+            (when cur-file
+              (when cur-rev
+                (setq cur-rev (plist-put cur-rev :desc cur-desc))
+                (push cur-rev cur-revs))
+              (push (cons cur-file (nreverse cur-revs)) result))
+            (setq cur-file (match-string 1 line)
+                  cur-revs nil cur-rev nil cur-desc ""))
+           ;; Revision: ... #N change M action on DATE by USER@CLIENT
+           ((string-match (concat "^\\.\\.\\. #\\([0-9]+\\) change \\([0-9]+\\) "
+                                  "\\([a-z/]+\\) on \\([0-9/]+\\) by "
+                                  "\\([^ @]+\\)@\\([^ \n]+\\)")
+                          line)
+            (when cur-rev
+              (setq cur-rev (plist-put cur-rev :desc cur-desc))
+              (push cur-rev cur-revs))
+            (setq cur-rev (list :rev    (string-to-number (match-string 1 line))
+                                :change (string-to-number (match-string 2 line))
+                                :action (match-string 3 line)
+                                :date   (match-string 4 line)
+                                :user   (match-string 5 line)
+                                :integrations nil)
+                  cur-desc ""))
+           ;; Integration: ... ... action from/into //depot/path#rev
+           ((string-match "^\\.\\.\\. \\.\\.\\. \\([a-z]+\\) \\(from\\|into\\) \\(//[^ \t\n]+\\)" line)
+            (when cur-rev
+              (setq cur-rev
+                    (plist-put cur-rev :integrations
+                               (append (plist-get cur-rev :integrations)
+                                       (list (list :direction (match-string 2 line)
+                                                   :action    (match-string 1 line)
+                                                   :path      (match-string 3 line))))))))
+           ;; Description line (tab-indented, from -l flag)
+           ((string-match "^\t\\(.*\\)" line)
+            (when cur-rev
+              (setq cur-desc (if (string-empty-p cur-desc)
+                                 (match-string 1 line)
+               (concat cur-desc "\n" (match-string 1 line)))))))
+          (forward-line 1))))
+    (when cur-file
+      (when cur-rev
+        (setq cur-rev (plist-put cur-rev :desc cur-desc))
+        (push cur-rev cur-revs))
+      (push (cons cur-file (nreverse cur-revs)) result))
+    (nreverse result)))
+
+(defun p4--rgraph-integ-col (path files)
+  "Return the column index in FILES matching the depot path in PATH (strips revision spec)."
+  (let ((file (replace-regexp-in-string "#[0-9,#]+$" "" path))
+        (result nil) (i 0))
+    (dolist (entry files result)
+      (when (and (not result) (string= (car entry) file))
+        (setq result i))
+      (setq i (1+ i)))))
+
+(defun p4--rgraph-track (ncols active-cols node-col src-col)
+  "Build the ASCII track string for one graph row.
+NCOLS total columns; ACTIVE-COLS is list of active indices; NODE-COL gets `*';
+SRC-COL (optional) draws a horizontal arrow from SRC-COL to NODE-COL."
+  (let ((v (make-string (max 1 (1- (* 2 ncols))) ?\s)))
+    (dolist (c active-cols)
+      (aset v (* 2 c) ?|))
+    (when (and src-col node-col (/= src-col node-col))
+      (let ((i (* 2 (min node-col src-col)))
+            (end (* 2 (max node-col src-col))))
+        (while (<= i end) (aset v i ?-) (setq i (1+ i))))
+      (aset v (* 2 src-col) ?+))
+    (when node-col (aset v (* 2 node-col) ?*))
+    v))
+
+(defun p4--rgraph-render (parsed-files)
+  "Render PARSED-FILES as a multi-column revision graph into the current buffer."
+  (let* ((ncols (length parsed-files))
+         (col-ranges (make-vector ncols nil))
+         all-nodes)
+    ;; Per-column change ranges (min . max)
+    (dotimes (ci ncols)
+      (let ((changes (mapcar (lambda (r) (plist-get r :change))
+                             (cdr (nth ci parsed-files)))))
+        (when changes
+          (aset col-ranges ci (cons (apply #'min changes) (apply #'max changes))))))
+    ;; Header legend
+    (dotimes (ci ncols)
+      (insert (propertize (format "  [%d] %s\n" ci (car (nth ci parsed-files)))
+                          'face 'p4-filespec-face)))
+    (insert "\n")
+    ;; Collect all nodes with column index, sort by change descending
+    (dotimes (ci ncols)
+      (dolist (rev (cdr (nth ci parsed-files)))
+        (push (cons ci rev) all-nodes)))
+    (setq all-nodes
+          (sort all-nodes
+                (lambda (a b) (> (plist-get (cdr a) :change)
+                                 (plist-get (cdr b) :change)))))
+    ;; Render
+    (let ((first-row t))
+      (dolist (entry all-nodes)
+        (let* ((ci     (car entry))
+               (rev    (cdr entry))
+               (change (plist-get rev :change))
+               (integs (plist-get rev :integrations))
+               ;; Columns whose change range spans this change number
+               (active (let (acc)
+                         (dotimes (k ncols)
+                           (let ((r (aref col-ranges k)))
+                             (when (and r (<= (car r) change) (<= change (cdr r)))
+                               (push k acc))))
+                         (nreverse acc)))
+               ;; First integration resolvable to a known column
+               (primary (let (found)
+                          (dolist (ig integs)
+                            (when (and (not found)
+                                       (p4--rgraph-integ-col
+                                        (plist-get ig :path) parsed-files))
+                              (setq found ig)))
+                          found))
+               (src-col (when primary
+                          (p4--rgraph-integ-col
+                           (plist-get primary :path) parsed-files)))
+               (track-width (max 1 (1- (* 2 ncols)))))
+          ;; Separator pipe row (skip before very first node)
+          (unless first-row
+            (insert (p4--rgraph-track ncols active nil nil) "\n"))
+          (setq first-row nil)
+          ;; Node row
+          (insert (p4--rgraph-track ncols active ci src-col))
+          (insert (format "   ")
+          (insert (propertize (number-to-string change) 'face 'p4-change-face))
+          (insert (format "  #%-3d %-10s  %s  "
+                          (plist-get rev :rev)
+                          (plist-get rev :action)
+                          (plist-get rev :date)))
+          (insert (propertize (plist-get rev :user) 'face 'p4-user-face))
+          ;; Integration annotations
+          (dolist (ig integs)
+            (insert (format "\n%s  %s %s "
+                            (make-string (+ 3 track-width) ?\s)
+                            (if (string= (plist-get ig :direction) "from") "<<" ">>")
+                            (plist-get ig :action)))
+            (insert (propertize (plist-get ig :path) 'face 'p4-filespec-face)))
+          (insert "\n")))))))
+
+(defun p4--rgraph-activate ()
+  "Parse raw filelog output in current buffer and re-render as a graph."
+  (let ((raw (buffer-string))
+        (inhibit-read-only t))
+    (erase-buffer)
+    (p4--rgraph-render (p4--rgraph-parse raw))))
+
+(defun p4-revision-graph ()
+  "Display a text revision graph for the current file, following integrations across streams."
+  (interactive)
+  (p4-call-command "filelog"
+                   (list "-i" "-l" (p4-context-single-filename))
+                   :mode 'p4-revision-graph-mode
+                   :callback 'p4--rgraph-activate))
 
 ;; describe -s 42024482
 ;; change -o 42024482
@@ -589,7 +766,5 @@
 ;; print -o C:\Users\YILIAN~1\AppData\Local\Temp\p4v\CDW-AQRHE1HHT39_perforce-useredge-sanjose.epicgames.net_1666\Fortnite\Main\Engine\Source\Runtime\VerseCompiler\Private\uLang\SemanticAnalyzer\Desugarer@=42024482.cpp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp@=42024482
 ;; 150018eb] //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6 - edit change 41956326 (text)
 ;; 150018eb] //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6 - edit change 42024482 (text)
-
-
 
 (provide 'p4-extensions)
