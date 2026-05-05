@@ -1992,6 +1992,7 @@ PWD is not in a git repo (or the git command is not found)."
 
 ; Load Epic Games specific stuff
 (require 'epic-games-internal)
+(require 'jira)
 
 ; Disable garbage collection while the minibuffer is open
 (defun my-minibuffer-setup-hook ()

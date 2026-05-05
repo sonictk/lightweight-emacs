@@ -257,6 +257,125 @@
   (list "-t" "-m" "200" "--me" "-L" "-s" "submitted" "-c" (p4-current-client))
   (p4-file-change-log "changes" args))
 
+(defun p4--fetch-stream-list ()
+  "Return a list of depot stream paths from `p4 streams'."
+  (split-string
+   (string-trim (shell-command-to-string "p4 -ztag -F \"%Stream%\" streams -m 1000"))
+   "\n" t "[ \t]+"))
+
+(defun p4-show-recent-changes-for-user (user stream status max-changes)
+  "Show recent Perforce changes by USER on STREAM filtered by STATUS.
+MAX-CHANGES limits results (default 200, or the numeric prefix argument).
+Changes are shown regardless of which client workspace they were submitted from."
+  (interactive
+   (let* ((max    (if current-prefix-arg
+                      (prefix-numeric-value current-prefix-arg)
+                    200))
+          (user   (p4-completing-read 'user "User: "))
+          (stream (completing-read "Stream: " (p4--fetch-stream-list) nil nil))
+          (status (completing-read "Status: "
+                                   '("submitted" "pending" "shelved")
+                                   nil t nil nil "submitted")))
+     (list user stream status max)))
+  (p4-file-change-log "changes"
+                      (list "-L" "-t"
+                            "-m" (number-to-string max-changes)
+                            "-u" user
+                            "-s" status
+                            (concat stream "/..."))))
+
+(defvar-local p4-changes-list--line-cl nil
+  "Hash table mapping buffer line numbers to changelist number strings.")
+
+(defun p4-changes-list--cl-at-point ()
+  "Return the changelist number string for the line at point, or nil."
+  (and p4-changes-list--line-cl
+       (gethash (line-number-at-pos) p4-changes-list--line-cl)))
+
+(defun p4-changes-list-describe-at-point ()
+  "Run `p4 describe' on the changelist at point and show the result."
+  (interactive)
+  (if-let ((cl (p4-changes-list--cl-at-point)))
+      (p4-call-command "describe" (list cl))
+    (message "No changelist at point")))
+
+(defun p4-changes-list-patch-at-point ()
+  "Generate a unified diff patch for the changelist at point."
+  (interactive)
+  (if-let ((cl (p4-changes-list--cl-at-point)))
+      (p4-generate-patch-for-changelist cl 3)
+    (message "No changelist at point")))
+
+(defun p4-show-changes-by-status (stream status user max-changes)
+  "Show Perforce changes on STREAM with STATUS submitted by USER.
+With a numeric prefix argument, show that many changes (default 200).
+Prompts for stream, status, and username with completion.
+
+In the results buffer:
+  RET or mouse-1  – run `p4 describe' on the changelist at point
+  d               – generate a diff patch via `p4-generate-patch-for-changelist'
+  q               – quit the window"
+  (interactive
+   (let* ((max    (if current-prefix-arg
+                      (prefix-numeric-value current-prefix-arg)
+                    200))
+          (stream (completing-read "Stream: " (p4--fetch-stream-list) nil nil))
+          (status (completing-read "Status: "
+                                   '("submitted" "pending" "shelved")
+                                   nil t nil nil "submitted"))
+          (user   (p4-completing-read 'user "User: ")))
+     (list stream status user max)))
+  (message "Fetching %s changes for %s on %s..." status user stream)
+  (let* ((raw   (string-trim
+                 (shell-command-to-string
+                  (format "p4 changes -m %d -s %s -u %s %s/..."
+                          max-changes
+                          (shell-quote-argument status)
+                          (shell-quote-argument user)
+                          (shell-quote-argument stream)))))
+         (lines (seq-filter (lambda (l) (string-match-p "^Change " l))
+                            (split-string raw "\n" t)))
+         (buf   (get-buffer-create
+                 (format "*P4 Changes: %s — %s — %s*" user status stream))))
+    (with-current-buffer buf
+      (let ((inhibit-read-only t)
+            (lm (make-hash-table :test 'eql)))
+        (erase-buffer)
+        (special-mode)
+        (setq-local p4-changes-list--line-cl lm)
+        (let ((map (make-sparse-keymap)))
+          (set-keymap-parent map special-mode-map)
+          (define-key map (kbd "RET") #'p4-changes-list-describe-at-point)
+          (define-key map (kbd "d")   #'p4-changes-list-patch-at-point)
+          (define-key map (kbd "q")   #'quit-window)
+          (use-local-map map))
+        (insert (format "%d %s change(s) for %s on %s (max %d)\n\n"
+                        (length lines) status user stream max-changes))
+        (if (null lines)
+            (insert "(no results)\n")
+          (dolist (line lines)
+            (when (string-match
+                   "^Change \\([0-9]+\\) on \\([^ ]+\\) by \\([^@]+\\)@[^ ]+ '\\(.*\\)'$"
+                   line)
+              (let* ((cl   (match-string 1 line))
+                     (date (match-string 2 line))
+                     (usr  (match-string 3 line))
+                     (desc (match-string 4 line))
+                     (lnum (line-number-at-pos)))
+                (puthash lnum cl lm)
+                (insert-text-button
+                 cl
+                 'face 'compilation-info
+                 'follow-link t
+                 'mouse-face 'highlight
+                 'help-echo "RET/mouse-1: p4 describe  |  d: patch"
+                 'action (lambda (_b) (p4-changes-list-describe-at-point)))
+                (insert (format "  %s  %-14s  %s\n" date usr desc))))))
+        (goto-char (point-min))
+        (set-buffer-modified-p nil)))
+    (switch-to-buffer-other-window buf)
+    (message "Done.")))
+
 (defp4cmd p4-show-opened-for-changelist (&rest args)
   "opened"
   "List open files and display file status for a specific changelist."
