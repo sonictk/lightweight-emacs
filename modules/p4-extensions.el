@@ -97,6 +97,50 @@
   (p4-call-command "reshelve" args :mode 'p4-basic-list-mode
                    :callback (p4-refresh-callback)))
 
+(defun p4--changelist-description (cl)
+  "Return the Description field of changelist CL (trimmed)."
+  (with-temp-buffer
+    (let ((exit (call-process (p4-executable) nil t nil
+                              "-ztag" "-F" "%Description%"
+                              "describe" "-s" cl)))
+      (unless (zerop exit)
+        (error "p4 describe failed for CL %s: %s" cl (buffer-string))))
+    (string-trim (buffer-string))))
+
+(defun p4-backup-shelf (source-cl)
+  "Make a backup copy of an existing shelved changelist SOURCE-CL.
+Creates a new pending changelist with the same description prefixed by
+\"[BACKUP] \", then copies SOURCE-CL's shelved files into it via
+`p4 reshelve'.  Prompts with completion over your shelved CLs."
+  (interactive
+   (list (p4-completing-read 'shelved "Backup shelf (source CL): ")))
+  (let* ((desc     (p4--changelist-description source-cl))
+         (new-desc (concat "[BACKUP] " (if (string-empty-p desc) "(no description)" desc)))
+         (form     (with-temp-buffer
+                     (let ((exit (call-process (p4-executable) nil t nil
+                                               "--field" (concat "Description=" new-desc)
+                                               "--field" "Files="
+                                               "change" "-o")))
+                       (unless (zerop exit)
+                         (error "p4 change -o failed: %s" (buffer-string))))
+                     (buffer-string)))
+         (result   (with-temp-buffer
+                     (let ((exit (call-process-region
+                                  form nil
+                                  (p4-executable) nil t nil
+                                  "change" "-i")))
+                       (unless (zerop exit)
+                         (error "p4 change -i failed: %s" (buffer-string))))
+                     (buffer-string))))
+    (if (string-match "Change \\([0-9]+\\) created" result)
+        (let ((new-cl (match-string 1 result)))
+          (message "Created backup CL %s; copying shelved files from %s..." new-cl source-cl)
+          (p4-call-command "reshelve"
+                           (list "-p" "-s" source-cl "-c" new-cl)
+                           :mode 'p4-basic-list-mode
+                           :callback (p4-refresh-callback)))
+      (error "Could not parse new CL number from p4 output: %s" result))))
+
 (defp4cmd p4-opened-files-in-changelist (&rest args)
   "opened-list"
   "Just lists the files in a given changelist, without any other information."
@@ -165,14 +209,51 @@
                    "p4" "-x" "-" "reopen" "-c" (p4-completing-read 'pending "Move files to: "))))
     (p4-call-shell-command args))
 
-; TODO This should check if you're about to blow away a shelf with empty local changes first.
+(defun p4--changelist-opened-files (cl)
+  "Return the depot paths currently open in pending changelist CL.
+Returns NIL when nothing is open in CL (`p4 opened' fails in that case)."
+  (p4-output-matches (list "-ztag" "-F" "%depotFile%" "opened" "-c" cl)
+                     "^//.+$"))
+
+(defun p4--changelist-shelved-files (cl)
+  "Return the depot paths shelved in changelist CL.
+Returns NIL when CL has no shelf (`p4 files @=CL' fails in that case)."
+  (p4-output-matches (list "-ztag" "-F" "%depotFile%" "files" (concat "@=" cl))
+                     "^//.+$"))
+
+(defun p4--changelist-arg (args)
+  "Return the changelist number given as \"-c CL\" in ARGS, or NIL."
+  (let ((tail (member "-c" args)))
+    (when (and tail (cadr tail) (string-match-p "\\`[0-9]+\\'" (cadr tail)))
+      (cadr tail))))
+
+(defun p4--confirm-destructive-shelve (args)
+  "Confirm a `p4 shelve' invocation described by ARGS that would empty a shelf.
+`p4 shelve -r' replaces the shelf with whatever is open in the changelist, so
+running it on a changelist with no open files wipes out an existing shelf with
+no warning from the server.  Signal a `user-error' if the user declines."
+  (let ((cl (p4--changelist-arg args)))
+    (when (and cl (or (member "-r" args) (member "-f" args)))
+      (let ((shelved (p4--changelist-shelved-files cl)))
+        (when (and shelved (null (p4--changelist-opened-files cl)))
+          ;; Logged so the full list survives in *Messages* after the prompt.
+          (message "Shelf for CL %s currently holds:\n%s"
+                   cl (mapconcat #'identity shelved "\n"))
+          (unless (yes-or-no-p
+                   (format "CL %s has no open files but %d shelved file(s); shelving now DELETES that shelf (see *Messages*).  Proceed? "
+                           cl (length shelved)))
+            (user-error "Aborted: shelf for CL %s left untouched" cl)))))))
+
 (defp4cmd p4-shelve-force (&rest args)
   "shelve"
-  "Store files (or a stream spec) from a pending changelist in the depot, without submitting them."
+  "Store files (or a stream spec) from a pending changelist in the depot, without submitting them.
+Asks for confirmation first when the changelist has an existing shelf but no
+open files, since the `-r' replace would silently delete that shelf."
   (interactive
    (if current-prefix-arg
        (p4-read-args "p4 shelve" "" 'pending)
      (append (list "-p" "-r" "-c" (p4-completing-read 'pending "Changelist: ")))))
+  (p4--confirm-destructive-shelve args)
   (p4-call-command "shelve" args :mode 'p4-basic-list-mode))
 
 (defp4cmd p4-shelve-discard-files (&rest args)
@@ -263,19 +344,39 @@
    (string-trim (shell-command-to-string "p4 -ztag -F \"%Stream%\" streams -m 1000"))
    "\n" t "[ \t]+"))
 
+(defvar p4--max-changes-history nil
+  "Minibuffer history of maximum change counts.")
+
+(defun p4--read-max-changes (&optional default)
+  "Read a positive maximum change count, pre-filled with DEFAULT (200 if omitted).
+A numeric prefix argument is used directly without prompting."
+  (let ((default (or default 200))
+        (n nil))
+    (if current-prefix-arg
+        (prefix-numeric-value current-prefix-arg)
+      (while (progn
+               (setq n (string-to-number
+                        (string-trim
+                         (read-from-minibuffer
+                          "Max changes: " (number-to-string default)
+                          nil nil 'p4--max-changes-history))))
+               (< n 1))
+        (message "Enter a positive number of changes")
+        (sit-for 1))
+      n)))
+
 (defun p4-show-recent-changes-for-user (user stream status max-changes)
   "Show recent Perforce changes by USER on STREAM filtered by STATUS.
-MAX-CHANGES limits results (default 200, or the numeric prefix argument).
+MAX-CHANGES limits results; the prompt is pre-filled with 200, and a numeric
+prefix argument overrides the prompt entirely.
 Changes are shown regardless of which client workspace they were submitted from."
   (interactive
-   (let* ((max    (if current-prefix-arg
-                      (prefix-numeric-value current-prefix-arg)
-                    200))
-          (user   (p4-completing-read 'user "User: "))
+   (let* ((user   (p4-completing-read 'user "User: "))
           (stream (completing-read "Stream: " (p4--fetch-stream-list) nil nil))
           (status (completing-read "Status: "
                                    '("submitted" "pending" "shelved")
-                                   nil t nil nil "submitted")))
+                                   nil t nil nil "submitted"))
+          (max    (p4--read-max-changes)))
      (list user stream status max)))
   (p4-file-change-log "changes"
                       (list "-L" "-t"
@@ -376,6 +477,194 @@ In the results buffer:
     (switch-to-buffer-other-window buf)
     (message "Done.")))
 
+;;; ---------------------------------------------------------------------------
+;;; p4-blame-range / p4-blame-range-diff
+;;;
+;;; Show every submitted change on a stream within a CL range, equivalent to:
+;;;   p4 -Ztag -F %change% changes -m 1000000 -s submitted STREAM/...@A,@B \
+;;;     | p4 -x - describe -du -s     (p4-blame-range)
+;;;   p4 -Ztag -F %change% changes -m 1000000 -s submitted STREAM/...@A,@B \
+;;;     | p4 -x - describe -du -S     (p4-blame-range-diff, includes diffs)
+;;;
+;;; The full piped output is parsed into per-CL `describe' blocks.  Each line
+;;; in the list buffer shows the CL and a 250-char description; the rest of
+;;; the block is inserted as invisible text on the following lines, so isearch
+;;; transparently matches descriptions, file paths, diff hunks, etc., just as
+;;; if you were searching the raw command output.
+
+(defvar-local p4-blame-range--blocks nil
+  "Alist of (CL . BLOCK-STRING) for the current blame-range buffer.")
+(defvar-local p4-blame-range--include-diffs nil
+  "Whether describe blocks in this buffer include diff hunks.")
+
+(defun p4--blame-range-clean-cl (cl)
+  "Strip leading @ and surrounding whitespace from CL."
+  (let ((s (string-trim cl)))
+    (if (string-prefix-p "@" s) (substring s 1) s)))
+
+(defun p4--blame-range-run (stream start-cl end-cl describe-flags)
+  "Run the piped blame-range command and return the full output as a string.
+DESCRIBE-FLAGS is the trailing string of flags passed to `p4 describe',
+e.g. \"-du -s\" or \"-du -S\"."
+  (shell-command-to-string
+   (format "p4 -Ztag -F %%change%% changes -m 1000000 -s submitted %s/...@%s,@%s | p4 -x - describe %s"
+           (shell-quote-argument stream)
+           (shell-quote-argument start-cl)
+           (shell-quote-argument end-cl)
+           describe-flags)))
+
+(defun p4--blame-range-parse-blocks (output)
+  "Parse OUTPUT into an alist of (CL . BLOCK-TEXT) in source order."
+  (let (blocks)
+    (with-temp-buffer
+      (insert output)
+      (goto-char (point-min))
+      (while (re-search-forward "^Change \\([0-9]+\\) " nil t)
+        (let* ((cl    (match-string 1))
+               (start (line-beginning-position))
+               (end   (save-excursion
+                        (forward-line 1)
+                        (if (re-search-forward "^Change [0-9]+ " nil t)
+                            (line-beginning-position)
+                          (point-max)))))
+          (push (cons cl (buffer-substring-no-properties start end)) blocks)
+          (goto-char end))))
+    (nreverse blocks)))
+
+(defun p4--blame-range-extract-desc (block)
+  "Extract the description portion of a describe BLOCK joined onto one line."
+  (with-temp-buffer
+    (insert block)
+    (goto-char (point-min))
+    (forward-line 1)                                       ; past "Change ..." header
+    (while (and (not (eobp)) (looking-at "^[ \t]*$"))      ; skip blank lines
+      (forward-line 1))
+    (let (lines)
+      (while (and (not (eobp))
+                  (looking-at "^[ \t]+"))                  ; indented description lines
+        (push (string-trim
+               (buffer-substring-no-properties
+                (line-beginning-position) (line-end-position)))
+              lines)
+        (forward-line 1))
+      (mapconcat #'identity (nreverse lines) " "))))
+
+(defun p4-blame-range-show-at-point ()
+  "Show the full `p4 describe' block for the CL at point in a new buffer."
+  (interactive)
+  (let* ((cl    (get-text-property (point) 'p4-blame-cl))
+         (block (and cl (cdr (assoc cl p4-blame-range--blocks)))))
+    (cond
+     ((not cl)    (message "No changelist at point"))
+     ((not block) (message "No describe data for CL %s" cl))
+     (t
+      (let ((buf (get-buffer-create (format "*P4 Describe: %s*" cl))))
+        (with-current-buffer buf
+          (let ((inhibit-read-only t))
+            (erase-buffer)
+            (insert block)
+            (goto-char (point-min))
+            (diff-mode)
+            (read-only-mode 1)
+            (local-set-key (kbd "q") #'quit-window)))
+        (switch-to-buffer-other-window buf))))))
+
+(defun p4--blame-range-display (stream start end output include-diffs)
+  "Render the parsed list buffer for the blame-range command."
+  (let* ((blocks (p4--blame-range-parse-blocks output))
+         (buf    (get-buffer-create
+                  (format "*P4 Blame Range%s: %s @%s,@%s*"
+                          (if include-diffs " (diff)" "")
+                          stream start end))))
+    (with-current-buffer buf
+      (let ((inhibit-read-only t))
+        (erase-buffer)
+        (special-mode)
+        (setq-local p4-blame-range--blocks blocks)
+        (setq-local p4-blame-range--include-diffs include-diffs)
+        (setq-local buffer-invisibility-spec '(p4-blame-block))
+        (setq-local search-invisible 'open)
+        (setq-local line-move-ignore-invisible t)
+        (let ((map (make-sparse-keymap)))
+          (set-keymap-parent map special-mode-map)
+          (define-key map (kbd "RET") #'p4-blame-range-show-at-point)
+          (define-key map (kbd "q")   #'quit-window)
+          (use-local-map map))
+        (insert (format "Stream: %s   Range: @%s,@%s   %d change(s)%s\n"
+                        stream start end (length blocks)
+                        (if include-diffs "   [diffs included]" "")))
+        (insert "RET on a CL → describe.  isearch sees the full underlying output.\n\n")
+        (if (null blocks)
+            (insert "(no results)\n")
+          (dolist (b blocks)
+            (let* ((cl     (car b))
+                   (block  (cdr b))
+                   (dfull  (p4--blame-range-extract-desc block))
+                   (desc   (if (> (length dfull) 250)
+                               (concat (substring dfull 0 247) "...")
+                             dfull))
+                   (line-s (point)))
+              (insert-text-button
+               cl
+               'face 'compilation-info
+               'follow-link t
+               'mouse-face 'highlight
+               'help-echo "RET/mouse-1: show describe output"
+               'action (lambda (_b) (p4-blame-range-show-at-point)))
+              (insert (format "  %s\n" desc))
+              (put-text-property line-s (point) 'p4-blame-cl cl)
+              (let ((inv-s (point)))
+                (insert block)
+                (unless (eq (char-before) ?\n) (insert "\n"))
+                (put-text-property inv-s (point) 'invisible 'p4-blame-block)
+                (put-text-property inv-s (point) 'p4-blame-cl cl)))))
+        (goto-char (point-min))
+        (set-buffer-modified-p nil)))
+    (switch-to-buffer-other-window buf)))
+
+(defun p4--blame-range-prompt (include-diffs)
+  "Prompt for stream + CL range, run the pipe, and display the result buffer."
+  (let* ((stream (completing-read "Stream: " (p4--fetch-stream-list) nil nil))
+         (start  (p4--blame-range-clean-cl (read-string "Start CL: ")))
+         (end    (p4--blame-range-clean-cl (read-string "End CL: ")))
+         (flags  (if include-diffs "-du -S" "-du -s")))
+    (message "Running p4 blame-range for %s @%s,@%s..." stream start end)
+    (let ((output (p4--blame-range-run stream start end flags)))
+      (if (string-empty-p (string-trim output))
+          (message "No output (no submitted changes in range?)")
+        (p4--blame-range-display stream start end output include-diffs)
+        (message "Done.")))))
+
+(defun p4-blame-range ()
+  "Show submitted changes on a stream within a CL range.
+
+Prompts for STREAM (with completion), START CL, and END CL, then runs:
+  p4 -Ztag -F %change% changes -m 1000000 -s submitted STREAM/...@START,@END
+    | p4 -x - describe -du -s
+
+Displays one line per change with CL on the left and the description
+truncated to 250 chars on the right.  RET opens the full `p4 describe'
+block (description + affected files) for the change at point in a new
+buffer.
+
+The full piped output is retained as invisible text in the buffer, so
+isearch transparently matches against any portion of it (descriptions,
+file paths, etc.) — same as searching the raw command output."
+  (interactive)
+  (p4--blame-range-prompt nil))
+
+(defun p4-blame-range-diff ()
+  "Like `p4-blame-range', but include unified diffs.
+
+Prompts for STREAM, START CL, END CL, then runs:
+  p4 -Ztag -F %change% changes -m 1000000 -s submitted STREAM/...@START,@END
+    | p4 -x - describe -du -S
+
+RET opens the full describe block (which now includes the unified diff
+for the change) in a new buffer using `diff-mode' for highlighting."
+  (interactive)
+  (p4--blame-range-prompt t))
+
 (defp4cmd p4-show-opened-for-changelist (&rest args)
   "opened"
   "List open files and display file status for a specific changelist."
@@ -389,43 +678,93 @@ In the results buffer:
                                        'pending "Edit change"))
      :pop-up-output (lambda () t)))
 
-(defp4cmd p4-show-files-for-pending-changelist (&rest args)
+(defun p4--opened-changelists ()
+  "Return a sorted list of distinct changelist numbers with files currently opened.
+The string \"default\" represents the default changelist."
+  (let (cls)
+    (with-temp-buffer
+      (let ((exit (call-process (p4-executable) nil t nil
+                                "-ztag" "-F" "%change%" "opened")))
+        (unless (zerop exit)
+          (error "p4 opened failed: %s" (buffer-string))))
+      (goto-char (point-min))
+      (while (not (eobp))
+        (let ((line (string-trim (buffer-substring-no-properties
+                                  (line-beginning-position)
+                                  (line-end-position)))))
+          (when (and (not (string-empty-p line))
+                     (not (member line cls)))
+            (push line cls)))
+        (forward-line 1)))
+    (sort cls
+          (lambda (a b)
+            (cond
+             ((string= a "default") nil)
+             ((string= b "default") t)
+             (t (> (string-to-number a) (string-to-number b))))))))
+
+(defun p4--populate-opened-changelist-annotations (cls)
+  "Populate the global `p4-completion-annotations' for CLs in CLS.
+Uses the same `p4 changes -l' format and regex that `p4-fetch-change-completions'
+uses, so multi-line descriptions are handled correctly."
+  (let ((ht     (make-hash-table :test 'equal))
+        (client (p4-current-client)))
+    (with-temp-buffer
+      (let ((exit (apply #'call-process (p4-executable) nil t nil
+                         (append (list "changes" "-m" "200" "-s" "pending" "-l")
+                                 (when client (list "-c" client))))))
+        (when (zerop exit)
+          (goto-char (point-min))
+          (while (re-search-forward "^Change \\([0-9]+\\) .*\n+\\(.*\\)\n" nil t)
+            (let* ((cl (match-string 1))
+                   (d  (string-trim (match-string 2))))
+              (when (member cl cls)
+                (puthash cl d ht)))))))
+    (when (member "default" cls)
+      (puthash "default" "(default changelist)" ht))
+    (setq p4-completion-annotations ht)))
+
+(defun p4-show-opened-changelists ()
+  "Prompt with completion over the changelists you currently have files opened in.
+After selection, invoke `p4-show-opened-for-changelist' to list that CL's files.
+Uses the same annotation mechanism as `p4-completing-read', so descriptions
+appear alongside each candidate."
+  (interactive)
+  (let ((cls (p4--opened-changelists)))
+    (cond
+     ((null cls)
+      (message "No files currently opened."))
+     (t
+      (p4--populate-opened-changelist-annotations cls)
+      (let* ((table
+              (lambda (string pred action)
+                (if (eq action 'metadata)
+                    '(metadata
+                      (category . p4-change)
+                      (annotation-function . p4-completion-annotate))
+                  (complete-with-action action cls string pred))))
+             (completion-extra-properties
+              '(:annotation-function p4-completion-annotate))
+             (cl (completing-read "Opened changelist: " table nil t)))
+        (when (and cl (not (string-empty-p cl)))
+          (p4-show-opened-for-changelist "-c" cl)))))))
+
+(defp4cmd p4-show-files-for-changelist (&rest args)
   "files"
-  "List files and display their status for a specific changelist."
+  "List files and display their status for a specific changelist.
+Prompts for the changelist type (pending, shelved or submitted) and then
+for the changelist itself, with completion scoped to the chosen type."
   (interactive
     (if current-prefix-arg
        (p4-read-args "p4 files" "" 'pending)
-       (append (list (concat "@=" (p4-completing-read 'pending "Changelist: "))))))
+       (let ((type (intern (completing-read "Changelist type: "
+                                            '("pending" "shelved" "submitted")
+                                            nil t))))
+         (append (list (concat "@=" (p4-completing-read type "Changelist: ")))))))
    (p4-call-command "files" args :mode 'p4-opened-list-mode
      :callback (lambda ()
                  (p4-regexp-create-links "\\<change \\([1-9][0-9]*\\) ([a-z]+)"
                                        'pending "Edit change"))
-     :pop-up-output (lambda () t)))
-
-(defp4cmd p4-show-files-for-shelved-changelist (&rest args)
-  "files"
-  "List shelved files and display their status for a specific changelist."
-  (interactive
-    (if current-prefix-arg
-       (p4-read-args "p4 files" "" 'shelved)
-       (append (list (concat "@=" (p4-completing-read 'shelved "Changelist: "))))))
-   (p4-call-command "files" args :mode 'p4-opened-list-mode
-     :callback (lambda ()
-                 (p4-regexp-create-links "\\<change \\([1-9][0-9]*\\) ([a-z]+)"
-                                       'shelved "Edit change"))
-     :pop-up-output (lambda () t)))
-
-(defp4cmd p4-show-files-for-submitted-changelist (&rest args)
-  "files"
-  "List submitted files and display their status for a specific changelist."
-  (interactive
-    (if current-prefix-arg
-       (p4-read-args "p4 files" "" 'submitted)
-       (append (list (concat "@=" (p4-completing-read 'submitted "Changelist: "))))))
-   (p4-call-command "files" args :mode 'p4-opened-list-mode
-     :callback (lambda ()
-                 (p4-regexp-create-links "\\<change \\([1-9][0-9]*\\) ([a-z]+)"
-                                       'submitted "Edit change"))
      :pop-up-output (lambda () t)))
 
 (defp4cmd p4-unshelve-using-branch-spec (&rest args)
@@ -604,7 +943,7 @@ In the results buffer:
 ; p4 describe -du -S <CL number here> | sed -Ee "s|==== //(.*)#[0-9]+(.*)|+++ \1\n--- \1|" | awk "/^+++ /{f=1}f"
 
 ; TODO Make megapatch generation command
-; p4 -Ztag -F %change% changes -m 10000 -s submitted //Fortnite/Release-35.00/...@41406195,41440259 | p4 -x - describe -du -S
+; p4 -Ztag -F %change% changes -m 10000 -s submitted //Depot/Release-X.XX/...@41406195,41440259 | p4 -x - describe -du -S
 
 (defun p4-get-changes-for-range (stream begin end diff-type)
   "Generate a Perforce \"megapatch\" of the changes between a changelist range."
@@ -874,16 +1213,16 @@ SRC-COL (optional) draws a horizontal arrow from SRC-COL to NODE-COL."
 ;; change -o 42024482
 ;; fstat -Op -Rs -e 42024482 //...
 ;; describe -s 42024482
-;; fstat -Olhp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp
-;; fstat -Olhp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp
-;; fstat -OL -L //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6
-;; fstat -Olp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6
-;; fstat -OL -L //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6
-;; fstat -Olp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp@=42024482
-;; diff2 //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6 //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp@=42024482
-;; print -o C:\Users\YILIAN~1\AppData\Local\Temp\p4v\CDW-AQRHE1HHT39_perforce-useredge-sanjose.epicgames.net_1666\Fortnite\Main\Engine\Source\Runtime\VerseCompiler\Private\uLang\SemanticAnalyzer\Desugarer#6.cpp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6
-;; print -o C:\Users\YILIAN~1\AppData\Local\Temp\p4v\CDW-AQRHE1HHT39_perforce-useredge-sanjose.epicgames.net_1666\Fortnite\Main\Engine\Source\Runtime\VerseCompiler\Private\uLang\SemanticAnalyzer\Desugarer@=42024482.cpp //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp@=42024482
-;; 150018eb] //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6 - edit change 41956326 (text)
-;; 150018eb] //Fortnite/Main/Engine/Source/Runtime/VerseCompiler/Private/uLang/SemanticAnalyzer/Desugarer.cpp#6 - edit change 42024482 (text)
+;; fstat -Olhp //Depot/Main/Path/To/SomeFile.cpp
+;; fstat -Olhp //Depot/Main/Path/To/SomeFile.cpp
+;; fstat -OL -L //Depot/Main/Path/To/SomeFile.cpp#6
+;; fstat -Olp //Depot/Main/Path/To/SomeFile.cpp#6
+;; fstat -OL -L //Depot/Main/Path/To/SomeFile.cpp#6
+;; fstat -Olp //Depot/Main/Path/To/SomeFile.cpp@=42024482
+;; diff2 //Depot/Main/Path/To/SomeFile.cpp#6 //Depot/Main/Path/To/SomeFile.cpp@=42024482
+;; print -o %TEMP%\p4v\<workspace>_<p4port-host>_<port>\Depot\Main\Path\To\SomeFile#6.cpp //Depot/Main/Path/To/SomeFile.cpp#6
+;; print -o %TEMP%\p4v\<workspace>_<p4port-host>_<port>\Depot\Main\Path\To\SomeFile@=42024482.cpp //Depot/Main/Path/To/SomeFile.cpp@=42024482
+;; 150018eb] //Depot/Main/Path/To/SomeFile.cpp#6 - edit change 41956326 (text)
+;; 150018eb] //Depot/Main/Path/To/SomeFile.cpp#6 - edit change 42024482 (text)
 
 (provide 'p4-extensions)

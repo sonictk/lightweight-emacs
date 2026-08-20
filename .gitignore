@@ -19,6 +19,9 @@ irony-cfg/
 emacs.desktop
 lock
 
+# Internal / site-specific notes (endpoints, env var inventory)
+README_Epic.md
+
 # Caches
 projectile.cache
 projectile-bookmarks.eld

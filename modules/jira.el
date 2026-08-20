@@ -9,6 +9,8 @@
 ;;                     Generate one at:
 ;;                     https://id.atlassian.com/manage-profile/security/api-tokens
 
+(require 'cl-lib)
+(require 'crm)
 (require 'json)
 (require 'url)
 (require 'tabulated-list)
@@ -424,8 +426,8 @@ Call with a prefix argument (C-u) to refresh the cache."
         (concat (string-trim-right (getenv "JIRAURL") "/") "/browse/" key))))
 
 (defun search-for-jira-issue ()
-  "Search your filed JIRA issues by title, with regex support.
-Candidates show \"KEY  summary\"; type any substring or regex to filter across
+  "Search your filed JIRA issues by title.
+Candidates show \"KEY  summary\"; type any substring to filter across
 both fields.  Selecting an entry opens it in the browser.
 
 Uses the same background cache as `navigate-to-jira-issue'; call with a
@@ -448,7 +450,7 @@ prefix argument (C-u) to force a cache refresh."
            (prompt (if jira--nav-fetch-active
                        "Search JIRA titles (loading…): "
                      "Search JIRA titles: "))
-           (completion-styles '(substring regexp basic))
+           (completion-styles '(substring basic))
            (choice (completing-read prompt table nil nil)))
       (when (and choice (not (string-empty-p choice)))
         (browse-url (jira--search-url choice))))))
@@ -460,6 +462,7 @@ prefix argument (C-u) to force a cache refresh."
 (defvar-local jira--form-issuetype nil)
 (defvar-local jira--form-priority nil)
 (defvar-local jira--form-assignee-id nil)
+(defvar-local jira--form-reporter-id nil)
 (defvar-local jira--form-components nil)
 (defvar-local jira--form-labels nil)
 
@@ -474,7 +477,11 @@ prefix argument (C-u) to force a cache refresh."
 \\{jira-new-issue-mode-map}"
   (setq-local font-lock-defaults
               '((("^#.*"        0 font-lock-comment-face)
-                 ("^[A-Za-z]+:" 0 font-lock-keyword-face)))))
+                 ("^[A-Za-z]+:" 0 font-lock-keyword-face))))
+  (require 'whitespace)
+  (setq-local whitespace-style
+              '(face tabs spaces trailing tab-mark space-mark))
+  (whitespace-mode 1))
 
 (defun jira--fetch-json-sync (url)
   "Fetch URL with JIRA auth and return parsed JSON, or nil on error."
@@ -515,17 +522,68 @@ prefix argument (C-u) to force a cache refresh."
          (data (jira--fetch-json-sync url)))
     (mapcar (lambda (c) (cdr (assoc 'name c))) data)))
 
-(defun jira--fetch-assignable-users-sync (base project-key)
-  "Return an alist of (DISPLAY-STRING . ACCOUNT-ID) for users assignable to PROJECT-KEY."
-  (let* ((url  (concat base "/rest/api/3/user/assignable/search?project="
-                       (url-hexify-string project-key) "&maxResults=200"))
+(defun jira--fetch-assignable-users-by-query (base project-key query)
+  "Return alist of (DISPLAY-STRING . ACCOUNT-ID) for assignable users matching QUERY in PROJECT-KEY.
+QUERY is sent as the `query' parameter to JIRA's user/assignable/search endpoint;
+without it JIRA Cloud often returns an incomplete subset."
+  (let* ((url  (concat base "/rest/api/3/user/assignable/search"
+                       "?project=" (url-hexify-string project-key)
+                       "&query="   (url-hexify-string (or query ""))
+                       "&maxResults=50"))
          (data (jira--fetch-json-sync url)))
     (mapcar (lambda (u)
-              (cons (format "%s (%s)"
-                            (or (cdr (assoc 'displayName u)) "")
-                            (or (cdr (assoc 'emailAddress u)) ""))
-                    (cdr (assoc 'accountId u))))
+              (let* ((name  (or (cdr (assoc 'displayName  u)) ""))
+                     (email (or (cdr (assoc 'emailAddress u)) ""))
+                     (aid   (cdr (assoc 'accountId u)))
+                     (label (if (string-empty-p email)
+                                (format "%s · %s" name (or aid ""))
+                              (format "%s (%s)" name email))))
+                (cons label aid)))
             (or data nil))))
+
+(defun jira--read-jira-user (prompt base project-key &optional initial-input)
+  "Prompt for a JIRA user with live completion against the assignable-users endpoint.
+PROMPT is the minibuffer prompt; INITIAL-INPUT pre-fills the search query.
+`(unassigned)' is always offered as a candidate and returned with a nil account id.
+Returns (DISPLAY-STRING . ACCOUNT-ID)."
+  (let* ((query-cache (make-hash-table :test 'equal))
+         (label->id   (make-hash-table :test 'equal))
+         (table
+          (lambda (string pred action)
+            (let* ((q (string-trim string))
+                   (entries
+                    (cond
+                     ((< (length q) 2) nil)
+                     (t (or (gethash q query-cache)
+                            (let ((fresh (jira--fetch-assignable-users-by-query
+                                          base project-key q)))
+                              (puthash q fresh query-cache)
+                              (dolist (e fresh)
+                                (puthash (car e) (cdr e) label->id))
+                              fresh)))))
+                   (candidates (cons "(unassigned)" (mapcar #'car entries))))
+              (cond
+               ((eq action 'metadata)
+                '(metadata (category . jira-user)))
+               ((eq (car-safe action) 'boundaries) nil)
+               (t (complete-with-action action candidates string pred))))))
+         (chosen (completing-read prompt table nil t initial-input nil "(unassigned)")))
+    (if (equal chosen "(unassigned)")
+        (cons chosen nil)
+      (cons chosen (gethash chosen label->id)))))
+
+(defun jira--read-assignee (base project-key)
+  "Prompt for an assignee with live completion against JIRA.
+Returns (DISPLAY-STRING . ACCOUNT-ID); ACCOUNT-ID is nil for unassigned."
+  (jira--read-jira-user "Assignee (type ≥2 chars to search): " base project-key))
+
+(defun jira--read-reporter (base project-key)
+  "Prompt for a reporter with live completion against JIRA.
+Pre-fills the search box with $P4USER so the matching JIRA user can be picked
+quickly.  Returns (DISPLAY-STRING . ACCOUNT-ID); ACCOUNT-ID is nil for the
+default (the API caller)."
+  (jira--read-jira-user "Reporter (type ≥2 chars to search): " base project-key
+                        (or (getenv "P4USER") "")))
 
 (defun jira--fetch-labels-sync (base)
   "Return a list of label strings from the JIRA instance at BASE (first 1000)."
@@ -534,7 +592,7 @@ prefix argument (C-u) to force a cache refresh."
     (cdr (assoc 'values data))))
 
 (defun jira--new-issue-template (proj-key proj-name issuetype priority
-                                assignee-display components labels)
+                                assignee-display reporter-display components labels)
   "Return the initial content string for a new-issue form buffer."
   (concat
    (format "# New JIRA issue — %s (%s)\n" proj-name proj-key)
@@ -545,6 +603,8 @@ prefix argument (C-u) to force a cache refresh."
    (format "# Priority:   %s\n" priority)
    (format "# Assignee:   %s\n"
            (if (string-empty-p (or assignee-display "")) "(unassigned)" assignee-display))
+   (format "# Reporter:   %s\n"
+           (if (string-empty-p (or reporter-display "")) "(default)" reporter-display))
    (format "# Components: %s\n" (if components (string-join components ", ") "(none)"))
    (format "# Labels:     %s\n" (if labels (string-join labels ", ") "(none)"))
    "#\n"
@@ -606,6 +666,8 @@ prefix argument (C-u) to force a cache refresh."
       (push `(priority . ((name . ,jira--form-priority))) fields))
     (when jira--form-assignee-id
       (push `(assignee . ((accountId . ,jira--form-assignee-id))) fields))
+    (when jira--form-reporter-id
+      (push `(reporter . ((accountId . ,jira--form-reporter-id))) fields))
     (when jira--form-components
       (push `(components . ,(vconcat (mapcar (lambda (c) `((name . ,c)))
                                              jira--form-components)))
@@ -706,7 +768,6 @@ Press C-c C-c to submit, or C-x k to cancel."
                                '("Task" "Bug" "Story" "Epic")))
                (priorities (or (jira--fetch-priorities-sync base)
                                '("Highest" "High" "Medium" "Low" "Lowest")))
-               (assignable (jira--fetch-assignable-users-sync base proj-key))
                (components (jira--fetch-components-sync base proj-key))
                (labels     (jira--fetch-labels-sync base)))
           ;; --- Pre-prompts with autocomplete ---
@@ -714,12 +775,12 @@ Press C-c C-c to submit, or C-x k to cancel."
                   (completing-read "IssueType: " types nil t nil nil (car types)))
                  (priority
                   (completing-read "Priority: " priorities nil t nil nil "Medium"))
-                 (user-candidates (cons "(unassigned)" (mapcar #'car assignable)))
-                 (assignee-str
-                  (completing-read "Assignee: " user-candidates nil t nil nil "(unassigned)"))
-                 (assignee-id
-                  (unless (equal assignee-str "(unassigned)")
-                    (cdr (assoc assignee-str assignable))))
+                 (assignee-pair (jira--read-assignee base proj-key))
+                 (assignee-str  (car assignee-pair))
+                 (assignee-id   (cdr assignee-pair))
+                 (reporter-pair (jira--read-reporter base proj-key))
+                 (reporter-str  (car reporter-pair))
+                 (reporter-id   (cdr reporter-pair))
                  (chosen-comps
                   (when components
                     (cl-remove-if #'string-empty-p
@@ -740,12 +801,14 @@ Press C-c C-c to submit, or C-x k to cancel."
               (setq-local jira--form-issuetype    issuetype)
               (setq-local jira--form-priority     priority)
               (setq-local jira--form-assignee-id  assignee-id)
+              (setq-local jira--form-reporter-id  reporter-id)
               (setq-local jira--form-components   chosen-comps)
               (setq-local jira--form-labels       chosen-labels)
               (let ((inhibit-read-only t))
                 (erase-buffer)
                 (insert (jira--new-issue-template proj-key proj-name issuetype priority
-                                                 assignee-str chosen-comps chosen-labels))))
+                                                 assignee-str reporter-str
+                                                 chosen-comps chosen-labels))))
             (switch-to-buffer buf)
             (goto-char (point-min))
             (when (re-search-forward "^Summary:[ \t]*" nil t)
@@ -806,5 +869,120 @@ In the results buffer press RET, o, or click to open the issue in a browser."
              (buf-name   (format "*JIRA: Issues — %s*" (string-join chosen ", "))))
         (message "Fetching JIRA issues with status: %s..." (string-join chosen ", "))
         (jira--fetch-page base jql buf-name nil nil)))))
+
+;; --- User- and status-filtered issue list -----------------------------------
+
+(defun jira--fetch-users-by-query (base query)
+  "Return an alist of (DISPLAY . ACCOUNT-ID) for users matching QUERY at BASE.
+Uses the instance-wide user search, so no project context is needed.
+App/customer accounts are filtered out."
+  (let* ((url  (concat base "/rest/api/3/user/search"
+                       "?query=" (url-hexify-string (or query ""))
+                       "&maxResults=50"))
+         (data (jira--fetch-json-sync url)))
+    (delq nil
+          (mapcar (lambda (u)
+                    (let* ((name  (or (cdr (assoc 'displayName  u)) ""))
+                           (email (or (cdr (assoc 'emailAddress u)) ""))
+                           (aid   (cdr (assoc 'accountId u)))
+                           (atype (or (cdr (assoc 'accountType u)) "atlassian")))
+                      (when (and aid (string= atype "atlassian"))
+                        (cons (if (string-empty-p email)
+                                  (format "%s · %s" name aid)
+                                (format "%s (%s)" name email))
+                              aid))))
+                  data))))
+
+(defun jira--read-any-jira-user (prompt base)
+  "Prompt with PROMPT for any JIRA user at BASE, with live completion.
+Type at least two characters to search.  `(me)' is always offered and is
+returned with a nil account id, meaning `currentUser()'.
+Returns (DISPLAY-STRING . ACCOUNT-ID)."
+  (let* ((query-cache (make-hash-table :test 'equal))
+         (label->id   (make-hash-table :test 'equal))
+         (table
+          (lambda (string pred action)
+            (let* ((q (string-trim string))
+                   (entries
+                    (when (>= (length q) 2)
+                      (or (gethash q query-cache)
+                          (let ((fresh (jira--fetch-users-by-query base q)))
+                            (puthash q fresh query-cache)
+                            (dolist (e fresh)
+                              (puthash (car e) (cdr e) label->id))
+                            fresh))))
+                   (candidates (cons "(me)" (mapcar #'car entries))))
+              (cond
+               ((eq action 'metadata) '(metadata (category . jira-user)))
+               ((eq (car-safe action) 'boundaries) nil)
+               (t (complete-with-action action candidates string pred))))))
+         (chosen (completing-read prompt table nil nil nil nil "(me)")))
+    (if (or (null chosen) (string-empty-p chosen) (equal chosen "(me)"))
+        (cons "(me)" nil)
+      (cons chosen (gethash chosen label->id)))))
+
+(defun jira--user-status-jql (field account-id statuses)
+  "Build a JQL query matching ACCOUNT-ID in FIELD, restricted to STATUSES.
+FIELD is \"Reporter\", \"Assignee\", or \"Either\".  A nil ACCOUNT-ID means
+`currentUser()'.  A nil or empty STATUSES omits the status restriction."
+  (let* ((who (if account-id (format "\"%s\"" account-id) "currentUser()"))
+         (user-clause
+          (cond
+           ((equal field "Assignee") (format "assignee = %s" who))
+           ((equal field "Either")   (format "(reporter = %s OR assignee = %s)" who who))
+           (t                        (format "reporter = %s" who))))
+         (status-clause
+          (when statuses
+            (format "status in (%s)"
+                    (mapconcat (lambda (s) (format "\"%s\"" s)) statuses ", ")))))
+    (concat user-clause
+            (when status-clause (concat " AND " status-clause))
+            " ORDER BY created DESC")))
+
+(defun show-jira-issues-with-status ()
+  "List JIRA issues for a chosen user and status(es), newest first.
+
+Prompts, all with completion, for:
+  User     - any JIRA user (type ≥2 characters to search); RET picks you.
+  Field    - whether the user is the Reporter, the Assignee, or Either.
+  Statuses - one or more comma-separated statuses; RET means any status.
+
+Required environment variables:
+  JIRAURL         - Root URL of the JIRA instance.
+  JIRA_USER_EMAIL - Your Atlassian account email.
+  JIRA_API_TOKEN  - Atlassian API token.
+
+In the results buffer press RET, o, or click to open the issue in a browser;
+press s to change status and p to change priority."
+  (interactive)
+  (unless (getenv "JIRAURL")
+    (user-error "JIRAURL environment variable is not set"))
+  (unless (getenv "JIRA_USER_EMAIL")
+    (user-error "JIRA_USER_EMAIL environment variable is not set"))
+  (unless (getenv "JIRA_API_TOKEN")
+    (user-error "JIRA_API_TOKEN environment variable is not set"))
+  (let* ((base       (string-trim-right (getenv "JIRAURL") "/"))
+         (user-pair  (jira--read-any-jira-user "User (type ≥2 chars to search): " base))
+         (user-str   (car user-pair))
+         (account-id (cdr user-pair))
+         (field      (completing-read "Match user as: "
+                                      '("Reporter" "Assignee" "Either")
+                                      nil t nil nil "Reporter"))
+         (statuses   (or (jira--fetch-statuses-sync base)
+                         '("To Do" "In Progress" "In Review" "Done" "Closed"
+                           "Open" "Resolved" "Reopened" "Backlog")))
+         (chosen     (cl-remove-if
+                      #'string-empty-p
+                      (mapcar #'string-trim
+                              (completing-read-multiple
+                               "Status(es) (RET for any): " statuses nil nil))))
+         (short      (car (split-string user-str " (")))
+         (jql        (jira--user-status-jql field account-id chosen))
+         (buf-name   (format "*JIRA: %s %s — %s*"
+                             short
+                             (downcase field)
+                             (if chosen (string-join chosen ", ") "any status"))))
+    (message "Fetching JIRA issues: %s" jql)
+    (jira--fetch-page base jql buf-name nil nil)))
 
 (provide 'jira)

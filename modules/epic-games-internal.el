@@ -7,6 +7,36 @@
 
                                         ; TODO This is all Windows-development-specific. Might need to eventually make this work on other platforms if needed.
 
+                                        ; None of the service endpoints below are hardcoded: they are read from the
+                                        ; environment so that this file can live in a public repository. See
+                                        ; `README_Epic.md' for the list of variables and how to set them.
+
+(defun epic--env (var description)
+  "Return the value of environment variable VAR with any trailing slash removed.
+Signals an error mentioning DESCRIPTION when VAR is unset or empty."
+  (let ((val (getenv var)))
+    (if (and val (not (string-empty-p (string-trim val))))
+        (string-trim-right (string-trim val) "/")
+      (error "Environment variable `%s' is not set (expected: %s)" var description))))
+
+(defun epic--horde-url ()
+  "Return the root URL of the Horde build service."
+  (epic--env "EPIC_HORDE_URL" "root URL of the Horde web service"))
+
+(defun epic-codescout--base-url ()
+  "Return the root URL of the CodeScout code-search service."
+  (epic--env "EPIC_CODESCOUT_URL" "root URL of the CodeScout web service"))
+
+(defun epic-codescout--host ()
+  "Return just the hostname of the CodeScout service, for cookie lookups."
+  (url-host (url-generic-parse-url (epic-codescout--base-url))))
+
+(defun epic--default-stream ()
+  "Return the depot stream to fall back on, or nil when unconfigured."
+  (let ((val (getenv "EPIC_DEFAULT_STREAM")))
+    (when (and val (not (string-empty-p (string-trim val))))
+      (string-trim val))))
+
 (defun epic-p4-safe-backout-changelist ()
   "Backout/undo a previously-submitted changelist. (Epic-specific.)"
   (interactive)
@@ -84,7 +114,8 @@
   (interactive)
   (let* ((stream-name (string-trim-right (shell-command-to-string "p4 -F \"%Stream%\" -ztag client -o")))
          (cl (p4-completing-read 'shelved "Changelist: ")))
-    (browse-url (concat "https://horde.devtools.epicgames.com/preflight?stream="
+    (browse-url (concat (epic--horde-url)
+                        "/preflight?stream="
                         (url-hexify-string stream-name)
                         "&change="
                         (url-hexify-string cl)))))
@@ -170,7 +201,7 @@ Set this to the full 'connect.sid=...' string."
 
 (defvar-local epic-codescout--search-term nil)
 (defvar-local epic-codescout--search-path-filter nil)
-(defvar-local epic-codescout--search-branch "//Fortnite/Main")
+(defvar-local epic-codescout--search-branch nil)
 (defvar-local epic-codescout--p4-root-cache nil)
 (defvar-local epic-codescout--line-meta nil
   "Hash table mapping buffer line numbers to (file-path . line-num) cons cells.")
@@ -200,15 +231,18 @@ Set this to the full 'connect.sid=...' string."
       (message "CodeScout: could not determine P4 root")))))
 
 (defun epic-codescout-browse-result-at-point ()
-  "Open the current CodeScout search in the browser."
+  "Open the file and line for the result at point in CodeScout in the browser."
   (interactive)
-  (browse-url
-   (concat "https://codescout.internal.epicgames.net/?"
-           (url-build-query-string
-            `(("branch"    ,epic-codescout--search-branch)
-              ("searchStr" ,(or epic-codescout--search-term ""))
-              ("pathsStr"  ,(or epic-codescout--search-path-filter ""))
-              ("options"   "{\"matchCase\":false,\"wholeWord\":false}"))))))
+  (let ((meta (and epic-codescout--line-meta
+                   (gethash (line-number-at-pos) epic-codescout--line-meta))))
+    (if meta
+        (browse-url
+         (concat (epic-codescout--base-url) "/?"
+                 (url-build-query-string
+                  `(("branch" ,epic-codescout--search-branch)
+                    ("path"   ,(car meta))
+                    ("line"   ,(format "%s" (cdr meta)))))))
+      (message "No result at point"))))
 
 (defun epic-codescout-open-result-at-point ()
   "Open the local file for the result at point (used for RET and mouse-1)."
@@ -231,7 +265,7 @@ Set this to the full 'connect.sid=...' string."
       (special-mode)
       (setq-local epic-codescout--search-term        search-term)
       (setq-local epic-codescout--search-path-filter path-filter)
-      (setq-local epic-codescout--search-branch      (or branch "//Fortnite/Main"))
+      (setq-local epic-codescout--search-branch      (or branch (epic-codescout--default-branch)))
       (setq-local epic-codescout--line-meta (make-hash-table :test 'eql))
       (let ((map (make-sparse-keymap)))
         (set-keymap-parent map special-mode-map)
@@ -265,13 +299,13 @@ Set this to the full 'connect.sid=...' string."
                'action (lambda (_btn)
                          (epic-codescout-open-result-at-point)))
               (insert ":")
-              ;; match content → opens CodeScout in browser
+              ;; match content → opens the file at this line in CodeScout
               (insert-text-button
                highlighted-str
                'face 'link
                'follow-link t
                'mouse-face 'highlight
-               'help-echo "mouse-1: open search in browser"
+               'help-echo "mouse-1: open file and line in CodeScout"
                'action (lambda (_btn) (epic-codescout-browse-result-at-point)))
               (insert "\n")
               (incf match-count))))))
@@ -302,34 +336,49 @@ Requires sqlite3 on PATH.  Returns \"connect.sid=VALUE\" or nil."
                               (file-attribute-modification-time (file-attributes b))
                               (file-attribute-modification-time (file-attributes a))))))))
       (when db
-        (let ((tmp (make-temp-file "cs-cookies" nil ".sqlite")))
-          (condition-case nil (copy-file db tmp t) (error nil))
-          (let ((val (string-trim
-                      (shell-command-to-string
-                       (format "sqlite3 %s \"SELECT value FROM moz_cookies WHERE host='codescout.internal.epicgames.net' AND name='connect.sid' ORDER BY lastAccessed DESC LIMIT 1\""
-                               (shell-quote-argument tmp))))))
-            (ignore-errors (delete-file tmp))
-            (unless (string-empty-p val)
-              (concat "connect.sid=" val))))))))
+        ;; Firefox keeps cookies.sqlite in WAL mode, so a cookie written by a
+        ;; fresh Okta login lives in the -wal sidecar until Firefox checkpoints
+        ;; it.  Copy the db together with its -wal/-shm files into a temp dir so
+        ;; sqlite3 reads the current value instead of a stale snapshot.
+        (let* ((tmp-dir (make-temp-file "cs-cookies" t))
+               (tmp-db  (expand-file-name "cookies.sqlite" tmp-dir)))
+          (unwind-protect
+              (progn
+                (dolist (suffix '("" "-wal" "-shm"))
+                  (let ((src (concat db suffix)))
+                    (when (file-exists-p src)
+                      (ignore-errors (copy-file src (concat tmp-db suffix) t)))))
+                (when (file-exists-p tmp-db)
+                  (let ((val (string-trim
+                              (shell-command-to-string
+                               (format "sqlite3 %s \"SELECT value FROM moz_cookies WHERE host='%s' AND name='connect.sid' ORDER BY lastAccessed DESC LIMIT 1\""
+                                       (shell-quote-argument tmp-db)
+                                       (epic-codescout--host))))))
+                    (unless (string-empty-p val)
+                      (concat "connect.sid=" val)))))
+            (ignore-errors (delete-directory tmp-dir t))))))))
 
 (defun epic-codescout--manual-login (search-term path-filter branch)
-  "Open CodeScout in a browser for Okta login, then retry the search."
-  (browse-url "https://codescout.internal.epicgames.net/")
+  "Open CodeScout in a browser for Okta login, then retry the search.
+After confirmation, reads the current connect.sid cookie from Firefox and
+retries.  Falls back to manual paste only if Firefox has no cookie at all."
+  (browse-url (concat (epic-codescout--base-url) "/"))
   (when (y-or-n-p "CodeScout: log in via Okta in your browser, then press y: ")
-    (let ((auto (epic-codescout--try-read-firefox-cookie)))
-      (if auto
-          (progn
-            (customize-save-variable 'epic-codescout-cookie auto)
-            (message "CodeScout: cookie read from Firefox, retrying...")
-            (epic-codescout--do-search search-term path-filter branch t))
+    (let ((fresh (epic-codescout--try-read-firefox-cookie)))
+      (cond
+       (fresh
+        (customize-save-variable 'epic-codescout-cookie fresh)
+        (message "CodeScout: cookie read from Firefox, retrying...")
+        (epic-codescout--do-search search-term path-filter branch t))
+       (t
         (let ((val (read-string
-                    "Paste connect.sid value (Firefox DevTools -> Storage -> Cookies -> codescout): ")))
+                    "Couldn't read a cookie from Firefox.  Paste connect.sid value (Firefox DevTools -> Storage -> Cookies -> codescout): ")))
           (unless (string-empty-p val)
             (let ((cookie (if (string-prefix-p "connect.sid=" val) val
                             (concat "connect.sid=" val))))
               (customize-save-variable 'epic-codescout-cookie cookie)
               (message "CodeScout: cookie updated, retrying...")
-              (epic-codescout--do-search search-term path-filter branch t))))))))
+              (epic-codescout--do-search search-term path-filter branch t)))))))))
 
 (defun epic-codescout--reauthenticate (search-term path-filter branch)
   "Acquire a fresh CodeScout cookie and retry the search.
@@ -393,8 +442,8 @@ and t after manual login also failed."
 
 (defun epic-codescout--do-search (search-term path-filter branch reauth-attempted)
   "Fire the CodeScout HTTP request for SEARCH-TERM filtered by PATH-FILTER on BRANCH."
-  (let* ((base-url "https://codescout.internal.epicgames.net/api/find-in-files")
-         (params `(("branch"    ,(or branch "//Fortnite/Main"))
+  (let* ((base-url (concat (epic-codescout--base-url) "/api/find-in-files"))
+         (params `(("branch"    ,(or branch (epic-codescout--default-branch)))
                    ("searchStr" ,search-term)
                    ("pathsStr"  ,(or path-filter ""))
                    ("options"   "{\"matchCase\":false,\"wholeWord\":false}")))
@@ -407,10 +456,32 @@ and t after manual login also failed."
                   (lambda (status)
                     (epic-codescout-search-callback status search-term path-filter branch reauth-attempted)))))
 
+(defun epic-codescout--current-stream ()
+  "Return the stream of the current P4CLIENT, or nil if unavailable.
+Reads the `Stream' field from the current client spec via `p4 client -o'.
+Returns nil for classic (non-stream) clients or when the lookup fails."
+  (let* ((client (ignore-errors (p4-current-client)))
+         (stream (when (and client (not (string-empty-p client)))
+                   (ignore-errors
+                     (string-trim
+                      (shell-command-to-string "p4 -ztag -F \"%Stream%\" client -o"))))))
+    (when (and stream (string-prefix-p "//" stream))
+      stream)))
+
+(defun epic-codescout--default-branch ()
+  "Return the default CodeScout branch to search.
+Uses the current P4CLIENT's stream when available, otherwise falls back to
+the stream named by the `EPIC_DEFAULT_STREAM' environment variable."
+  (or (epic-codescout--current-stream)
+      (epic--default-stream)
+      (error "No stream to search: set a stream client in P4CLIENT, or set `EPIC_DEFAULT_STREAM' (expected: a depot stream path such as //Depot/Main)")))
+
 (defun epic-codescout-search (search-term &optional path-filter branch)
   "Search Epic's CodeScout for SEARCH-TERM.
 With a prefix argument (C-u), also prompt for a path/filetype filter
 \(e.g. *.cpp, Engine/Source/Runtime\) and the branch to search.
+The default branch is derived from the current P4CLIENT's stream,
+falling back to the `EPIC_DEFAULT_STREAM' environment variable.
 If the session cookie is expired, opens the Okta login page automatically."
   (interactive
    (let ((default (when (use-region-p)
@@ -419,9 +490,10 @@ If the session cookie is expired, opens the Okta login page automatically."
          (list (read-string "Search CodeScout for: " default)
                (read-string "Filter by path/filetype (e.g. *.cpp, Engine/Source): ")
                (completing-read "Branch: " (ignore-errors (p4--fetch-stream-list))
-                                nil nil "//Fortnite/Main"))
+                                nil nil (ignore-errors (epic-codescout--default-branch))))
        (list (read-string "Search CodeScout for: " default)))))
-  (epic-codescout--do-search search-term (or path-filter "") (or branch "//Fortnite/Main") nil))
+  (epic-codescout--do-search search-term (or path-filter "")
+                             (or branch (epic-codescout--default-branch)) nil))
 
 (add-hook 'ff-pre-find-hooks 'ue-ff-other-file-alist-function)
 (add-hook 'ff-post-load-hooks 'ue-ff-restore-search-directories)
@@ -439,7 +511,7 @@ If the session cookie is expired, opens the Okta login page automatically."
 ;;                  (tab-width . 4)
 ;;                  (indent-tabs-mode . t)
 ;;                  (fill-column . 120)
-;;                  (my-clangd-executable-path . "S:/source/repos/epic/ysiew_devvk/Engine/Restricted/NotForLicensees/Binaries/Win64/AutoRTFM/20/bin/verse-clangd.exe")
+;;                  (my-clangd-executable-path . "Full/Path/To/EpicClangd.exe")
 ;;                  (eval . (progn
 ;;                            ;; 1. Define a "flag" variable and make it permanent for this buffer
 ;;                            (put 'my-dir-locals-initialized 'permanent-local t)
@@ -461,7 +533,7 @@ If the session cookie is expired, opens the Okta login page automatically."
 ;;                (tab-width . 4)
 ;;                (indent-tabs-mode . t)
 ;;                (fill-column . 120)
-;;                (my-clangd-executable-path . "S:/source/repos/epic/ysiew_devvk/Engine/Restricted/NotForLicensees/Binaries/Win64/AutoRTFM/20/bin/verse-clangd.exe")
+;;                (my-clangd-executable-path . "Full/Path/To/EpicClangd.exe")
 ;;                (eval . (progn
 ;;                          ;; 1. Define a "flag" variable and make it permanent for this buffer
 ;;                          (put 'my-dir-locals-initialized 'permanent-local t)

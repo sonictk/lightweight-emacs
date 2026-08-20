@@ -538,7 +538,7 @@ GIVEN-INITIAL match the method signature of `consult-wrapper'."
 ; Using in-memory PCH storage for perf and also no need to cleanup when `clangd` crashes. Setting unlimited file rename limit as well.
 (add-to-list 'eglot-server-programs
              `((c++-mode c++-ts-mode c-mode c-ts-mode objc-mode cuda-mode)
-               . ,(lambda (&rest_)
+               . ,(lambda (&rest _)
                     (list my-clangd-executable-path
                           "--background-index"
                           "--background-index-priority=normal"
