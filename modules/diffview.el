@@ -44,6 +44,8 @@
 ;;
 ;; o `}' : Next file
 ;; o `{' : Previous file
+;; o `n' : Next change
+;; o `p' : Previous change
 ;; o `l' : Align windows
 ;; o `q' : Quit
 ;;
@@ -77,6 +79,10 @@
   "A + followed by one non + or the end of the line.")
 (defvar diffview--regexp-is-minus-line "^-\\([^-]\\{1\\}\\|$\\)"
   "A - followed by one non - or the end of the line.")
+(defvar diffview--changed-lines nil
+  "Vector whose Nth element is non-NIL when line N+1 belongs to a change.")
+(defvar diffview--changed-lines-key nil
+  "Identity of the buffers `diffview--changed-lines' was computed from.")
 
 (defun diffview--view-string (input-string)
   "Displays `INPUT-STRING' (a diff) in a side-by-side view."
@@ -136,6 +142,9 @@
 
       (setq last-state current-state))
 
+    (setq diffview--changed-lines nil
+          diffview--changed-lines-key nil)
+
     (diffview--print-all-lines-to-buffer (reverse minus-lines) diffview--minus-bufname)
     (diffview--print-all-lines-to-buffer (reverse plus-lines) diffview--plus-bufname)
 
@@ -184,6 +193,10 @@ This is useful for reading patches from mailing lists."
     (define-key km (kbd "l") 'diffview--align-windows)
     (define-key km (kbd "}") 'diffview--next-file)
     (define-key km (kbd "{") 'diffview--prev-file)
+    (define-key km (kbd "n") 'diffview--next-change)
+    (define-key km (kbd "p") 'diffview--prev-change)
+    (define-key km (kbd "M-n") 'diffview--next-change)
+    (define-key km (kbd "M-p") 'diffview--prev-change)
     (define-key km (kbd "q") 'diffview--quit)
     km)
   "Special keymap for `diffview--mode-map'.")
@@ -194,6 +207,8 @@ This is useful for reading patches from mailing lists."
     ["Align windows" diffview--align-windows]
     ["Next file" diffview--next-file]
     ["Prev file" diffview--prev-file]
+    ["Next change" diffview--next-change]
+    ["Prev change" diffview--prev-change]
     ["Quit" diffview--quit]))
 
 ;;; You probably don't want to invoke `diffview-mode' directly.  Just use
@@ -254,6 +269,106 @@ with prefix ARG."
   "Move to prev diff file start"
   (interactive)
   (diffview--next-file t))
+
+(defun diffview--changed-lines ()
+  "Return a vector marking which lines of the side-by-side view differ.
+
+Element N is non-NIL when line N+1 is part of a change on either
+side.  Both side-by-side buffers are padded to the same length, so
+one vector describes them both."
+  (let ((minusbuf (get-buffer diffview--minus-bufname))
+        (plusbuf (get-buffer diffview--plus-bufname)))
+    (unless (and minusbuf plusbuf)
+      (user-error "No side-by-side diff to navigate"))
+    (let ((key (list minusbuf plusbuf
+                     (buffer-chars-modified-tick minusbuf)
+                     (buffer-chars-modified-tick plusbuf))))
+      (unless (and diffview--changed-lines
+                   (equal key diffview--changed-lines-key))
+        (let* ((minus (with-current-buffer minusbuf
+                        (split-string (buffer-string) "\n")))
+               (plus (with-current-buffer plusbuf
+                       (split-string (buffer-string) "\n")))
+               (vec (make-vector (max (length minus) (length plus)) nil))
+               (i 0))
+          (while (or minus plus)
+            (let ((m (car minus))
+                  (p (car plus)))
+              (aset vec i (or (and m (string-match-p diffview--regexp-is-minus-line m))
+                              (and p (string-match-p diffview--regexp-is-plus-line p)))))
+            (setq minus (cdr minus)
+                  plus (cdr plus)
+                  i (1+ i)))
+          (setq diffview--changed-lines vec
+                diffview--changed-lines-key key)))
+      diffview--changed-lines)))
+
+(defun diffview--change-start-p (line changed)
+  "Return non-NIL if LINE starts a change block according to CHANGED."
+  (and (>= line 1)
+       (<= line (length changed))
+       (aref changed (1- line))
+       (or (= line 1)
+           (not (aref changed (- line 2))))))
+
+(defun diffview--search-change-start (line step changed)
+  "Return the first change block start reached from LINE moving by STEP.
+Returns NIL when there is none."
+  (let ((l (+ line step))
+        (found nil))
+    (while (and (not found) (>= l 1) (<= l (length changed)))
+      (if (diffview--change-start-p l changed)
+          (setq found l)
+        (setq l (+ l step))))
+    found))
+
+(defun diffview--goto-line-in-both-buffers (line)
+  "Move point to LINE in both side-by-side buffers, keeping them aligned.
+Point is left in the window it started in."
+  (let ((from-top (- (line-number-at-pos (point))
+                     (line-number-at-pos (window-start)))))
+    (goto-char (point-min))
+    (forward-line (1- line))
+    (when (cond
+           ((string= (buffer-name (current-buffer))
+                     diffview--minus-bufname)
+            (switch-to-buffer-other-window diffview--plus-bufname))
+           ((string= (buffer-name (current-buffer))
+                     diffview--plus-bufname)
+            (switch-to-buffer-other-window diffview--minus-bufname)))
+      (goto-char (point-min))
+      (forward-line (1- line))
+      (recenter from-top)
+      (other-window 1))
+    (recenter from-top)))
+
+(defun diffview--move-change (count)
+  "Move COUNT change blocks forward, or backward when COUNT is negative."
+  (let* ((changed (diffview--changed-lines))
+         (step (if (< count 0) -1 1))
+         (remaining (abs count))
+         (line (line-number-at-pos))
+         (target nil))
+    (while (> remaining 0)
+      (let ((candidate (diffview--search-change-start line step changed)))
+        (if candidate
+            (setq target candidate
+                  line candidate
+                  remaining (1- remaining))
+          (setq remaining 0))))
+    (if target
+        (diffview--goto-line-in-both-buffers target)
+      (message "No %s change" (if (< step 0) "previous" "next")))))
+
+(defun diffview--next-change (&optional arg)
+  "Move to the start of the next change.  With numeric ARG, move ARG changes."
+  (interactive "p")
+  (diffview--move-change (or arg 1)))
+
+(defun diffview--prev-change (&optional arg)
+  "Move to the start of the previous change.  With numeric ARG, move ARG changes."
+  (interactive "p")
+  (diffview--move-change (- (or arg 1))))
 
 (defun diffview--align-windows ()
   (interactive)

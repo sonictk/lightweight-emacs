@@ -2795,6 +2795,7 @@ only be used when p4 annotate is unavailable."
   group                ; group in regexp containing the completion (default 1).
   annotation           ; group in regexp containing the annotation.
   fetch-completions-fn ; function to fetch completions from the depot.
+  preserve-order       ; if non-NIL, present candidates in the order they were fetched.
   completion-fn        ; function to do the completion.
   arg-completion-fn)   ; function to do completion in arg list context.
 
@@ -2875,14 +2876,27 @@ to the matches for ANNOTATION."
 
 (defun p4-fetch-change-completions (completion string status)
   "Fetch change completions (with status STATUS) for STRING from
-the depot."
+the depot, most recently modified first."
   (interactive)
   (let ((client (p4-current-client)))
     (when client
-      (cons "default"
-            (p4-output-annotations `("changes" "-m" "100" "-s" ,status "-c" ,client, "-l")
-                                   "^Change \\([0-9]+\\) .*\n+\\(.*\\)\n"
-                                   1 2)))))
+      (p4-with-temp-buffer `("changes" "-m" "100" "-s" ,status "-c" ,client "-l" "-t")
+        (let (entries (ht (make-hash-table :test #'equal)))
+          (while (re-search-forward
+                  (concat "^Change \\([0-9]+\\) on "
+                          "\\([0-9]+\\)/\\([0-9]+\\)/\\([0-9]+\\) "
+                          "\\([0-9]+\\):\\([0-9]+\\):\\([0-9]+\\) "
+                          ".*\n+\\(.*\\)\n")
+                  nil t)
+            (let ((change (match-string 1))
+                  (stamp (mapconcat (lambda (group) (match-string group))
+                                    '(2 3 4 5 6 7) "")))
+              (puthash change (match-string 8) ht)
+              (push (cons stamp change) entries)))
+          (setq p4-completion-annotations ht)
+          (cons "default"
+                (mapcar #'cdr (sort (nreverse entries)
+                                    (lambda (a b) (string> (car a) (car b)))))))))))
 
 (defun p4-fetch-pending-completions (completion string)
   "Fetch pending change completions for STRING from the depot."
@@ -2982,16 +2996,20 @@ and update the cache accordingly."
 (defun p4-arg-completion-builder (completion)
   (lexical-let ((completion completion))
     (lambda (string predicate action)
-      (string-match "^\\(\\(?:.* \\)?\\)\\([^ \t\n]*\\)$" string)
-      (let* ((first (match-string 1 string))
-             (remainder (match-string 2 string))
-             (f (p4-completion-completion-fn completion))
-             (completions (unless (string-match "^-" remainder)
-                            (funcall f remainder predicate action))))
-       (if (and (null action)             ; try-completion
-                (stringp completions))
-           (concat first completions)
-         completions)))))
+      (if (eq action 'metadata)
+          (when (p4-completion-preserve-order completion)
+            '(metadata (display-sort-function . identity)
+                       (cycle-sort-function . identity)))
+        (string-match "^\\(\\(?:.* \\)?\\)\\([^ \t\n]*\\)$" string)
+        (let* ((first (match-string 1 string))
+               (remainder (match-string 2 string))
+               (f (p4-completion-completion-fn completion))
+               (completions (unless (string-match "^-" remainder)
+                              (funcall f remainder predicate action))))
+          (if (and (null action)          ; try-completion
+                   (stringp completions))
+              (concat first completions)
+            completions))))))
 
 (defun p4-make-completion (&rest args)
   (let* ((c (apply 'make-p4-completion args)))
@@ -3045,12 +3063,15 @@ and update the cache accordingly."
                     :history 'p4-label-history))
    (cons 'pending  (p4-make-completion
                     :fetch-completions-fn 'p4-fetch-pending-completions
+                    :preserve-order t
                     :history 'p4-pending-history))
    (cons 'shelved  (p4-make-completion
                     :fetch-completions-fn 'p4-fetch-shelved-completions
+                    :preserve-order t
                     :history 'p4-shelved-history))
    (cons 'submitted  (p4-make-completion
                     :fetch-completions-fn 'p4-fetch-submitted-completions
+                    :preserve-order t
                     :history 'p4-submitted-history))
    (cons 'streams  (p4-make-completion
                     :fetch-completions-fn 'p4-fetch-streams-completions
@@ -3429,8 +3450,7 @@ is NIL, otherwise return NIL."
     (define-key map "r" 'p4-revert)
     (define-key map "t" 'p4-opened-list-type)
     (define-key map "c" 'p4-opened-list-change)
-    ; TODO Make a version that works with ediff
-    (define-key map "d" 'p4-diff)
+    (define-key map "d" 'p4-ediff-new-window)
     (define-key map "C-c e" 'p4-ediff)
     (define-key map "C-c d" 'p4-plaintext-diff)
     ; TODO Make this actually unshelve the file

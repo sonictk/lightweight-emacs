@@ -221,11 +221,79 @@ Returns NIL when CL has no shelf (`p4 files @=CL' fails in that case)."
   (p4-output-matches (list "-ztag" "-F" "%depotFile%" "files" (concat "@=" cl))
                      "^//.+$"))
 
-(defun p4--changelist-arg (args)
-  "Return the changelist number given as \"-c CL\" in ARGS, or NIL."
+(defun p4--changelist-arg (args &optional allow-default)
+  "Return the changelist number given as \"-c CL\" in ARGS, or NIL.
+With ALLOW-DEFAULT non-NIL, the literal \"default\" changelist is accepted too."
   (let ((tail (member "-c" args)))
-    (when (and tail (cadr tail) (string-match-p "\\`[0-9]+\\'" (cadr tail)))
+    (when (and tail (cadr tail)
+               (or (string-match-p "\\`[0-9]+\\'" (cadr tail))
+                   (and allow-default (equal (cadr tail) "default"))))
       (cadr tail))))
+
+(defun p4--changelist-opened-file-actions (cl)
+  "Return an alist of (DEPOT-PATH . ACTION) for files open in changelist CL.
+Returns NIL when nothing is open in CL."
+  (p4-with-temp-buffer (list "-ztag" "-F" "%depotFile% %action%" "opened" "-c" cl)
+    (let (result)
+      (while (re-search-forward "^\\(//.+\\) \\([^ \n]+\\)$" nil t)
+        (push (cons (match-string-no-properties 1)
+                    (match-string-no-properties 2))
+              result))
+      (nreverse result))))
+
+(defvar p4-shelve-preview-diffable-actions '("edit" "integrate" "move/add")
+  "Open file actions for which `p4 diff' can produce a content diff.")
+
+(defvar p4-shelve-preview-batch-size 50
+  "Number of files passed to each `p4 diff' invocation when previewing a shelve.")
+
+(defun p4--shelve-preview-diff (cl)
+  "Display a buffer showing what shelving changelist CL would store.
+Lists every open file with its action, followed by the diff of each file whose
+action appears in `p4-shelve-preview-diffable-actions'.  Returns non-NIL when a
+preview buffer was displayed."
+  (let ((entries (p4--changelist-opened-file-actions cl)))
+    (when entries
+      (let ((files (delq nil (mapcar (lambda (entry)
+                                       (when (member (cdr entry)
+                                                     p4-shelve-preview-diffable-actions)
+                                         (car entry)))
+                                     entries)))
+            (diff-base (cons "diff" (p4-make-list-from-string p4-default-diff-options)))
+            (inhibit-read-only t)
+            (process-environment (cl-list* "P4DIFF" "DIFF" process-environment)))
+        (with-current-buffer (p4-make-output-buffer
+                              (format "*P4 shelve preview: change %s*" cl)
+                              'p4-diff-mode)
+          (insert (format "%d file(s) open in change %s:\n\n" (length entries) cl))
+          (dolist (entry entries)
+            (insert (format "... %s %s\n" (car entry) (cdr entry))))
+          (insert "\n")
+          (if (null files)
+              (insert "No content diff available for these actions.\n")
+            (while files
+              (let ((chunk nil)
+                    (n p4-shelve-preview-batch-size))
+                (while (and files (> n 0))
+                  (push (car files) chunk)
+                  (setq files (cdr files)
+                        n (1- n)))
+                (goto-char (point-max))
+                (p4-run (append diff-base (nreverse chunk))))))
+          (p4-activate-diff-buffer)
+          (goto-char (point-min))
+          (display-buffer (current-buffer))
+          t)))))
+
+(defun p4--confirm-shelve-preview (args)
+  "Preview the diff a `p4 shelve' described by ARGS would store, and confirm it.
+Returns non-NIL when the shelve should go ahead.  When no changelist can be
+determined from ARGS, or the changelist has no open files, no preview is shown
+and the shelve proceeds."
+  (let ((cl (p4--changelist-arg args t)))
+    (if (and cl (p4--shelve-preview-diff cl))
+        (yes-or-no-p (format "Really shelve the above changes in CL %s? " cl))
+      t)))
 
 (defun p4--confirm-destructive-shelve (args)
   "Confirm a `p4 shelve' invocation described by ARGS that would empty a shelf.
@@ -248,13 +316,17 @@ no warning from the server.  Signal a `user-error' if the user declines."
   "shelve"
   "Store files (or a stream spec) from a pending changelist in the depot, without submitting them.
 Asks for confirmation first when the changelist has an existing shelf but no
-open files, since the `-r' replace would silently delete that shelf."
+open files, since the `-r' replace would silently delete that shelf.  Otherwise
+displays the diff of everything that is about to be shelved and asks for
+confirmation before running the command."
   (interactive
    (if current-prefix-arg
        (p4-read-args "p4 shelve" "" 'pending)
      (append (list "-p" "-r" "-c" (p4-completing-read 'pending "Changelist: ")))))
+  (save-some-buffers nil (lambda () (or (not p4-do-find-file) p4-vc-status)))
   (p4--confirm-destructive-shelve args)
-  (p4-call-command "shelve" args :mode 'p4-basic-list-mode))
+  (when (p4--confirm-shelve-preview args)
+    (p4-call-command "shelve" args :mode 'p4-basic-list-mode)))
 
 (defp4cmd p4-shelve-discard-files (&rest args)
   "shelve"
@@ -344,6 +416,38 @@ open files, since the `-r' replace would silently delete that shelf."
    (string-trim (shell-command-to-string "p4 -ztag -F \"%Stream%\" streams -m 1000"))
    "\n" t "[ \t]+"))
 
+(defvar p4--current-stream-cache nil
+  "Cons cell (CLIENT . STREAM) caching the last `p4--current-stream' lookup.")
+
+(defun p4--current-stream (&optional refresh)
+  "Return the depot stream path of the current P4CLIENT, or nil.
+Reads the `Stream' field of the client spec via `p4 client -o'.  Returns nil
+for classic (non-stream) clients, when P4CLIENT is unset, or when the lookup
+fails.  The result is cached per client name; non-nil REFRESH re-runs the
+lookup and updates the cache."
+  (let ((client (ignore-errors (p4-current-client))))
+    (when (and client (not (string-empty-p client)))
+      (if (and (not refresh)
+               (equal (car p4--current-stream-cache) client))
+          (cdr p4--current-stream-cache)
+        (let* ((out (ignore-errors
+                      (car (split-string
+                            (shell-command-to-string
+                             (format "p4 -ztag -F \"%%Stream%%\" client -o %s"
+                                     (shell-quote-argument client)))
+                            "\n" t "[ \t\r]+"))))
+               (stream (and out (string-prefix-p "//" out) out)))
+          (setq p4--current-stream-cache (cons client stream))
+          stream)))))
+
+(defun p4-show-current-stream ()
+  "Display the stream of the current P4CLIENT, refreshing the cached value."
+  (interactive)
+  (let ((stream (p4--current-stream t)))
+    (message "%s" (or stream
+                      (format "No stream for P4CLIENT=%s"
+                              (or (ignore-errors (p4-current-client)) "<unset>"))))))
+
 (defvar p4--max-changes-history nil
   "Minibuffer history of maximum change counts.")
 
@@ -369,10 +473,14 @@ A numeric prefix argument is used directly without prompting."
   "Show recent Perforce changes by USER on STREAM filtered by STATUS.
 MAX-CHANGES limits results; the prompt is pre-filled with 200, and a numeric
 prefix argument overrides the prompt entirely.
+The stream prompt is pre-filled with the stream of the current P4CLIENT when
+that client is a stream client.
 Changes are shown regardless of which client workspace they were submitted from."
   (interactive
    (let* ((user   (p4-completing-read 'user "User: "))
-          (stream (completing-read "Stream: " (p4--fetch-stream-list) nil nil))
+          (current-stream (p4--current-stream))
+          (stream (completing-read "Stream: " (p4--fetch-stream-list)
+                                   nil nil current-stream nil current-stream))
           (status (completing-read "Status: "
                                    '("submitted" "pending" "shelved")
                                    nil t nil nil "submitted"))
@@ -906,6 +1014,129 @@ for the changelist itself, with completion scoped to the chosen type."
   (p4-call-command "print"
                    (list (concat (p4-context-single-filename) revision))
                    :after-show (p4-activate-ediff-callback)))
+
+(defvar p4-ediff-frame-parameters '((name . "P4 Ediff"))
+  "Frame parameters for the frame created by `p4-ediff-new-window'.
+The `name' parameter doubles as the window title, which is what makes the
+session easy to pick out when switching windows at the OS level.")
+
+(defvar p4-ediff-frame-window-setup-function #'ediff-setup-windows-plain
+  "Value of `ediff-window-setup-function' used by `p4-ediff-new-window'.
+`ediff-setup-windows-multiframe' is deliberately not used here: it reuses
+whichever frame already displays one of the compared buffers, which is exactly
+the layout takeover this command exists to avoid.")
+
+(defvar ediff-window-setup-function)
+(defvar ediff-after-quit-hook-internal)
+
+(defun p4--ediff-in-new-frame (buffer-a buffer-b &optional window-config)
+  "Compare BUFFER-A and BUFFER-B using ediff in a frame of its own.
+WINDOW-CONFIG, when non-NIL, is a window configuration restored before the new
+frame is created, undoing the windows that displaying the `p4 print' output
+opened in the original frame.  The new frame is deleted and the original frame
+reselected when the ediff session is quit."
+  (require 'ediff)
+  (when (and window-config
+             (frame-live-p (window-configuration-frame window-config)))
+    (set-window-configuration window-config))
+  (let* ((origin-frame (selected-frame))
+         (ediff-frame (make-frame p4-ediff-frame-parameters))
+         (ediff-window-setup-function p4-ediff-frame-window-setup-function))
+    (select-frame-set-input-focus ediff-frame)
+    (ediff-buffers
+     buffer-a buffer-b
+     (list (lambda ()
+             (add-hook 'ediff-after-quit-hook-internal
+                       (lambda ()
+                         (when (frame-live-p ediff-frame)
+                           (delete-frame ediff-frame))
+                         (when (frame-live-p origin-frame)
+                           (select-frame-set-input-focus origin-frame)))
+                       nil t))))))
+
+(defun p4--activate-ediff-new-frame-callback (&optional window-config target-buffer)
+  "Return a callback that ediffs TARGET-BUFFER against the P4 output buffer.
+TARGET-BUFFER defaults to the current buffer.  The session is set up in its own
+frame.  WINDOW-CONFIG is passed through to `p4--ediff-in-new-frame'."
+  (let ((orig-buffer (or target-buffer (current-buffer))))
+    (lambda ()
+      (when (buffer-live-p orig-buffer)
+        (p4-fontify-print-buffer t)
+        (p4--ediff-in-new-frame (current-buffer) orig-buffer window-config)))))
+
+(defun p4--depot-to-local-path (depot-path)
+  "Return the workspace path DEPOT-PATH maps to, or NIL when it is unmapped."
+  (car (p4-output-matches (list "-ztag" "-F" "%path%" "where" depot-path)
+                          "^[^-\n].*$")))
+
+(defun p4--ediff-workspace-buffer (filespec)
+  "Return the buffer holding the workspace copy of FILESPEC, or NIL.
+In a buffer visiting a file, that buffer is used.  Otherwise FILESPEC comes
+from the line at point in a P4 list buffer; a depot path is mapped through
+`p4 where' and the workspace file is visited if it is not already in a buffer."
+  (cond ((p4-buffer-file-name) (current-buffer))
+        ((null filespec) nil)
+        ((not (string-prefix-p "//" filespec))
+         (and (file-exists-p filespec) (find-file-noselect filespec)))
+        (t (let ((local (p4--depot-to-local-path filespec)))
+             (and local (file-exists-p local) (find-file-noselect local))))))
+
+(defun p4--activate-ediff2-new-frame-callback (other-file &optional window-config)
+  "Return a callback that ediffs the P4 output buffer against OTHER-FILE.
+The session is set up in its own frame.  WINDOW-CONFIG is passed through to
+`p4--ediff-in-new-frame'."
+  (lambda ()
+    (p4-fontify-print-buffer t)
+    (p4-call-command "print" (list other-file)
+                     :after-show (p4--activate-ediff-new-frame-callback
+                                  window-config))))
+
+(defun p4-ediff2-new-window (rev1 rev2)
+  "Use ediff to compare two versions of a depot file in a frame of its own.
+Behaves like `p4-ediff2' except that the current frame's window layout is left
+untouched; see `p4-ediff-new-window'."
+  (interactive
+   (let ((rev (or (get-char-property (point) 'rev) p4-vc-revision 0)))
+     (list (p4-read-arg-string "First filespec/revision to diff: "
+                               (when (> rev 1) (number-to-string (1- rev))))
+           (p4-read-arg-string "Second filespec/revision to diff: "
+                               (when (> rev 1) (number-to-string rev))))))
+  (p4-call-command "print" (list (p4-get-file-rev rev1))
+                   :after-show (p4--activate-ediff2-new-frame-callback
+                                (p4-get-file-rev rev2)
+                                (current-window-configuration))))
+
+(defun p4-ediff-new-window (prefix)
+  "Use ediff to compare file with its original client version in a new frame.
+Behaves like `p4-ediff', except that the whole session -- the two buffers and
+the control panel -- is set up in a frame created for it, leaving the current
+frame's buffers and window layout as they were.  The frame is deleted and the
+original frame reselected when the session is quit.  With PREFIX, compare two
+revisions, as `p4-ediff2' does.
+
+Works from a P4 list buffer as well as from a buffer visiting a file: there the
+file on the current line is resolved to its workspace path and compared, rather
+than the list buffer itself.
+
+On a text terminal there is no separate frame to switch to, so this falls back
+to `p4-ediff'."
+  (interactive "P")
+  (require 'ediff)
+  (cond
+   ((not (display-graphic-p))
+    (call-interactively (if prefix #'p4-ediff2 #'p4-ediff)))
+   (prefix (call-interactively #'p4-ediff2-new-window))
+   (t
+    (let* ((filespec (p4-context-single-filename))
+           (buffer (p4--ediff-workspace-buffer filespec)))
+      (unless filespec
+        (error "No file at point to compare"))
+      (unless buffer
+        (error "No workspace copy of %s to compare" filespec))
+      (p4-call-command "print" (list (concat filespec "#have"))
+                       :after-show (p4--activate-ediff-new-frame-callback
+                                    (current-window-configuration)
+                                    buffer))))))
 
 ; TODO: make a command that gets the latest CL description that modified a given line in a source file.
 ; TODO: make a command that allows modifying the description of a given changelist.
