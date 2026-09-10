@@ -1018,6 +1018,39 @@ will be killed."
 ;      split-width-threshold 0      ; ⇒ 0 means “OK to split vertically if >0 columns”
 ;      split-window-preferred-function 'split-window-sensibly)
 
+(defvar lightweight-gnu-diffutils-directories
+  '("C:/msys64/usr/bin"
+    "C:/msys64/mingw64/bin"
+    "C:/Program Files/Git/usr/bin"
+    "C:/Program Files (x86)/Git/usr/bin"
+    "/usr/bin"
+    "/usr/local/bin"
+    "/opt/homebrew/bin")
+  "Directories searched for GNU diffutils programs, most preferred first.")
+
+(defun lightweight-gnu-diff-program (name)
+  "Return an absolute path to the GNU diffutils program NAME, or NIL.
+`executable-find' is not good enough for this on Windows: Vim installs a
+cut-down `diff.exe' which GNU `diff3' cannot drive, and its directory usually
+comes earlier on PATH than a real diffutils one."
+  (let ((exe (if (memq system-type '(ms-dos windows-nt))
+                 (concat name ".exe")
+               name)))
+    (seq-find #'file-executable-p
+              (mapcar (lambda (dir) (expand-file-name exe dir))
+                      lightweight-gnu-diffutils-directories))))
+
+(let ((diff (lightweight-gnu-diff-program "diff"))
+      (diff3 (lightweight-gnu-diff-program "diff3")))
+  (when diff
+    (setq ediff-diff-program diff)
+    (setq ediff-custom-diff-program diff))
+  (when diff3
+    (setq ediff-diff3-program diff3))
+  (when (and diff diff3 (not (string-match-p " " diff)))
+    (setq ediff-diff3-options (format "--diff-program=%s" diff))
+    (setq-default ediff-actual-diff3-options ediff-diff3-options)))
+
 (defun lightweight-ediff-setup-windows (buffer-A buffer-B buffer-C control-buffer)
   (ediff-setup-windows-plain buffer-A buffer-B buffer-C control-buffer)
 )
@@ -1574,14 +1607,14 @@ will be killed."
 (setq scroll-step 3)
 
 ; Markdown support
-(require 'markdown-mode)
-(autoload 'markdown-mode "markdown-mode"
-   "Major mode for editing Markdown files" t)
-(add-to-list 'auto-mode-alist '("\\.markdown\\'" . markdown-mode))
-(add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-mode))
-(add-to-list 'auto-mode-alist '("\\.md.html\\'" . markdown-mode))
+(require 'markdown-ts-mode)
+(require 'markdown-ts-mode-x)
+(add-to-list 'auto-mode-alist '("\\.markdown\\'" . markdown-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.md\\'" . markdown-ts-mode))
+(add-to-list 'auto-mode-alist '("\\.md.html\\'" . markdown-ts-mode))
+(add-to-list 'major-mode-remap-alist '(markdown-mode . markdown-ts-mode))
 
-(autoload 'gfm-mode "markdown-mode"
+(autoload 'gfm-mode "markdown-ts-mode"
    "Major mode for editing GitHub Flavored Markdown files" t)
 (add-to-list 'auto-mode-alist '("README\\.md\\'" . gfm-mode))
 
@@ -2012,6 +2045,7 @@ PWD is not in a git repo (or the git command is not found)."
 ; Perforce support
 (require 'p4)
 (require 'p4-extensions)
+(require 'p4-swarm)
 (setq p4-do-find-file nil) ; prevents p4 from taking ownership of a P4 file when it is loaded
 (setq p4-auto-refresh nil)
 (setq p4-check-empty-diffs t)

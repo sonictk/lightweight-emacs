@@ -1028,13 +1028,19 @@ the layout takeover this command exists to avoid.")
 
 (defvar ediff-window-setup-function)
 (defvar ediff-after-quit-hook-internal)
+(defvar ediff-quit-merge-hook)
+(defvar ediff-buffer-C)
 
-(defun p4--ediff-in-new-frame (buffer-a buffer-b &optional window-config)
-  "Compare BUFFER-A and BUFFER-B using ediff in a frame of its own.
+(defun p4--ediff-in-new-frame-1 (setup-fn &optional window-config after-quit-fn)
+  "Start an ediff session in a frame of its own by calling SETUP-FN.
+SETUP-FN is called with one argument, the list of startup hooks to hand to the
+ediff entry point, so that any of them -- two-way compare, three-way merge --
+can be set up this way.
 WINDOW-CONFIG, when non-NIL, is a window configuration restored before the new
 frame is created, undoing the windows that displaying the `p4 print' output
 opened in the original frame.  The new frame is deleted and the original frame
-reselected when the ediff session is quit."
+reselected when the ediff session is quit, after AFTER-QUIT-FN, if given, has
+been called."
   (require 'ediff)
   (when (and window-config
              (frame-live-p (window-configuration-frame window-config)))
@@ -1043,16 +1049,23 @@ reselected when the ediff session is quit."
          (ediff-frame (make-frame p4-ediff-frame-parameters))
          (ediff-window-setup-function p4-ediff-frame-window-setup-function))
     (select-frame-set-input-focus ediff-frame)
-    (ediff-buffers
-     buffer-a buffer-b
-     (list (lambda ()
-             (add-hook 'ediff-after-quit-hook-internal
-                       (lambda ()
-                         (when (frame-live-p ediff-frame)
-                           (delete-frame ediff-frame))
-                         (when (frame-live-p origin-frame)
-                           (select-frame-set-input-focus origin-frame)))
-                       nil t))))))
+    (funcall setup-fn
+             (list (lambda ()
+                     (add-hook 'ediff-after-quit-hook-internal
+                               (lambda ()
+                                 (when (frame-live-p ediff-frame)
+                                   (delete-frame ediff-frame))
+                                 (when (frame-live-p origin-frame)
+                                   (select-frame-set-input-focus origin-frame))
+                                 (when after-quit-fn (funcall after-quit-fn)))
+                               nil t))))))
+
+(defun p4--ediff-in-new-frame (buffer-a buffer-b &optional window-config)
+  "Compare BUFFER-A and BUFFER-B using ediff in a frame of its own.
+WINDOW-CONFIG is passed through to `p4--ediff-in-new-frame-1'."
+  (p4--ediff-in-new-frame-1
+   (lambda (startup-hooks) (ediff-buffers buffer-a buffer-b startup-hooks))
+   window-config))
 
 (defun p4--activate-ediff-new-frame-callback (&optional window-config target-buffer)
   "Return a callback that ediffs TARGET-BUFFER against the P4 output buffer.
@@ -1137,6 +1150,237 @@ to `p4-ediff'."
                        :after-show (p4--activate-ediff-new-frame-callback
                                     (current-window-configuration)
                                     buffer))))))
+
+(defvar p4-resolve-frame-parameters '((name . "P4 Resolve"))
+  "Frame parameters for the frame created by `p4-resolve-ediff'.
+Used in place of `p4-ediff-frame-parameters' so that a merge in progress is
+distinguishable from a plain comparison when switching windows at the OS
+level.")
+
+(defvar p4-resolve-conflict-regexp "^<<<<<<< "
+  "Regular expression matching a conflict marker left in an ediff merge buffer.
+See `ediff-combination-pattern' for where these come from.")
+
+(defvar p4-resolve-unmergeable-type-regexp
+  "\\`\\(binary\\|symlink\\|apple\\|resource\\|utf16\\)"
+  "Regular expression matching the Perforce file types ediff must not merge.
+Matched against the type `p4 fstat' reports, so it is anchored at the start to
+let the +modifier suffixes through.  Merging any of these as text would write
+back a corrupted file, since the contents do not survive being decoded into a
+buffer and re-encoded.")
+
+(defvar p4--resolve-queue nil
+  "Workspace paths still waiting to be merged by `p4-resolve-ediff'.")
+
+(declare-function p4-resolve-comint "p4")
+
+(defun p4--fstat-tags (file)
+  "Return the tagged output of `p4 fstat -Or' for FILE as an alist of strings."
+  (p4-with-temp-buffer (list "-ztag" "fstat" "-Or" file)
+    (let (tags)
+      (while (re-search-forward "^\\.\\.\\. \\([A-Za-z]+[0-9]*\\) ?\\(.*\\)$" nil t)
+        (push (cons (match-string-no-properties 1)
+                    (match-string-no-properties 2))
+              tags))
+      (nreverse tags))))
+
+(defun p4--resolve-pending-records (file)
+  "Return the resolves still scheduled for FILE as a list of alists.
+Each element gives the BASE and THEIRS filespecs to merge against the workspace
+copy, the resolve TYPE, and FILE's own Perforce FILE-TYPE.  `p4 fstat -Or'
+reports the records that have already been resolved as well, so the pending one
+is the record whose resolve action is still \"unresolved\", which is not
+necessarily the first."
+  (let* ((tags (p4--fstat-tags file))
+         (file-type (or (cdr (assoc "type" tags))
+                        (cdr (assoc "headType" tags))))
+         (index 0)
+         records)
+    (while (assoc (format "resolveAction%d" index) tags)
+      (when (equal (cdr (assoc (format "resolveAction%d" index) tags)) "unresolved")
+        (push (list (cons 'base
+                          (format "%s#%s"
+                                  (cdr (assoc (format "resolveBaseFile%d" index) tags))
+                                  (cdr (assoc (format "resolveBaseRev%d" index) tags))))
+                    (cons 'theirs
+                          (format "%s#%s"
+                                  (cdr (assoc (format "resolveFromFile%d" index) tags))
+                                  (cdr (assoc (format "resolveEndFromRev%d" index) tags))))
+                    (cons 'type
+                          (cdr (assoc (format "resolveType%d" index) tags)))
+                    (cons 'file-type file-type))
+              records))
+      (setq index (1+ index)))
+    (nreverse records)))
+
+(defun p4--resolve-pending-files (args)
+  "Return the workspace paths of the files needing resolve, restricted by ARGS."
+  (p4-output-matches (append '("-ztag" "resolve" "-n") args)
+                     "^\\.\\.\\. clientFile \\(.*\\)$" 1))
+
+(defun p4--resolve-print-buffer (filespec name mode-file)
+  "Print FILESPEC into a read-only buffer called NAME and return that buffer.
+MODE-FILE is the file name the major mode is chosen from; the depot path is not
+used for this, since it carries a revision suffix that defeats
+`auto-mode-alist'."
+  (with-current-buffer (p4-make-output-buffer name)
+    (let ((inhibit-read-only t))
+      (unless (zerop (p4-run (list "print" "-q" filespec)))
+        (error "Cannot print %s" filespec))
+      (let ((buffer-file-name mode-file))
+        (set-auto-mode)))
+    (setq buffer-read-only t)
+    (current-buffer)))
+
+(defun p4--resolve-yours-buffer (file name)
+  "Return a read-only buffer called NAME holding the workspace contents of FILE.
+The contents come from FILE's own buffer when it has one, so that unsaved edits
+count as yours rather than being silently dropped."
+  (let ((source (find-buffer-visiting file)))
+    (with-current-buffer (p4-make-output-buffer name)
+      (let ((inhibit-read-only t)
+            (buffer-file-name file))
+        (if source
+            (insert-buffer-substring source)
+          (insert-file-contents file))
+        (set-auto-mode))
+      (setq buffer-read-only t)
+      (current-buffer))))
+
+(defun p4--resolve-accept (file merged)
+  "Write MERGED into FILE and mark it resolved with `p4 resolve -ay'.
+Accepting yours is what records the resolve: the workspace file already holds
+the merge result by the time p4 is told about it.  The command is run from
+FILE's own buffer, so that `p4-refresh-callback' refreshes that buffer rather
+than whichever one ediff happened to leave current, and synchronously, so that
+it has finished before the next file is merged."
+  (with-current-buffer (find-file-noselect file)
+    (let ((inhibit-read-only t))
+      (erase-buffer)
+      (insert merged)
+      (save-buffer))
+    (p4-call-command "resolve" (list "-ay" file)
+                     :mode 'p4-basic-list-mode
+                     :synchronous t
+                     :callback (p4-refresh-callback))))
+
+(defun p4--resolve-finish (file merged)
+  "Offer to accept MERGED as the resolution of FILE, then move on to the next.
+MERGED is NIL when the merge buffer did not survive the session, in which case
+FILE is left unresolved."
+  (unwind-protect
+      (let ((default-directory (file-name-directory file)))
+        (cond
+         ((null merged)
+          (message "No merge result for %s; left unresolved" file))
+         ((yes-or-no-p (format "Accept merge of %s%s and mark resolved? "
+                               (file-name-nondirectory file)
+                               (if (string-match-p p4-resolve-conflict-regexp merged)
+                                   " (conflict markers remain)"
+                                 "")))
+          (p4--resolve-accept file merged))
+         (t (message "%s left unresolved" file))))
+    (p4--resolve-next)))
+
+(defun p4--resolve-merge (file record)
+  "Merge FILE's base and their revisions from RECORD against its workspace copy.
+Sets up a three-way ediff merge in a frame of its own; the result is offered for
+acceptance once the session is quit."
+  (let* ((name (file-name-nondirectory file))
+         (base (p4--resolve-print-buffer (cdr (assq 'base record))
+                                         (format "*P4 merge base: %s*" name)
+                                         file))
+         (theirs (p4--resolve-print-buffer (cdr (assq 'theirs record))
+                                           (format "*P4 merge theirs: %s*" name)
+                                           file))
+         (yours (p4--resolve-yours-buffer file (format "*P4 merge yours: %s*" name)))
+         (merged nil)
+         (p4-ediff-frame-parameters p4-resolve-frame-parameters))
+    (p4--ediff-in-new-frame-1
+     (lambda (startup-hooks)
+       (ediff-merge-buffers-with-ancestor
+        yours theirs base
+        (cons (lambda ()
+                (add-hook 'ediff-quit-merge-hook
+                          (lambda ()
+                            (when (buffer-live-p ediff-buffer-C)
+                              (setq merged
+                                    (with-current-buffer ediff-buffer-C
+                                      (buffer-substring-no-properties (point-min)
+                                                                      (point-max))))))
+                          nil t))
+              startup-hooks)))
+     nil
+     (lambda ()
+       (dolist (buffer (list base theirs yours))
+         (when (buffer-live-p buffer)
+           (kill-buffer buffer)))
+       (p4--resolve-finish file merged)))))
+
+(defun p4--resolve-file (file)
+  "Resolve FILE with a three-way ediff merge, or skip it with an explanation."
+  (let* ((default-directory (file-name-directory file))
+         (records (p4--resolve-pending-records file))
+         (record (car records))
+         (type (cdr (assq 'type record)))
+         (file-type (or (cdr (assq 'file-type record)) "")))
+    (cond
+     ((null records)
+      (message "%s does not need resolving" file)
+      (p4--resolve-next))
+     ((cdr records)
+      (message "%s has %d scheduled resolves; use `p4-resolve-comint' for it"
+               file (length records))
+      (p4--resolve-next))
+     ((not (equal type "content"))
+      (message "%s needs a %s resolve rather than a content merge; use `p4-resolve-comint' for it"
+               file type)
+      (p4--resolve-next))
+     ((string-match-p p4-resolve-unmergeable-type-regexp file-type)
+      (message "%s is of type %s, which cannot be merged as text; use `p4-resolve-comint' for it"
+               file file-type)
+      (p4--resolve-next))
+     (t (p4--resolve-merge file record)))))
+
+(defun p4--resolve-next ()
+  "Start merging the next file in `p4--resolve-queue'."
+  (if p4--resolve-queue
+      (p4--resolve-file (pop p4--resolve-queue))
+    (message "No more files to resolve")))
+
+(defun p4-resolve-ediff (&optional args)
+  "Resolve integrations and updates to workspace files using ediff.
+Each file scheduled for a content resolve is merged three ways -- your
+workspace copy, their revision and the base revision the two diverged from --
+in a frame of its own, as `p4-ediff-new-window' does for a plain comparison.
+Quitting the session offers to write the merge buffer back to the workspace file
+and mark the file resolved with `p4 resolve -ay'; declining leaves the file
+unresolved.  Files are merged one at a time.
+
+ARGS restricts the files considered, and defaults to every file that needs
+resolving.  Interactively, a prefix argument prompts for it.  Flags given there
+only narrow that list; they are not passed on to the resolve itself, so use
+`p4-resolve-comint' for `-as', `-at' and the like.
+
+Branch and delete resolves, file types that cannot be merged as text, files with
+more than one scheduled resolve, and text terminals are handed to
+`p4-resolve-comint', which is the original comint-based `p4 resolve'."
+  (interactive
+   (list (when current-prefix-arg
+           (p4-read-args "p4 resolve (files): "
+                         (or (p4-context-single-filename) "")))))
+  (require 'ediff)
+  (if (not (display-graphic-p))
+      (call-interactively #'p4-resolve-comint)
+    (let ((files (p4--resolve-pending-files args)))
+      (if (null files)
+          (message "No files need resolving")
+        (setq p4--resolve-queue files)
+        (p4--resolve-next)))))
+
+(unless (fboundp 'p4-resolve-comint)
+  (defalias 'p4-resolve-comint (symbol-function 'p4-resolve)))
+(defalias 'p4-resolve #'p4-resolve-ediff)
 
 ; TODO: make a command that gets the latest CL description that modified a given line in a source file.
 ; TODO: make a command that allows modifying the description of a given changelist.
