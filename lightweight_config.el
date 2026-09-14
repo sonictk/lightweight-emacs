@@ -22,6 +22,12 @@
 (add-to-list 'custom-theme-load-path
              (file-name-as-directory "~/source/repos/lightweight-emacs/themes"))
 
+; Org mode configuration
+(setq org-startup-with-inline-images t)
+(setq org-startup-with-latex-preview t)
+(setq org-startup-with-link-previews t)
+(setq org-startup-with-beamer-mode t)
+
 ; Enable font ligatures
 ; Fira Code configuration below
 (require 'ligature)
@@ -1740,37 +1746,37 @@ comes earlier on PATH than a real diffutils one."
 (defalias 'yes-or-no-p 'y-or-n-p)
 
 ; Guess indentation in files
-(require 'dtrt-indent)
-(dtrt-indent-global-mode t)
-(setq dtrt-indent-verbosity 0)
+; (require 'dtrt-indent)
+; (dtrt-indent-global-mode t)
+; (setq dtrt-indent-verbosity 0)
 
 (global-set-key (kbd "RET") 'newline-and-indent)  ; automatically indent when press RET
 
 ; Set up auto-pairing for parentheses
-(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/smartparens")
-(require 'dash)
-(require 'smartparens-config)
-(add-to-list 'sp-ignore-modes-list '(minibuffer-inactive-mode picture-mode markdown-mode text-mode artist-mode))
-(show-smartparens-global-mode t)
-(smartparens-global-mode nil)
-
-(add-hook 'artist-mode-hook
-    (lambda ()
-      (turn-off-smartparens-mode)
-      (whitespace-mode)
-    )
-)
-
-(add-hook 'prog-mode-hook #'smartparens-mode)
-
-(setq sp-show-pair-delay 0.8) ; Slow down the smartparens matching mode to improve interactive typing performance
-
-; when you press RET, the curly braces automatically
-; add another newline
-(sp-with-modes '(c-mode c++-mode)
-  (sp-local-pair "{" nil :post-handlers '(("||\n[i]" "RET")))
-  (sp-local-pair "/*" "*/" :post-handlers '((" | " "SPC")
-                                            ("* ||\n[i]" "RET"))))
+;(add-to-list 'load-path "~/source/repos/lightweight-emacs/modules/smartparens")
+;(require 'dash)
+;(require 'smartparens-config)
+;(add-to-list 'sp-ignore-modes-list '(minibuffer-inactive-mode picture-mode markdown-mode text-mode artist-mode))
+;(show-smartparens-global-mode t)
+;(smartparens-global-mode nil)
+;
+;(add-hook 'artist-mode-hook
+;    (lambda ()
+;      (turn-off-smartparens-mode)
+;      (whitespace-mode)
+;    )
+;)
+;
+;(add-hook 'prog-mode-hook #'smartparens-mode)
+;
+;(setq sp-show-pair-delay 0.8) ; Slow down the smartparens matching mode to improve interactive typing performance
+;
+;; when you press RET, the curly braces automatically
+;; add another newline
+;(sp-with-modes '(c-mode c++-mode)
+;  (sp-local-pair "{" nil :post-handlers '(("||\n[i]" "RET")))
+;  (sp-local-pair "/*" "*/" :post-handlers '((" | " "SPC")
+;                                            ("* ||\n[i]" "RET"))))
 
 ; Show possible commands in minibuffer after hitting first button combination
 (require 'which-key)
@@ -1837,7 +1843,7 @@ comes earlier on PATH than a real diffutils one."
 (autoload 'maxscript-mode "maxscript-mode" nil t)
 (add-to-list 'auto-mode-alist '("\\.ms$" . maxscript-mode))
 (add-hook 'maxscript-mode
-  (lambda()(dtrt-indent-mode t))
+  ; (lambda()(dtrt-indent-mode t))
   (lambda()(indent-tabs-mode t))
 )
 
@@ -1957,7 +1963,8 @@ PWD is not in a git repo (or the git command is not found)."
                                  (vc-dired-mode nil)
                                  (erc-track-minor-mode nil)
                                  (global-whitespace-mode nil)
-                                 (global-smartparens-mode nil))) ; Prevent desktop read from being slow
+                                 ; (global-smartparens-mode nil) ; Prevent desktop read from being slow
+                                 )) 
 
 ; Back button functionality and buffer mark navigation improved
 (require 'back-button)

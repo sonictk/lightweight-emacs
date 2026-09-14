@@ -1282,6 +1282,20 @@ FILE is left unresolved."
          (t (message "%s left unresolved" file))))
     (p4--resolve-next)))
 
+(defun p4--resolve-quiet-merge-buffer (control)
+  "Stop the merge buffer of the ediff session CONTROL from asking to be saved.
+`ediff-setup' turns on `buffer-offer-save' and, when `make-backup-files' is
+non-NIL, auto-saving in the merge buffer, which makes `save-some-buffers' prompt
+for a buffer that never visited a file and gives it an auto-save name derived
+from `default-directory'.  It does so after the startup hooks have run, so this
+has to be called once setup has returned."
+  (when (buffer-live-p control)
+    (let ((merge-buffer (buffer-local-value 'ediff-buffer-C control)))
+      (when (buffer-live-p merge-buffer)
+        (with-current-buffer merge-buffer
+          (setq buffer-offer-save nil)
+          (auto-save-mode -1))))))
+
 (defun p4--resolve-merge (file record)
   "Merge FILE's base and their revisions from RECORD against its workspace copy.
 Sets up a three-way ediff merge in a frame of its own; the result is offered for
@@ -1295,12 +1309,14 @@ acceptance once the session is quit."
                                            file))
          (yours (p4--resolve-yours-buffer file (format "*P4 merge yours: %s*" name)))
          (merged nil)
+         (control nil)
          (p4-ediff-frame-parameters p4-resolve-frame-parameters))
     (p4--ediff-in-new-frame-1
      (lambda (startup-hooks)
        (ediff-merge-buffers-with-ancestor
         yours theirs base
         (cons (lambda ()
+                (setq control (current-buffer))
                 (add-hook 'ediff-quit-merge-hook
                           (lambda ()
                             (when (buffer-live-p ediff-buffer-C)
@@ -1309,7 +1325,8 @@ acceptance once the session is quit."
                                       (buffer-substring-no-properties (point-min)
                                                                       (point-max))))))
                           nil t))
-              startup-hooks)))
+              startup-hooks))
+       (p4--resolve-quiet-merge-buffer control))
      nil
      (lambda ()
        (dolist (buffer (list base theirs yours))
